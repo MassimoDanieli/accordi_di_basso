@@ -3,6 +3,18 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [2.5.0] — 2026-08-01
+
+### Modificato
+- Il walking non e' piu' quattro note uguali: le semiminime restano l'impianto, ma
+  sopra c'e' un fraseggio idiomatico che varia a ogni giro — ultimo movimento in due
+  ottavi swingati (ai 2/3 del tempo), ghost percussiva sul levare del due, salto
+  d'ottava occasionale. Le variazioni sono deterministiche per battuta e giro:
+  vive, ma non caotiche.
+- Ogni metro ha la sua pulsazione: 3/4 tre movimenti, 2/4 due, e in 6/8 due
+  pulsazioni puntate (sull'uno e sul quattro) invece di sei note in fila.
+- Primo movimento leggermente accentato, come si suona davvero.
+
 ## [2.4.0] — 2026-08-01
 
 ### Aggiunto

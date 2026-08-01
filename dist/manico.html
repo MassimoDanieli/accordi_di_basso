@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" data-versione="2.4.0">
+<html lang="it" data-versione="2.5.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -308,7 +308,7 @@ html{scroll-behavior:smooth}
     <button data-lang="en" title="English" aria-label="English"><span class="fl">🇬🇧</span></button>
   </span>
   <button id="tema" class="tog">Chiaro</button>
-  <span class="ver">v2.4.0</span>
+  <span class="ver">v2.5.0</span>
 </header>
 
 <main class="stage">
@@ -1874,10 +1874,74 @@ __mod.app = (function () {
     return linea;
   }
 
+  /** Rumore deterministico: stesso giro e stessa battuta, stesso fraseggio. */
+  function seme(a, b) {
+    let x = (a * 374761393 + b * 668265263 + 1442695040888963) >>> 0;
+    return () => {
+      x = (x ^ (x << 13)) >>> 0; x = (x ^ (x >> 17)) >>> 0; x = (x ^ (x << 5)) >>> 0;
+      return x / 4294967296;
+    };
+  }
+
+  /**
+   * Il fraseggio del walking: semiminime come impianto, ornamenti idiomatici sopra.
+   * Ogni evento ha posizione e durata in movimenti; lo swing sta nei 2/3 del tempo.
+   */
+  function walkingEvents(i, giro) {
+    const item = state.grid[i];
+    if (!item || !item.ok) return [];
+    const dur = item.dur || 1;
+    const rnd = seme(i * 31 + 7, giro * 101 + 13);
+    const ev = [];
+
+    // 6/8: due pulsazioni puntate (1 e 4), non sei note uguali.
+    if (state.beats === 6) {
+      const linea = walkingLine(i, 2);
+      if (!linea.length) return [];
+      ev.push({ n: linea[0], at: 0, len: 2.6, vol: 0.36 });
+      if (linea[1] && dur >= 1) ev.push({ n: linea[1], at: 3, len: 2.4, vol: 0.3 });
+      return ev;
+    }
+
+    const nb = Math.max(1, Math.round(state.beats * dur));
+    const linea = walkingLine(i, nb);
+    if (!linea.length) return [];
+
+    linea.forEach((n, b) => {
+      if (n) ev.push({ n, at: b, len: 0.92, vol: b === 0 ? 0.36 : 0.3 });
+    });
+
+    // Con meno di tre movimenti non c'e' spazio per ornamenti.
+    if (nb < 3) return ev;
+
+    // Salto d'ottava sul terzo movimento, quando la zona lo consente.
+    if (rnd() < 0.25) {
+      const su = findPos(linea[0].midi + 12);
+      if (su && ev[2]) { ev[2] = { ...ev[2], n: su }; }
+    }
+
+    // Ultimo movimento in due ottavi swingati: nota dell'accordo, poi il passaggio.
+    if (rnd() < 0.5 && ev.length >= 2) {
+      const ultimo = ev[ev.length - 1];
+      const prima = ev[ev.length - 2];
+      ultimo.len = 0.6;
+      ev.push({ n: ultimo.n, at: ultimo.at + 2 / 3, len: 0.3, vol: 0.28 });
+      ultimo.n = prima.n;
+    }
+
+    // Ghost percussiva sul levare del secondo movimento.
+    if (rnd() < 0.35 && ev[1]) {
+      ev.push({ n: ev[1].n, at: 1 + 2 / 3, len: 0.07, vol: 0.12, ghost: true });
+    }
+
+    return ev.sort((a, b) => a.at - b.at);
+  }
+
   // ---------------------------------------------------------------- trasporto
 
   function tick() {
     if (!state.playing) return;
+    if (state.index === 0) state.giro = (state.giro || 0) + 1;
     const item = state.grid[state.index];
     if (!item) { stop(); return; }
     const seconds = (60 / state.bpm) * state.beats * (item.dur || 1);
@@ -1895,13 +1959,10 @@ __mod.app = (function () {
     if (item.ok && state.playMode !== 'mute') {
       if (state.playMode === 'walking') {
         const beatSec = 60 / state.bpm;
-        const nb = Math.max(1, Math.round(state.beats * (item.dur || 1)));
-        const linea = walkingLine(state.index, nb);
         clearFlashes();
-        linea.forEach((n, b) => {
-          if (!n) return;
-          A.pluck(n.midi, b * beatSec, Math.min(beatSec * 0.95, 0.8), 0.32);
-          flashes.push(setTimeout(() => flash(n), b * beatSec * 1000));
+        walkingEvents(state.index, state.giro || 0).forEach(ev => {
+          A.pluck(ev.n.midi, ev.at * beatSec, ev.len * beatSec, ev.vol);
+          flashes.push(setTimeout(() => flash(ev.n), ev.at * beatSec * 1000));
         });
       } else {
         const v = chosen(state.index);
@@ -2229,7 +2290,7 @@ __mod.app = (function () {
     closeDialog($('dlgireal'));
   }
 
-  window.MANICO = { versione: document.documentElement.dataset.versione || '?' };
+  window.MANICO = { versione: document.documentElement.dataset.versione || '?', fraseggio: walkingEvents };
 
   try {
     init();
