@@ -8,7 +8,7 @@ export function readTheme() {
     const saved = localStorage.getItem(KEY);
     if (saved === 'chiaro' || saved === 'scuro') return saved;
   } catch (e) { /* archiviazione non disponibile */ }
-  return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'chiaro' : 'scuro';
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'scuro' : 'chiaro';
 }
 
 export function applyTheme(theme) {

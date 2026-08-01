@@ -1,25 +1,61 @@
-// Forme armoniche generiche e brani tradizionali di pubblico dominio.
-// Ogni voce e': [nome italiano, nome inglese, griglia].
-// Gli standard protetti da diritto d'autore non sono inclusi: per quelli
-// si usa l'importazione dai propri file iReal Pro.
+// Forme armoniche, brani tradizionali di pubblico dominio e versioni essenziali
+// semplificate di brani celebri (le progressioni armoniche di base non sono
+// soggette a diritto d'autore; le griglie complete degli standard si importano
+// dalle proprie carte iReal).
+//
+// Ogni voce e': [nome italiano, nome inglese, stile, bpm, griglia].
 
 export const LIBRARY = [
-  ['Blues maggiore, 12 battute (Fa)', 'Major blues, 12 bars (F)', 'F7 Bb7 F7 F7 Bb7 Bb7 F7 F7 C7 Bb7 F7 C7'],
-  ['Blues jazz, 12 battute (Sib)', 'Jazz blues, 12 bars (Bb)', 'Bb7 Eb7 Bb7 F-7,Bb7 Eb7 Edim7 Bb7 D-7,G7 C-7 F7 Bb7,G7 C-7,F7'],
-  ['Blues minore (Do)', 'Minor blues (C)', 'C-7 C-7 C-7 C-7 F-7 F-7 C-7 C-7 Ab7 G7 C-7 G7'],
-  ['Rhythm changes, sezione A (Sib)', 'Rhythm changes, A section (Bb)', 'Bb^7,G-7 C-7,F7 Bb^7,G-7 C-7,F7 Bb7 Eb7,Edim7 Bb^7,F7 Bb6'],
-  ['II-V-I che scende per quarte', 'II-V-I moving down in fourths', 'D-7 G7 C^7 C^7 G-7 C7 F^7 F^7 C-7 F7 Bb^7 Bb^7 F-7 Bb7 Eb^7 Eb^7'],
-  ['II-V-I minore', 'Minor II-V-I', 'D-7b5 G7b9 C-6 C-6 G-7b5 C7b9 F-6 F-6'],
-  ['Turnaround I-VI-II-V (Do)', 'Turnaround I-VI-II-V (C)', 'C^7 A7 D-7 G7'],
-  ['Giro anni Cinquanta I-vi-IV-V (Do)', 'Fifties progression I-vi-IV-V (C)', 'C A-7 F G7'],
-  ['Cadenza andalusa (La minore)', 'Andalusian cadence (A minor)', 'A- G F E7'],
-  ['Ciclo di terze maggiori', 'Major thirds cycle', 'C^7 Eb7 Ab^7 B7 E^7 G7 C^7 C^7'],
-  ['Vamp dorico a due accordi', 'Two-chord Dorian vamp', 'D-7 D-7 D-7 D-7 E-7 E-7 E-7 E-7'],
-  ['Canone di Pachelbel (Re)', 'Pachelbel canon (D)', 'D A B- F# G D G A'],
-  ['House of the Rising Sun (trad.)', 'House of the Rising Sun (trad.)', 'A- C D F A- C E7 E7'],
-  ['Greensleeves (trad.)', 'Greensleeves (trad.)', 'A- C G E7 A- C E7 A-'],
-  ['St. James Infirmary (trad.)', 'St. James Infirmary (trad.)', 'D- A7 D- D7 G- D- A7 D-'],
-  ['Amazing Grace (trad.)', 'Amazing Grace (trad.)', 'G G C G G G D7 D7 G G C G G D7 G G'],
-  ['Scarborough Fair (trad.)', 'Scarborough Fair (trad.)', 'A- A- C A- A- G A- A-'],
-  ['Sinner Man, vamp minore (trad.)', 'Sinner Man, minor vamp (trad.)', 'A- A- A- A- D- D- A- A- E7 D- A- A-']
+  ['Blues maggiore, 12 battute (Fa)', 'Major blues, 12 bars (F)', 'Blues', 104,
+   'F7 Bb7 F7 F7 Bb7 Bb7 F7 F7 C7 Bb7 F7 C7'],
+  ['Blues jazz, 12 battute (Sib)', 'Jazz blues, 12 bars (Bb)', 'Jazz blues', 132,
+   'Bb7 Eb7 Bb7 F-7,Bb7 Eb7 Edim7 Bb7 D-7,G7 C-7 F7 Bb7,G7 C-7,F7'],
+  ['Blues minore (Do)', 'Minor blues (C)', 'Blues', 96,
+   'C-7 C-7 C-7 C-7 F-7 F-7 C-7 C-7 Ab7 G7 C-7 G7'],
+  ['12 battute in Mi', '12 bars in E', 'Blues rock', 100,
+   'E7 E7 E7 E7 A7 A7 E7 E7 B7 A7 E7 B7'],
+  ['Rhythm changes, sezione A (Sib)', 'Rhythm changes, A section (Bb)', 'Turnaround', 160,
+   'Bb^7,G-7 C-7,F7 Bb^7,G-7 C-7,F7 Bb7 Eb7,Edim7 Bb^7,F7 Bb6'],
+  ['Stile Autumn Leaves, sezione A', 'Autumn Leaves style, A section', 'II-V-I', 120,
+   'C-7 F7 Bb^7 Eb^7 A-7b5 D7b9 G-6 G-6'],
+  ['Stile Blue Bossa, prime otto', 'Blue Bossa style, first eight', 'Bossa jazz', 116,
+   'C-7 C-7 F-7 F-7 D-7b5 G7b9 C-7 C-7'],
+  ['Stile Song for My Father', 'Song for My Father style', 'Hard bop', 126,
+   'F-7 F-7 Eb7 Eb7 Db7 C7 F-7 F-7'],
+  ['Stile So What, vamp modale', 'So What style, modal vamp', 'Modal jazz', 136,
+   'D-7 D-7 D-7 D-7 Eb-7 Eb-7 D-7 D-7'],
+  ['Giro pop I-vi-IV-V (Do)', 'Pop loop I-vi-IV-V (C)', 'Pop / Soul', 118,
+   'C A-7 F G7'],
+  ['Giro pop I-V-vi-IV (Do)', 'Pop loop I-V-vi-IV (C)', 'Pop', 72,
+   'C G A- F'],
+  ['Giro reggae I-IV-I-V (La)', 'Reggae loop I-IV-I-V (A)', 'Reggae', 76,
+   'A D A E'],
+  ['II-V-I che scende per quarte', 'II-V-I moving down in fourths', 'Studio', 120,
+   'D-7 G7 C^7 C^7 G-7 C7 F^7 F^7 C-7 F7 Bb^7 Bb^7 F-7 Bb7 Eb^7 Eb^7'],
+  ['II-V-I minore', 'Minor II-V-I', 'Studio', 110,
+   'D-7b5 G7b9 C-6 C-6 G-7b5 C7b9 F-6 F-6'],
+  ['Turnaround I-VI-II-V (Do)', 'Turnaround I-VI-II-V (C)', 'Turnaround', 140,
+   'C^7 A7 D-7 G7'],
+  ['Cadenza andalusa (La minore)', 'Andalusian cadence (A minor)', 'Flamenco', 112,
+   'A- G F E7'],
+  ['Ciclo di quinte in dominanti', 'Cycle of fifths in dominants', 'Tecnica', 90,
+   'C7 F7 Bb7 Eb7 Ab7 Db7 Gb7 B7 E7 A7 D7 G7'],
+  ['Ciclo di terze maggiori', 'Major thirds cycle', 'Tecnica', 100,
+   'C^7 Eb7 Ab^7 B7 E^7 G7 C^7 C^7'],
+  ['Vamp dorico a due accordi', 'Two-chord Dorian vamp', 'Modale', 96,
+   'D-7 D-7 D-7 D-7 E-7 E-7 E-7 E-7'],
+  ['Canone di Pachelbel (Re)', 'Pachelbel canon (D)', 'Classico', 66,
+   'D A B- F# G D G A'],
+  ['House of the Rising Sun (trad.)', 'House of the Rising Sun (trad.)', 'Folk', 78,
+   'A- C D F A- C E7 E7'],
+  ['Greensleeves (trad.)', 'Greensleeves (trad.)', 'Trad.', 90,
+   'A- C G E7 A- C E7 A-'],
+  ['St. James Infirmary (trad.)', 'St. James Infirmary (trad.)', 'Trad. blues', 84,
+   'D- A7 D- D7 G- D- A7 D-'],
+  ['Amazing Grace (trad.)', 'Amazing Grace (trad.)', 'Gospel', 70,
+   'G G C G G G D7 D7 G G C G G D7 G G'],
+  ['Scarborough Fair (trad.)', 'Scarborough Fair (trad.)', 'Folk', 92,
+   'A- A- C A- A- G A- A-'],
+  ['Sinner Man, vamp minore (trad.)', 'Sinner Man, minor vamp (trad.)', 'Trad.', 132,
+   'A- A- A- A- D- D- A- A- E7 D- A- A-']
 ];

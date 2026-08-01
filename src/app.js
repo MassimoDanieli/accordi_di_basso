@@ -120,7 +120,12 @@ function renderChips() {
   state.grid.forEach((x, i) => {
     if (x.bar !== bar && i > 0) html += '<span class="bl">|</span>';
     bar = x.bar;
-    if (x.ok) html += `<button class="chip${i === state.index ? ' on' : ''}" data-pick="${i}">${x.chord.symbol}</button>`;
+    if (x.ok) {
+      const v = chosen(i);
+      const sum = v ? v.shape.map(n => noteName(n.pc, x.chord.flats)).join('\u00b7') : '';
+      html += `<button class="chip${i === state.index ? ' on' : ''}" data-pick="${i}">`
+        + `<span class="cs">${x.chord.symbol}</span>${sum ? `<span class="cn">${sum}</span>` : ''}</button>`;
+    }
     else if (x.rest) html += `<span class="chip rest">N.C.</span>`;
     else html += `<span class="chip bad" title="${t('chip.bad')}">${x.raw}</span>`;
   });
@@ -279,6 +284,49 @@ function select(i) {
   if (!state.playing) hear(chosen(i), 1.2);
 }
 
+/** Trova una posizione in zona per un midi qualsiasi, anche fuori dall'accordo. */
+function findPos(midi) {
+  const o = open();
+  for (let si = o.length - 1; si >= 0; si--) {
+    const f = midi - o[si];
+    if (f >= state.zoneFrom && f <= zoneTo()) return { si, f, midi, pc: ((midi % 12) + 12) % 12, iv: -2 };
+  }
+  return null;
+}
+
+/**
+ * Linea walking essenziale dentro la zona: fondamentale, due note dell'accordo in
+ * salita, nota cromatica di avvicinamento alla fondamentale dell'accordo successivo.
+ */
+function walkingLine(i, beats) {
+  const item = state.grid[i];
+  if (!item || !item.ok) return [];
+  const notes = V.zoneNotes(item.chord, open(), state.zoneFrom, zoneTo());
+  if (!notes.length) return [];
+  const v = chosen(i);
+  const root = (v && v.shape[0]) || notes.find(n => n.iv === 0) || notes[0];
+  const sopra = notes.filter(n => n.midi > root.midi);
+  const n2 = sopra.find(n => n.iv === item.chord.third) || sopra[0] || root;
+  const n3 = sopra.find(n => n.iv === item.chord.fifth && n.midi > n2.midi)
+          || sopra.find(n => n.midi > n2.midi) || n2;
+  let appr = null;
+  for (let k = 1; k <= state.grid.length; k++) {
+    const j = (i + k) % state.grid.length;
+    if (!state.grid[j].ok) continue;
+    const vNext = chosen(j);
+    const target = (vNext && vNext.shape[0].midi)
+      || (V.zoneNotes(state.grid[j].chord, open(), state.zoneFrom, zoneTo())[0] || {}).midi;
+    if (target !== undefined) appr = findPos(target + 1) || findPos(target - 1);
+    break;
+  }
+  const giro = [root, n2, n3, appr || n3];
+  const linea = [];
+  for (let b = 0; b < beats; b++) {
+    linea.push(b === beats - 1 ? giro[3] : giro[b % 3]);
+  }
+  return linea;
+}
+
 // ---------------------------------------------------------------- trasporto
 
 function tick() {
@@ -298,12 +346,24 @@ function tick() {
     for (let b = 0; b < beats; b++) A.click(b * (60 / state.bpm), item.first && b === 0);
   }
   if (item.ok && state.playMode !== 'mute') {
-    const v = chosen(state.index);
-    if (v) {
-      if (state.playMode === 'root') {
-        A.pluck(v.shape[0].midi, 0, Math.min(seconds * 0.9, 1.6), 0.3);
-        clearFlashes(); flash(v.shape[0]);
-      } else hear(v, seconds * 0.92);
+    if (state.playMode === 'walking') {
+      const beatSec = 60 / state.bpm;
+      const nb = Math.max(1, Math.round(state.beats * (item.dur || 1)));
+      const linea = walkingLine(state.index, nb);
+      clearFlashes();
+      linea.forEach((n, b) => {
+        if (!n) return;
+        A.pluck(n.midi, b * beatSec, Math.min(beatSec * 0.95, 0.8), 0.32);
+        flashes.push(setTimeout(() => flash(n), b * beatSec * 1000));
+      });
+    } else {
+      const v = chosen(state.index);
+      if (v) {
+        if (state.playMode === 'root') {
+          A.pluck(v.shape[0].midi, 0, Math.min(seconds * 0.9, 1.6), 0.3);
+          clearFlashes(); flash(v.shape[0]);
+        } else hear(v, seconds * 0.92);
+      }
     }
   }
   state.timer = setTimeout(() => {
@@ -378,11 +438,12 @@ function loadGrid(text, autozone) {
 function buildMenus() {
   const keep = { lib: $('lib').value, vtype: $('vtype').value, tun: $('tun').value,
                  nfrets: $('nfrets').value, mode: $('mode').value, perline: $('perline').value };
-  $('lib').innerHTML = LIBRARY.map((x, i) => `<option value="${i}">${x[lang() === 'en' ? 1 : 0]}</option>`).join('');
+  $('lib').innerHTML = LIBRARY.map((x, i) =>
+    `<option value="${i}">${x[lang() === 'en' ? 1 : 0]} \u00b7 ${x[2]} \u00b7 ${x[3]} bpm</option>`).join('');
   $('vtype').innerHTML = V.VOICING_TYPES.map(x => `<option value="${x.id}">${t('vt.' + x.id + '.name')}</option>`).join('');
   $('tun').innerHTML = Object.entries(TUNINGS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
   $('nfrets').innerHTML = [12, 15, 18, 24].map(n => `<option value="${n}">${t('set.fretsTo', n)}</option>`).join('');
-  $('mode').innerHTML = ['voicing', 'root', 'mute'].map(m => `<option value="${m}">${t('play.' + m)}</option>`).join('');
+  $('mode').innerHTML = ['voicing', 'root', 'walking', 'mute'].map(m => `<option value="${m}">${t('play.' + m)}</option>`).join('');
   $('perline').innerHTML = [4, 2, 6].map(n => `<option value="${n}">${t('tab.perline', n)}</option>`).join('');
   $('lib').value = keep.lib || '0';
   $('vtype').value = keep.vtype || state.vtype;
@@ -396,6 +457,10 @@ function buildMenus() {
   if ($('tab').textContent.trim() === '' || $('tab').dataset.vuoto === 'si') {
     $('tab').textContent = t('tab.press'); $('tab').dataset.vuoto = 'si';
   }
+}
+
+function closeDialog(d) {
+  if (typeof d.close === 'function') d.close(); else d.removeAttribute('open');
 }
 
 function init() {
@@ -417,7 +482,14 @@ function init() {
     attesa = setTimeout(() => { parseGrid(); render(); }, 550);
   });
 
-  $('libgo').onclick = () => { loadGrid(LIBRARY[+$('lib').value][2], true); $('dlgforme').close(); };
+  $('libgo').onclick = () => {
+    const voce = LIBRARY[+$('lib').value];
+    state.bpm = voce[3];
+    $('bpm').value = voce[3];
+    $('bpmv').textContent = voce[3];
+    loadGrid(voce[4], true);
+    closeDialog($('dlgforme'));
+  };
 
   $('vtype').onchange = e => {
     state.vtype = e.target.value;
@@ -519,7 +591,7 @@ function init() {
     const card = e.target.closest('[data-voicing]');
     if (card) {
       state.pick[state.index] = +card.dataset.voicing;
-      renderBoard(); renderVoicings();
+      renderChips(); renderBoard(); renderVoicings();
       hear(chosen(state.index), 1.4);
     }
   });
@@ -547,8 +619,8 @@ function init() {
     };
   });
   document.querySelectorAll('dialog').forEach(d => {
-    d.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => d.close(); });
-    d.addEventListener('click', e => { if (e.target === d) d.close(); });
+    d.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => closeDialog(d); });
+    d.addEventListener('click', e => { if (e.target === d) closeDialog(d); });
   });
 }
 

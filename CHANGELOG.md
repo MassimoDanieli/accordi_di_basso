@@ -3,6 +3,22 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [2.2.0] — 2026-08-01
+
+### Aggiunto
+- Modalita' walking nell'esecuzione: fondamentale, note dell'accordo in salita e nota
+  cromatica di avvicinamento alla fondamentale dell'accordo successivo, tutto dentro la
+  zona scelta, con le note che si accendono a tempo.
+- Percorso fluido nel nastro degli accordi: sotto ogni sigla compaiono le note del
+  voicing scelto, e si aggiornano scegliendo una card o ottimizzando il voice leading.
+- Repertorio ampliato a 26 voci con stile e tempo consigliato: forme essenziali, giri
+  pop e reggae, versioni semplificate di brani celebri, tradizionali. Caricando una
+  voce si imposta anche il tempo.
+
+### Modificato
+- Tema chiaro di serie, palette carta calda, titoli con carattere editoriale Fraunces.
+- Manico realistico: tavola in legno con gradiente, tasti in metallo con luce e ombra.
+
 ## [2.1.0] — 2026-08-01
 
 ### Modificato

@@ -63,12 +63,13 @@ const D = {
     'set.viewHint': '<b>Gradi</b> mostra R, 3, 5, \u266d7 invece dei nomi delle note. <b>Inverti corde</b> mette la corda piu\u0300 grave in alto. <b>Sfuma fuori zona</b> lascia visibili in trasparenza le note fuori dalla zona.',
     'play.title': 'Esecuzione',
     'play.meter': 'Metro', 'play.what': 'Cosa suona',
-    'play.voicing': 'il voicing scelto', 'play.root': 'solo la fondamentale', 'play.mute': 'niente, solo il click',
+    'play.voicing': 'il voicing scelto', 'play.root': 'solo la fondamentale',
+    'play.walking': 'linea walking', 'play.mute': 'niente, solo il click',
     'play.options': 'Opzioni', 'play.click': 'Click', 'play.lock': 'Zona fissa',
     'play.hint': '<b>Zona fissa</b> impedisce alla zona di inseguire l\u2019accordo corrente: resti in posizione e vedi cosa hai davvero sotto le dita.',
 
     'lib.title': 'Forme armoniche',
-    'lib.hint': 'Forme generiche e brani tradizionali di pubblico dominio. Per gli standard usa l\u2019importazione dalle tue carte iReal.',
+    'lib.hint': 'Forme essenziali, brani tradizionali e versioni semplificate di brani celebri, con il tempo consigliato. Per le griglie complete degli standard usa l\u2019importazione dalle tue carte iReal.',
     'lib.load': 'Carica',
 
     'ir.title': 'Importa da iReal Pro',
@@ -150,12 +151,13 @@ const D = {
     'set.viewHint': '<b>Degrees</b> shows R, 3, 5, \u266d7 instead of note names. <b>Flip strings</b> puts the lowest string on top. <b>Dim outside zone</b> keeps notes outside the zone faintly visible.',
     'play.title': 'Playback',
     'play.meter': 'Metre', 'play.what': 'What plays',
-    'play.voicing': 'the chosen voicing', 'play.root': 'the root only', 'play.mute': 'nothing, click only',
+    'play.voicing': 'the chosen voicing', 'play.root': 'the root only',
+    'play.walking': 'walking line', 'play.mute': 'nothing, click only',
     'play.options': 'Options', 'play.click': 'Click', 'play.lock': 'Lock zone',
     'play.hint': '<b>Lock zone</b> stops the zone from following the current chord: you stay in position and see what is really under your fingers.',
 
     'lib.title': 'Harmonic forms',
-    'lib.hint': 'Generic forms and traditional tunes in the public domain. For standards, import your own iReal charts.',
+    'lib.hint': 'Essential forms, traditional tunes and simplified versions of well-known songs, each with a suggested tempo. For complete standard charts, import your own iReal files.',
     'lib.load': 'Load',
 
     'ir.title': 'Import from iReal Pro',

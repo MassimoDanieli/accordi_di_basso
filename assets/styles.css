@@ -8,14 +8,17 @@
   --sans:"Space Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
-:root{ --string:#B9B2A6; --nut:#EDE7DD; }
+:root{ --string:#B9B2A6; --nut:#EDE7DD;
+  --wood1:#4A3A2E; --wood2:#31261D; --fret1:#C4BCAE; --fret2:#6E675C;
+  --serif:"Fraunces","Georgia",serif; }
 
 [data-tema="chiaro"]{
-  --ink:#F6F2EA; --panel:#FFFFFF; --panel-2:#EFE9DE;
-  --wood:#CBB08A; --fretwire:#7C766B; --inlay:#A28F72;
+  --ink:#F3EDDF; --panel:#FCF9F1; --panel-2:#ECE3D0;
+  --wood:#E4CD9F; --fretwire:#8A8378; --inlay:#B49A6E;
   --string:#6E675C; --nut:#3A342C;
-  --paper:#241F1B; --muted:#6B6259; --faint:#8A8076;
-  --line:rgba(36,31,27,.13); --line-2:rgba(36,31,27,.22);
+  --wood1:#EDD9AF; --wood2:#D8BD8B; --fret1:#D4CFC5; --fret2:#8A8378;
+  --paper:#28221C; --muted:#6B6259; --faint:#8D8377;
+  --line:rgba(40,34,28,.13); --line-2:rgba(40,34,28,.22);
   --root:#C2831A; --third:#2C8676; --fifth:#4A6DB5; --sev:#C0573A; --ext:#785EB0;
 }
 [data-tema="chiaro"] .cell{color:rgba(255,255,255,.92)}
@@ -94,8 +97,10 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radiu
 /* ---------------------------------------------------------------- accordi */
 .ribbon{display:flex;align-items:center;gap:6px;padding:9px 16px;overflow-x:auto;overscroll-behavior:contain;
   border-bottom:1px solid var(--line);scrollbar-width:thin;flex:none}
-.chip{padding:7px 12px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
-  font-family:var(--mono);font-size:13px;font-weight:600;color:var(--paper);flex:none}
+.chip{padding:6px 12px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
+  font-family:var(--mono);font-size:13px;font-weight:600;color:var(--paper);flex:none;
+  display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.25}
+.chip .cn{font-size:9.5px;font-weight:400;opacity:.72;letter-spacing:.02em}
 button.chip:hover{border-color:var(--faint)}
 .chip.on{background:var(--root);border-color:var(--root);color:#221803}
 .chip.bad{color:#D9695A;border-style:dashed}
@@ -157,7 +162,7 @@ dialog{background:var(--panel);color:var(--paper);border:1px solid var(--line-2)
   padding:20px;width:min(500px,93vw);max-height:88vh;overflow:auto;font-family:var(--sans)}
 dialog.wide{width:min(780px,95vw)}
 dialog::backdrop{background:rgba(10,9,8,.74)}
-dialog h2{margin:0 0 10px;font-size:14px;font-weight:600}
+dialog h2{margin:0 0 10px;font-size:16px;font-weight:600;font-family:var(--serif)}
 dialog .hint{margin-bottom:12px}
 dialog select[size]{width:100%;margin-bottom:4px}
 .dlg-foot{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
@@ -187,8 +192,8 @@ pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r
 .doc-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:30px}
 .doc-bar .grow{flex:1}
 .lede{font-size:16px;line-height:1.7;color:var(--muted);margin:0 0 26px;max-width:64ch}
-.doc h1{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:0 0 10px}
-.doc h2{font-size:15px;font-weight:600;margin:34px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
+.doc h1{font-size:34px;font-weight:700;letter-spacing:-.02em;margin:0 0 10px;font-family:var(--serif)}
+.doc h2{font-size:19px;font-weight:600;margin:34px 0 10px;padding-top:16px;border-top:1px solid var(--line);font-family:var(--serif)}
 .doc h3{font-size:13px;font-weight:600;margin:20px 0 6px;color:var(--muted)}
 .doc p,.doc li{font-size:14px;line-height:1.75;color:var(--paper)}
 .doc p{margin:0 0 12px;max-width:70ch}

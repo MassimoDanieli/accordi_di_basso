@@ -21,14 +21,28 @@ export function fretboard(opts) {
   const sy = r => PT + r * ROW;
 
   let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  s += `<rect x="${NUT}" y="${PT - 17}" width="${BW}" height="${ROW * (open.length - 1) + 34}" rx="5" fill="var(--wood)"/>`;
+  s += `<defs>
+    <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" style="stop-color:var(--wood1)"/><stop offset="1" style="stop-color:var(--wood2)"/>
+    </linearGradient>
+    <linearGradient id="fg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" style="stop-color:var(--fret1)"/><stop offset=".5" style="stop-color:var(--fret2)"/><stop offset="1" style="stop-color:var(--fret1)"/>
+    </linearGradient>
+  </defs>`;
+  const boardH = ROW * (open.length - 1) + 34;
+  s += `<rect x="${NUT}" y="${PT - 17}" width="${BW}" height="${boardH}" rx="5" fill="url(#wg)"/>`;
+  s += `<rect x="${NUT}" y="${PT - 17}" width="${BW}" height="3" rx="1.5" fill="#FFFFFF" opacity=".14"/>`;
+  s += `<rect x="${NUT}" y="${PT - 17 + boardH - 3}" width="${BW}" height="3" rx="1.5" fill="#000000" opacity=".18"/>`;
 
   const zx1 = zoneFrom === 0 ? NUT - 34 : fx(zoneFrom - 1);
   s += `<rect x="${zx1}" y="${PT - 21}" width="${fx(zoneTo) - zx1}" height="${ROW * (open.length - 1) + 42}" rx="6" fill="var(--root)" opacity=".10" stroke="var(--root)" stroke-opacity=".35"/>`;
   s += `<rect x="${NUT - 5}" y="${PT - 17}" width="5" height="${ROW * (open.length - 1) + 34}" fill="var(--nut)" opacity=".85"/>`;
 
-  for (let f = 1; f <= frets; f++)
-    s += `<line x1="${fx(f)}" y1="${PT - 17}" x2="${fx(f)}" y2="${PT + ROW * (open.length - 1) + 17}" stroke="var(--fretwire)" stroke-width="${f < 6 ? 2.4 : 1.7}" opacity=".6"/>`;
+  for (let f = 1; f <= frets; f++) {
+    const wf = f < 6 ? 3.4 : 2.6;
+    s += `<rect x="${fx(f) - wf / 2}" y="${PT - 17}" width="${wf}" height="${boardH}" rx="${wf / 2}" fill="url(#fg)" opacity=".92"/>`;
+    s += `<line x1="${fx(f) + wf / 2}" y1="${PT - 17}" x2="${fx(f) + wf / 2}" y2="${PT - 17 + boardH}" stroke="#000" stroke-width=".7" opacity=".22"/>`;
+  }
 
   const my = PT + ROW * (open.length - 1) / 2;
   DOTS.filter(d => d <= frets).forEach(d => {

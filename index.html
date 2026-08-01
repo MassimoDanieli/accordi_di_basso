@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" data-versione="2.1.0">
+<html lang="it" data-versione="2.2.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,14 +8,14 @@
 <meta name="theme-color" content="#131110">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=2.1.0">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,600..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css?v=2.2.0">
 <script>
   // Applicato subito, prima del disegno, per non far lampeggiare la pagina.
   (function () {
     var t = 'scuro';
     try { var v = localStorage.getItem('manico-tema'); if (v === 'chiaro' || v === 'scuro') t = v; else
-      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'chiaro' : 'scuro';
+      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'scuro' : 'chiaro';
     } catch (e) {}
     document.documentElement.setAttribute('data-tema', t);
   })();
@@ -44,7 +44,7 @@
       <button data-lang="it" class="on" onclick="location.href='index.html'" title="Italiano">🇮🇹</button>
       <button data-lang="en" onclick="location.href='index.en.html'" title="English">🇬🇧</button>
     </span>
-    <span class="ver">v2.1.0</span>
+    <span class="ver">v2.2.0</span>
     <button id="tema" class="tog">Chiaro</button>
     <a class="cta" href="app.html">Apri lo strumento &rarr;</a>
   </div>
@@ -131,8 +131,7 @@ E |-----------------|-----------|</pre>
   <p>Nell'app iReal Pro usa Condividi e copia il link del brano o della playlist, poi incollalo nel
     pannello <b>Importa da iReal Pro</b>. Vengono letti battute, ritornelli, ripetizioni e note al basso.</p>
   <div class="note-box"><p>Il link viene decodificato qui nel browser: non viene inviato da nessuna parte,
-    e la pagina non fa richieste di rete. Le griglie degli standard protetti dal diritto d'autore non sono
-    incluse nel tool proprio per questo: usi le tue carte.</p></div>
+    e la pagina non fa richieste di rete. Il pannello Forme include anche versioni essenziali semplificate di brani celebri, con il tempo consigliato; per le griglie complete degli standard usi le tue carte iReal.</p></div>
   <p>Il menu <b>Forme armoniche</b> contiene invece forme generiche — blues, rhythm changes, cicli di
     II-V-I, cadenza andalusa, ciclo di terze maggiori — e brani tradizionali di pubblico dominio.</p>
 
@@ -153,7 +152,7 @@ E |-----------------|-----------|</pre>
 </div>
 
 <script type="module">
-  import { initTheme } from './src/theme.js?v=2.1.0';
+  import { initTheme } from './src/theme.js?v=2.2.0';
   initTheme();
 </script>
 </body>

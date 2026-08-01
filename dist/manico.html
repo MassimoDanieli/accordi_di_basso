@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" data-versione="2.1.0">
+<html lang="it" data-versione="2.2.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#131110">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,600..700&display=swap" rel="stylesheet">
 <style>
 :root{
   --ink:#131110; --panel:#1D1A18; --panel-2:#262220;
@@ -19,14 +19,17 @@
   --sans:"Space Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
-:root{ --string:#B9B2A6; --nut:#EDE7DD; }
+:root{ --string:#B9B2A6; --nut:#EDE7DD;
+  --wood1:#4A3A2E; --wood2:#31261D; --fret1:#C4BCAE; --fret2:#6E675C;
+  --serif:"Fraunces","Georgia",serif; }
 
 [data-tema="chiaro"]{
-  --ink:#F6F2EA; --panel:#FFFFFF; --panel-2:#EFE9DE;
-  --wood:#CBB08A; --fretwire:#7C766B; --inlay:#A28F72;
+  --ink:#F3EDDF; --panel:#FCF9F1; --panel-2:#ECE3D0;
+  --wood:#E4CD9F; --fretwire:#8A8378; --inlay:#B49A6E;
   --string:#6E675C; --nut:#3A342C;
-  --paper:#241F1B; --muted:#6B6259; --faint:#8A8076;
-  --line:rgba(36,31,27,.13); --line-2:rgba(36,31,27,.22);
+  --wood1:#EDD9AF; --wood2:#D8BD8B; --fret1:#D4CFC5; --fret2:#8A8378;
+  --paper:#28221C; --muted:#6B6259; --faint:#8D8377;
+  --line:rgba(40,34,28,.13); --line-2:rgba(40,34,28,.22);
   --root:#C2831A; --third:#2C8676; --fifth:#4A6DB5; --sev:#C0573A; --ext:#785EB0;
 }
 [data-tema="chiaro"] .cell{color:rgba(255,255,255,.92)}
@@ -105,8 +108,10 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radiu
 /* ---------------------------------------------------------------- accordi */
 .ribbon{display:flex;align-items:center;gap:6px;padding:9px 16px;overflow-x:auto;overscroll-behavior:contain;
   border-bottom:1px solid var(--line);scrollbar-width:thin;flex:none}
-.chip{padding:7px 12px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
-  font-family:var(--mono);font-size:13px;font-weight:600;color:var(--paper);flex:none}
+.chip{padding:6px 12px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
+  font-family:var(--mono);font-size:13px;font-weight:600;color:var(--paper);flex:none;
+  display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.25}
+.chip .cn{font-size:9.5px;font-weight:400;opacity:.72;letter-spacing:.02em}
 button.chip:hover{border-color:var(--faint)}
 .chip.on{background:var(--root);border-color:var(--root);color:#221803}
 .chip.bad{color:#D9695A;border-style:dashed}
@@ -168,7 +173,7 @@ dialog{background:var(--panel);color:var(--paper);border:1px solid var(--line-2)
   padding:20px;width:min(500px,93vw);max-height:88vh;overflow:auto;font-family:var(--sans)}
 dialog.wide{width:min(780px,95vw)}
 dialog::backdrop{background:rgba(10,9,8,.74)}
-dialog h2{margin:0 0 10px;font-size:14px;font-weight:600}
+dialog h2{margin:0 0 10px;font-size:16px;font-weight:600;font-family:var(--serif)}
 dialog .hint{margin-bottom:12px}
 dialog select[size]{width:100%;margin-bottom:4px}
 .dlg-foot{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
@@ -198,8 +203,8 @@ pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r
 .doc-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:30px}
 .doc-bar .grow{flex:1}
 .lede{font-size:16px;line-height:1.7;color:var(--muted);margin:0 0 26px;max-width:64ch}
-.doc h1{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:0 0 10px}
-.doc h2{font-size:15px;font-weight:600;margin:34px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
+.doc h1{font-size:34px;font-weight:700;letter-spacing:-.02em;margin:0 0 10px;font-family:var(--serif)}
+.doc h2{font-size:19px;font-weight:600;margin:34px 0 10px;padding-top:16px;border-top:1px solid var(--line);font-family:var(--serif)}
 .doc h3{font-size:13px;font-weight:600;margin:20px 0 6px;color:var(--muted)}
 .doc p,.doc li{font-size:14px;line-height:1.75;color:var(--paper)}
 .doc p{margin:0 0 12px;max-width:70ch}
@@ -251,7 +256,7 @@ html{scroll-behavior:smooth}
   (function () {
     var t = 'scuro';
     try { var v = localStorage.getItem('manico-tema'); if (v === 'chiaro' || v === 'scuro') t = v; else
-      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'chiaro' : 'scuro';
+      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'scuro' : 'chiaro';
     } catch (e) {}
     document.documentElement.setAttribute('data-tema', t);
   })();
@@ -293,7 +298,7 @@ html{scroll-behavior:smooth}
     <button data-lang="en" title="English" aria-label="English"><span class="fl">🇬🇧</span></button>
   </span>
   <button id="tema" class="tog">Chiaro</button>
-  <span class="ver">v2.1.0</span>
+  <span class="ver">v2.2.0</span>
 </header>
 
 <main class="stage">
@@ -857,14 +862,28 @@ __mod.render = (function () {
     const sy = r => PT + r * ROW;
 
     let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-    s += `<rect x="${NUT}" y="${PT - 17}" width="${BW}" height="${ROW * (open.length - 1) + 34}" rx="5" fill="var(--wood)"/>`;
+    s += `<defs>
+      <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" style="stop-color:var(--wood1)"/><stop offset="1" style="stop-color:var(--wood2)"/>
+      </linearGradient>
+      <linearGradient id="fg" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" style="stop-color:var(--fret1)"/><stop offset=".5" style="stop-color:var(--fret2)"/><stop offset="1" style="stop-color:var(--fret1)"/>
+      </linearGradient>
+    </defs>`;
+    const boardH = ROW * (open.length - 1) + 34;
+    s += `<rect x="${NUT}" y="${PT - 17}" width="${BW}" height="${boardH}" rx="5" fill="url(#wg)"/>`;
+    s += `<rect x="${NUT}" y="${PT - 17}" width="${BW}" height="3" rx="1.5" fill="#FFFFFF" opacity=".14"/>`;
+    s += `<rect x="${NUT}" y="${PT - 17 + boardH - 3}" width="${BW}" height="3" rx="1.5" fill="#000000" opacity=".18"/>`;
 
     const zx1 = zoneFrom === 0 ? NUT - 34 : fx(zoneFrom - 1);
     s += `<rect x="${zx1}" y="${PT - 21}" width="${fx(zoneTo) - zx1}" height="${ROW * (open.length - 1) + 42}" rx="6" fill="var(--root)" opacity=".10" stroke="var(--root)" stroke-opacity=".35"/>`;
     s += `<rect x="${NUT - 5}" y="${PT - 17}" width="5" height="${ROW * (open.length - 1) + 34}" fill="var(--nut)" opacity=".85"/>`;
 
-    for (let f = 1; f <= frets; f++)
-      s += `<line x1="${fx(f)}" y1="${PT - 17}" x2="${fx(f)}" y2="${PT + ROW * (open.length - 1) + 17}" stroke="var(--fretwire)" stroke-width="${f < 6 ? 2.4 : 1.7}" opacity=".6"/>`;
+    for (let f = 1; f <= frets; f++) {
+      const wf = f < 6 ? 3.4 : 2.6;
+      s += `<rect x="${fx(f) - wf / 2}" y="${PT - 17}" width="${wf}" height="${boardH}" rx="${wf / 2}" fill="url(#fg)" opacity=".92"/>`;
+      s += `<line x1="${fx(f) + wf / 2}" y1="${PT - 17}" x2="${fx(f) + wf / 2}" y2="${PT - 17 + boardH}" stroke="#000" stroke-width=".7" opacity=".22"/>`;
+    }
 
     const my = PT + ROW * (open.length - 1) / 2;
     DOTS.filter(d => d <= frets).forEach(d => {
@@ -1103,30 +1122,66 @@ __mod.ireal = (function () {
 
 __mod.library = (function () {
 
-  // Forme armoniche generiche e brani tradizionali di pubblico dominio.
-  // Ogni voce e': [nome italiano, nome inglese, griglia].
-  // Gli standard protetti da diritto d'autore non sono inclusi: per quelli
-  // si usa l'importazione dai propri file iReal Pro.
+  // Forme armoniche, brani tradizionali di pubblico dominio e versioni essenziali
+  // semplificate di brani celebri (le progressioni armoniche di base non sono
+  // soggette a diritto d'autore; le griglie complete degli standard si importano
+  // dalle proprie carte iReal).
+  //
+  // Ogni voce e': [nome italiano, nome inglese, stile, bpm, griglia].
 
   const LIBRARY = [
-    ['Blues maggiore, 12 battute (Fa)', 'Major blues, 12 bars (F)', 'F7 Bb7 F7 F7 Bb7 Bb7 F7 F7 C7 Bb7 F7 C7'],
-    ['Blues jazz, 12 battute (Sib)', 'Jazz blues, 12 bars (Bb)', 'Bb7 Eb7 Bb7 F-7,Bb7 Eb7 Edim7 Bb7 D-7,G7 C-7 F7 Bb7,G7 C-7,F7'],
-    ['Blues minore (Do)', 'Minor blues (C)', 'C-7 C-7 C-7 C-7 F-7 F-7 C-7 C-7 Ab7 G7 C-7 G7'],
-    ['Rhythm changes, sezione A (Sib)', 'Rhythm changes, A section (Bb)', 'Bb^7,G-7 C-7,F7 Bb^7,G-7 C-7,F7 Bb7 Eb7,Edim7 Bb^7,F7 Bb6'],
-    ['II-V-I che scende per quarte', 'II-V-I moving down in fourths', 'D-7 G7 C^7 C^7 G-7 C7 F^7 F^7 C-7 F7 Bb^7 Bb^7 F-7 Bb7 Eb^7 Eb^7'],
-    ['II-V-I minore', 'Minor II-V-I', 'D-7b5 G7b9 C-6 C-6 G-7b5 C7b9 F-6 F-6'],
-    ['Turnaround I-VI-II-V (Do)', 'Turnaround I-VI-II-V (C)', 'C^7 A7 D-7 G7'],
-    ['Giro anni Cinquanta I-vi-IV-V (Do)', 'Fifties progression I-vi-IV-V (C)', 'C A-7 F G7'],
-    ['Cadenza andalusa (La minore)', 'Andalusian cadence (A minor)', 'A- G F E7'],
-    ['Ciclo di terze maggiori', 'Major thirds cycle', 'C^7 Eb7 Ab^7 B7 E^7 G7 C^7 C^7'],
-    ['Vamp dorico a due accordi', 'Two-chord Dorian vamp', 'D-7 D-7 D-7 D-7 E-7 E-7 E-7 E-7'],
-    ['Canone di Pachelbel (Re)', 'Pachelbel canon (D)', 'D A B- F# G D G A'],
-    ['House of the Rising Sun (trad.)', 'House of the Rising Sun (trad.)', 'A- C D F A- C E7 E7'],
-    ['Greensleeves (trad.)', 'Greensleeves (trad.)', 'A- C G E7 A- C E7 A-'],
-    ['St. James Infirmary (trad.)', 'St. James Infirmary (trad.)', 'D- A7 D- D7 G- D- A7 D-'],
-    ['Amazing Grace (trad.)', 'Amazing Grace (trad.)', 'G G C G G G D7 D7 G G C G G D7 G G'],
-    ['Scarborough Fair (trad.)', 'Scarborough Fair (trad.)', 'A- A- C A- A- G A- A-'],
-    ['Sinner Man, vamp minore (trad.)', 'Sinner Man, minor vamp (trad.)', 'A- A- A- A- D- D- A- A- E7 D- A- A-']
+    ['Blues maggiore, 12 battute (Fa)', 'Major blues, 12 bars (F)', 'Blues', 104,
+     'F7 Bb7 F7 F7 Bb7 Bb7 F7 F7 C7 Bb7 F7 C7'],
+    ['Blues jazz, 12 battute (Sib)', 'Jazz blues, 12 bars (Bb)', 'Jazz blues', 132,
+     'Bb7 Eb7 Bb7 F-7,Bb7 Eb7 Edim7 Bb7 D-7,G7 C-7 F7 Bb7,G7 C-7,F7'],
+    ['Blues minore (Do)', 'Minor blues (C)', 'Blues', 96,
+     'C-7 C-7 C-7 C-7 F-7 F-7 C-7 C-7 Ab7 G7 C-7 G7'],
+    ['12 battute in Mi', '12 bars in E', 'Blues rock', 100,
+     'E7 E7 E7 E7 A7 A7 E7 E7 B7 A7 E7 B7'],
+    ['Rhythm changes, sezione A (Sib)', 'Rhythm changes, A section (Bb)', 'Turnaround', 160,
+     'Bb^7,G-7 C-7,F7 Bb^7,G-7 C-7,F7 Bb7 Eb7,Edim7 Bb^7,F7 Bb6'],
+    ['Stile Autumn Leaves, sezione A', 'Autumn Leaves style, A section', 'II-V-I', 120,
+     'C-7 F7 Bb^7 Eb^7 A-7b5 D7b9 G-6 G-6'],
+    ['Stile Blue Bossa, prime otto', 'Blue Bossa style, first eight', 'Bossa jazz', 116,
+     'C-7 C-7 F-7 F-7 D-7b5 G7b9 C-7 C-7'],
+    ['Stile Song for My Father', 'Song for My Father style', 'Hard bop', 126,
+     'F-7 F-7 Eb7 Eb7 Db7 C7 F-7 F-7'],
+    ['Stile So What, vamp modale', 'So What style, modal vamp', 'Modal jazz', 136,
+     'D-7 D-7 D-7 D-7 Eb-7 Eb-7 D-7 D-7'],
+    ['Giro pop I-vi-IV-V (Do)', 'Pop loop I-vi-IV-V (C)', 'Pop / Soul', 118,
+     'C A-7 F G7'],
+    ['Giro pop I-V-vi-IV (Do)', 'Pop loop I-V-vi-IV (C)', 'Pop', 72,
+     'C G A- F'],
+    ['Giro reggae I-IV-I-V (La)', 'Reggae loop I-IV-I-V (A)', 'Reggae', 76,
+     'A D A E'],
+    ['II-V-I che scende per quarte', 'II-V-I moving down in fourths', 'Studio', 120,
+     'D-7 G7 C^7 C^7 G-7 C7 F^7 F^7 C-7 F7 Bb^7 Bb^7 F-7 Bb7 Eb^7 Eb^7'],
+    ['II-V-I minore', 'Minor II-V-I', 'Studio', 110,
+     'D-7b5 G7b9 C-6 C-6 G-7b5 C7b9 F-6 F-6'],
+    ['Turnaround I-VI-II-V (Do)', 'Turnaround I-VI-II-V (C)', 'Turnaround', 140,
+     'C^7 A7 D-7 G7'],
+    ['Cadenza andalusa (La minore)', 'Andalusian cadence (A minor)', 'Flamenco', 112,
+     'A- G F E7'],
+    ['Ciclo di quinte in dominanti', 'Cycle of fifths in dominants', 'Tecnica', 90,
+     'C7 F7 Bb7 Eb7 Ab7 Db7 Gb7 B7 E7 A7 D7 G7'],
+    ['Ciclo di terze maggiori', 'Major thirds cycle', 'Tecnica', 100,
+     'C^7 Eb7 Ab^7 B7 E^7 G7 C^7 C^7'],
+    ['Vamp dorico a due accordi', 'Two-chord Dorian vamp', 'Modale', 96,
+     'D-7 D-7 D-7 D-7 E-7 E-7 E-7 E-7'],
+    ['Canone di Pachelbel (Re)', 'Pachelbel canon (D)', 'Classico', 66,
+     'D A B- F# G D G A'],
+    ['House of the Rising Sun (trad.)', 'House of the Rising Sun (trad.)', 'Folk', 78,
+     'A- C D F A- C E7 E7'],
+    ['Greensleeves (trad.)', 'Greensleeves (trad.)', 'Trad.', 90,
+     'A- C G E7 A- C E7 A-'],
+    ['St. James Infirmary (trad.)', 'St. James Infirmary (trad.)', 'Trad. blues', 84,
+     'D- A7 D- D7 G- D- A7 D-'],
+    ['Amazing Grace (trad.)', 'Amazing Grace (trad.)', 'Gospel', 70,
+     'G G C G G G D7 D7 G G C G G D7 G G'],
+    ['Scarborough Fair (trad.)', 'Scarborough Fair (trad.)', 'Folk', 92,
+     'A- A- C A- A- G A- A-'],
+    ['Sinner Man, vamp minore (trad.)', 'Sinner Man, minor vamp (trad.)', 'Trad.', 132,
+     'A- A- A- A- D- D- A- A- E7 D- A- A-']
   ];
 
   return { LIBRARY };
@@ -1144,7 +1199,7 @@ __mod.theme = (function () {
       const saved = localStorage.getItem(KEY);
       if (saved === 'chiaro' || saved === 'scuro') return saved;
     } catch (e) { /* archiviazione non disponibile */ }
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'chiaro' : 'scuro';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'scuro' : 'chiaro';
   }
 
   function applyTheme(theme) {
@@ -1244,12 +1299,13 @@ __mod.i18n = (function () {
       'set.viewHint': '<b>Gradi</b> mostra R, 3, 5, \u266d7 invece dei nomi delle note. <b>Inverti corde</b> mette la corda piu\u0300 grave in alto. <b>Sfuma fuori zona</b> lascia visibili in trasparenza le note fuori dalla zona.',
       'play.title': 'Esecuzione',
       'play.meter': 'Metro', 'play.what': 'Cosa suona',
-      'play.voicing': 'il voicing scelto', 'play.root': 'solo la fondamentale', 'play.mute': 'niente, solo il click',
+      'play.voicing': 'il voicing scelto', 'play.root': 'solo la fondamentale',
+      'play.walking': 'linea walking', 'play.mute': 'niente, solo il click',
       'play.options': 'Opzioni', 'play.click': 'Click', 'play.lock': 'Zona fissa',
       'play.hint': '<b>Zona fissa</b> impedisce alla zona di inseguire l\u2019accordo corrente: resti in posizione e vedi cosa hai davvero sotto le dita.',
 
       'lib.title': 'Forme armoniche',
-      'lib.hint': 'Forme generiche e brani tradizionali di pubblico dominio. Per gli standard usa l\u2019importazione dalle tue carte iReal.',
+      'lib.hint': 'Forme essenziali, brani tradizionali e versioni semplificate di brani celebri, con il tempo consigliato. Per le griglie complete degli standard usa l\u2019importazione dalle tue carte iReal.',
       'lib.load': 'Carica',
 
       'ir.title': 'Importa da iReal Pro',
@@ -1331,12 +1387,13 @@ __mod.i18n = (function () {
       'set.viewHint': '<b>Degrees</b> shows R, 3, 5, \u266d7 instead of note names. <b>Flip strings</b> puts the lowest string on top. <b>Dim outside zone</b> keeps notes outside the zone faintly visible.',
       'play.title': 'Playback',
       'play.meter': 'Metre', 'play.what': 'What plays',
-      'play.voicing': 'the chosen voicing', 'play.root': 'the root only', 'play.mute': 'nothing, click only',
+      'play.voicing': 'the chosen voicing', 'play.root': 'the root only',
+      'play.walking': 'walking line', 'play.mute': 'nothing, click only',
       'play.options': 'Options', 'play.click': 'Click', 'play.lock': 'Lock zone',
       'play.hint': '<b>Lock zone</b> stops the zone from following the current chord: you stay in position and see what is really under your fingers.',
 
       'lib.title': 'Harmonic forms',
-      'lib.hint': 'Generic forms and traditional tunes in the public domain. For standards, import your own iReal charts.',
+      'lib.hint': 'Essential forms, traditional tunes and simplified versions of well-known songs, each with a suggested tempo. For complete standard charts, import your own iReal files.',
       'lib.load': 'Load',
 
       'ir.title': 'Import from iReal Pro',
@@ -1532,7 +1589,12 @@ __mod.app = (function () {
     state.grid.forEach((x, i) => {
       if (x.bar !== bar && i > 0) html += '<span class="bl">|</span>';
       bar = x.bar;
-      if (x.ok) html += `<button class="chip${i === state.index ? ' on' : ''}" data-pick="${i}">${x.chord.symbol}</button>`;
+      if (x.ok) {
+        const v = chosen(i);
+        const sum = v ? v.shape.map(n => noteName(n.pc, x.chord.flats)).join('\u00b7') : '';
+        html += `<button class="chip${i === state.index ? ' on' : ''}" data-pick="${i}">`
+          + `<span class="cs">${x.chord.symbol}</span>${sum ? `<span class="cn">${sum}</span>` : ''}</button>`;
+      }
       else if (x.rest) html += `<span class="chip rest">N.C.</span>`;
       else html += `<span class="chip bad" title="${t('chip.bad')}">${x.raw}</span>`;
     });
@@ -1691,6 +1753,49 @@ __mod.app = (function () {
     if (!state.playing) hear(chosen(i), 1.2);
   }
 
+  /** Trova una posizione in zona per un midi qualsiasi, anche fuori dall'accordo. */
+  function findPos(midi) {
+    const o = open();
+    for (let si = o.length - 1; si >= 0; si--) {
+      const f = midi - o[si];
+      if (f >= state.zoneFrom && f <= zoneTo()) return { si, f, midi, pc: ((midi % 12) + 12) % 12, iv: -2 };
+    }
+    return null;
+  }
+
+  /**
+   * Linea walking essenziale dentro la zona: fondamentale, due note dell'accordo in
+   * salita, nota cromatica di avvicinamento alla fondamentale dell'accordo successivo.
+   */
+  function walkingLine(i, beats) {
+    const item = state.grid[i];
+    if (!item || !item.ok) return [];
+    const notes = V.zoneNotes(item.chord, open(), state.zoneFrom, zoneTo());
+    if (!notes.length) return [];
+    const v = chosen(i);
+    const root = (v && v.shape[0]) || notes.find(n => n.iv === 0) || notes[0];
+    const sopra = notes.filter(n => n.midi > root.midi);
+    const n2 = sopra.find(n => n.iv === item.chord.third) || sopra[0] || root;
+    const n3 = sopra.find(n => n.iv === item.chord.fifth && n.midi > n2.midi)
+            || sopra.find(n => n.midi > n2.midi) || n2;
+    let appr = null;
+    for (let k = 1; k <= state.grid.length; k++) {
+      const j = (i + k) % state.grid.length;
+      if (!state.grid[j].ok) continue;
+      const vNext = chosen(j);
+      const target = (vNext && vNext.shape[0].midi)
+        || (V.zoneNotes(state.grid[j].chord, open(), state.zoneFrom, zoneTo())[0] || {}).midi;
+      if (target !== undefined) appr = findPos(target + 1) || findPos(target - 1);
+      break;
+    }
+    const giro = [root, n2, n3, appr || n3];
+    const linea = [];
+    for (let b = 0; b < beats; b++) {
+      linea.push(b === beats - 1 ? giro[3] : giro[b % 3]);
+    }
+    return linea;
+  }
+
   // ---------------------------------------------------------------- trasporto
 
   function tick() {
@@ -1710,12 +1815,24 @@ __mod.app = (function () {
       for (let b = 0; b < beats; b++) A.click(b * (60 / state.bpm), item.first && b === 0);
     }
     if (item.ok && state.playMode !== 'mute') {
-      const v = chosen(state.index);
-      if (v) {
-        if (state.playMode === 'root') {
-          A.pluck(v.shape[0].midi, 0, Math.min(seconds * 0.9, 1.6), 0.3);
-          clearFlashes(); flash(v.shape[0]);
-        } else hear(v, seconds * 0.92);
+      if (state.playMode === 'walking') {
+        const beatSec = 60 / state.bpm;
+        const nb = Math.max(1, Math.round(state.beats * (item.dur || 1)));
+        const linea = walkingLine(state.index, nb);
+        clearFlashes();
+        linea.forEach((n, b) => {
+          if (!n) return;
+          A.pluck(n.midi, b * beatSec, Math.min(beatSec * 0.95, 0.8), 0.32);
+          flashes.push(setTimeout(() => flash(n), b * beatSec * 1000));
+        });
+      } else {
+        const v = chosen(state.index);
+        if (v) {
+          if (state.playMode === 'root') {
+            A.pluck(v.shape[0].midi, 0, Math.min(seconds * 0.9, 1.6), 0.3);
+            clearFlashes(); flash(v.shape[0]);
+          } else hear(v, seconds * 0.92);
+        }
       }
     }
     state.timer = setTimeout(() => {
@@ -1790,11 +1907,12 @@ __mod.app = (function () {
   function buildMenus() {
     const keep = { lib: $('lib').value, vtype: $('vtype').value, tun: $('tun').value,
                    nfrets: $('nfrets').value, mode: $('mode').value, perline: $('perline').value };
-    $('lib').innerHTML = LIBRARY.map((x, i) => `<option value="${i}">${x[lang() === 'en' ? 1 : 0]}</option>`).join('');
+    $('lib').innerHTML = LIBRARY.map((x, i) =>
+      `<option value="${i}">${x[lang() === 'en' ? 1 : 0]} \u00b7 ${x[2]} \u00b7 ${x[3]} bpm</option>`).join('');
     $('vtype').innerHTML = V.VOICING_TYPES.map(x => `<option value="${x.id}">${t('vt.' + x.id + '.name')}</option>`).join('');
     $('tun').innerHTML = Object.entries(TUNINGS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
     $('nfrets').innerHTML = [12, 15, 18, 24].map(n => `<option value="${n}">${t('set.fretsTo', n)}</option>`).join('');
-    $('mode').innerHTML = ['voicing', 'root', 'mute'].map(m => `<option value="${m}">${t('play.' + m)}</option>`).join('');
+    $('mode').innerHTML = ['voicing', 'root', 'walking', 'mute'].map(m => `<option value="${m}">${t('play.' + m)}</option>`).join('');
     $('perline').innerHTML = [4, 2, 6].map(n => `<option value="${n}">${t('tab.perline', n)}</option>`).join('');
     $('lib').value = keep.lib || '0';
     $('vtype').value = keep.vtype || state.vtype;
@@ -1808,6 +1926,10 @@ __mod.app = (function () {
     if ($('tab').textContent.trim() === '' || $('tab').dataset.vuoto === 'si') {
       $('tab').textContent = t('tab.press'); $('tab').dataset.vuoto = 'si';
     }
+  }
+
+  function closeDialog(d) {
+    if (typeof d.close === 'function') d.close(); else d.removeAttribute('open');
   }
 
   function init() {
@@ -1829,7 +1951,14 @@ __mod.app = (function () {
       attesa = setTimeout(() => { parseGrid(); render(); }, 550);
     });
 
-    $('libgo').onclick = () => { loadGrid(LIBRARY[+$('lib').value][2], true); $('dlgforme').close(); };
+    $('libgo').onclick = () => {
+      const voce = LIBRARY[+$('lib').value];
+      state.bpm = voce[3];
+      $('bpm').value = voce[3];
+      $('bpmv').textContent = voce[3];
+      loadGrid(voce[4], true);
+      closeDialog($('dlgforme'));
+    };
 
     $('vtype').onchange = e => {
       state.vtype = e.target.value;
@@ -1931,7 +2060,7 @@ __mod.app = (function () {
       const card = e.target.closest('[data-voicing]');
       if (card) {
         state.pick[state.index] = +card.dataset.voicing;
-        renderBoard(); renderVoicings();
+        renderChips(); renderBoard(); renderVoicings();
         hear(chosen(state.index), 1.4);
       }
     });
@@ -1959,8 +2088,8 @@ __mod.app = (function () {
       };
     });
     document.querySelectorAll('dialog').forEach(d => {
-      d.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => d.close(); });
-      d.addEventListener('click', e => { if (e.target === d) d.close(); });
+      d.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => closeDialog(d); });
+      d.addEventListener('click', e => { if (e.target === d) closeDialog(d); });
     });
   }
 

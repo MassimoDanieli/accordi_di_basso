@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-versione="2.1.0">
+<html lang="en" data-versione="2.2.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,14 +8,14 @@
 <meta name="theme-color" content="#131110">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=2.1.0">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,600..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css?v=2.2.0">
 <script>
   // Applicato subito, prima del disegno, per non far lampeggiare la pagina.
   (function () {
     var t = 'scuro';
     try { var v = localStorage.getItem('manico-tema'); if (v === 'chiaro' || v === 'scuro') t = v; else
-      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'chiaro' : 'scuro';
+      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'scuro' : 'chiaro';
     } catch (e) {}
     document.documentElement.setAttribute('data-tema', t);
   })();
@@ -44,7 +44,7 @@
       <button data-lang="it" onclick="location.href='index.html'" title="Italiano">🇮🇹</button>
       <button data-lang="en" class="on" onclick="location.href='index.en.html'" title="English">🇬🇧</button>
     </span>
-    <span class="ver">v2.1.0</span>
+    <span class="ver">v2.2.0</span>
     <button id="tema" class="tog">Chiaro</button>
     <a class="cta" href="app.html">Open the tool &rarr;</a>
   </div>
@@ -131,8 +131,7 @@ E |-----------------|-----------|</pre>
   <p>In iReal Pro use Share and copy the link of a song or a playlist, then paste it into the
     <b>iReal</b> panel. Bars, repeats, repeat signs and bass notes are all read.</p>
   <div class="note-box"><p>The link is decoded here in the browser: nothing is sent anywhere, and the
-    page makes no network requests. Charts of copyrighted standards are deliberately not bundled with
-    the tool for the same reason: you use your own.</p></div>
+    page makes no network requests. The Forms panel also holds simplified essential versions of well-known tunes, each with a suggested tempo; for complete standard charts you import your own iReal files.</p></div>
   <p>The <b>Forms</b> panel instead holds generic shapes — blues, rhythm changes, cycles of II-V-I, the
     Andalusian cadence, the major thirds cycle — and traditional tunes in the public domain.</p>
 
@@ -153,7 +152,7 @@ E |-----------------|-----------|</pre>
 </div>
 
 <script type="module">
-  import { initTheme } from './src/theme.js?v=2.1.0';
+  import { initTheme } from './src/theme.js?v=2.2.0';
   initTheme();
 </script>
 </body>
