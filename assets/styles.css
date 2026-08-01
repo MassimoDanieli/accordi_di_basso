@@ -31,7 +31,7 @@ body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);
 }
 
 /* ------------------------------------------------------------------ barra */
-body{display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;height:100vh;height:100dvh;overflow:hidden}
+body{display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100vh;height:100dvh;overflow:hidden}
 .bar{display:flex;align-items:center;gap:9px;padding:0 16px;height:56px;
   border-bottom:1px solid var(--line);background:var(--panel);flex:none}
 .brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;flex:none}
@@ -92,22 +92,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--root);cursor:pointer}
 
 /* ---------------------------------------------------------------- accordi */
-.ribbon{display:flex;flex-direction:column;gap:5px;padding:10px;overflow-y:auto;overscroll-behavior:contain;
-  border-right:1px solid var(--line);background:var(--panel);min-height:0;scrollbar-width:thin;align-items:stretch}
-.ribbon .chip{text-align:center}
+.ribbon{display:flex;align-items:center;gap:6px;padding:9px 16px;overflow-x:auto;overscroll-behavior:contain;
+  border-bottom:1px solid var(--line);scrollbar-width:thin;flex:none}
 .chip{padding:7px 12px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
   font-family:var(--mono);font-size:13px;font-weight:600;color:var(--paper);flex:none}
 button.chip:hover{border-color:var(--faint)}
 .chip.on{background:var(--root);border-color:var(--root);color:#221803}
 .chip.bad{color:#D9695A;border-style:dashed}
 .chip.rest{color:var(--faint)}
-.bl{display:none}
+.bl{color:var(--faint);font-family:var(--mono);user-select:none;flex:none}
 
 /* ------------------------------------------------------- manico e zona */
-.stage{display:grid;grid-template-columns:118px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;min-height:0}
-.ribbon{grid-row:1/3;grid-column:1}
-.board{grid-column:2}
-.zoneline{grid-column:2}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) clamp(330px,30vw,470px);min-height:0}
+.left{display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-width:0;min-height:0}
 .board{display:flex;align-items:center;justify-content:center;padding:8px 12px;min-height:180px;overflow:auto}
 .board svg{display:block;max-width:100%;height:auto}
 .board .note{cursor:pointer}
@@ -122,34 +119,28 @@ button.chip:hover{border-color:var(--faint)}
 .key{display:flex;gap:13px;font-size:11px;color:var(--faint);flex-wrap:wrap;align-items:center}
 .key i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
 
-/* --------------------------------------------------------------- cassetto */
-.dock{background:var(--panel);border-top:1px solid var(--line-2);display:grid;
-  grid-template-rows:auto 0fr;transition:grid-template-rows .28s ease;min-height:0}
-.dock[data-aperto="si"]{grid-template-rows:auto 1fr}
-.dock-body{overflow:hidden;min-height:0}
-.dock-tab{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:0;
-  background:transparent;padding:9px 18px;text-align:left}
-.dock-tab:hover{background:var(--panel-2)}
-.dock-title{font-size:13px;font-weight:600;letter-spacing:.02em}
-.dock-sub{font-size:12px;color:var(--faint);font-weight:400;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dock-chevron{color:var(--root);transition:transform .28s ease}
-.dock[data-aperto="si"] .dock-chevron{transform:rotate(180deg)}
-.vhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:2px 18px 10px}
-.vhead select{min-width:160px}
-.vhead .hint{max-width:36ch}
-.voices{overflow-y:auto;overscroll-behavior:contain;padding:0 18px 14px;max-height:34vh;
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:11px;align-content:start}
+/* ------------------------------------------------------ pannello rivolti */
+.vpanel{border-left:1px solid var(--line);background:var(--panel);
+  display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;min-width:0}
+.vhead{padding:12px 14px 8px;display:flex;flex-direction:column;gap:9px}
+.vhead h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.02em}
+.vhead h2 small{color:var(--faint);font-weight:400;margin-left:6px}
+.vrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.vrow select{flex:1;min-width:140px}
+.vrow .mini input[type=range]{width:82px}
+.voices{overflow-y:auto;overscroll-behavior:contain;padding:0 14px 14px;min-height:0;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:11px;align-content:start}
 .voice{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
-  padding:9px 10px;cursor:pointer;transition:border-color .12s}
+  padding:11px 12px;cursor:pointer;transition:border-color .12s}
 .voice:hover{border-color:var(--line-2)}
 .voice.sel{border-color:var(--root)}
 .voice .head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.voice h4{margin:0;font-size:12px;font-weight:500}
+.voice h4{margin:0;font-size:13px;font-weight:500}
 .voice .mv{font-family:var(--mono);font-size:10px;color:var(--faint);white-space:nowrap}
-.voice .meta{font-size:10px;color:var(--faint);font-family:var(--mono);margin:3px 0 6px}
+.voice .meta{font-size:11px;color:var(--faint);font-family:var(--mono);margin:3px 0 8px}
 .voice svg{display:block;width:100%;height:auto}
 .voice .foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:5px}
-.voice .deg{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.voice .deg{font-family:var(--mono);font-size:12px;color:var(--muted)}
 .play-s{padding:3px 8px;font-size:10px}
 .empty{color:var(--faint);font-size:12px;line-height:1.7;padding:6px 0;grid-column:1/-1}
 
@@ -183,9 +174,9 @@ pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r
 @media (max-width:900px){
   body{height:auto;overflow:auto;display:block}
   .bar{flex-wrap:wrap;height:auto;padding:10px 14px}
-  .stage{grid-template-columns:1fr}
-  .ribbon{grid-row:auto;grid-column:1;flex-direction:row;border-right:0;border-bottom:1px solid var(--line);overflow-x:auto}
-  .board,.zoneline{grid-column:1}
+  .stage{grid-template-columns:1fr;grid-template-rows:auto auto}
+  .vpanel{border-left:0;border-top:1px solid var(--line-2)}
+  .voices{max-height:56vh}
   .voices{max-height:none;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
   .field>span:first-child{width:100px}
 }

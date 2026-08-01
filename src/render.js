@@ -77,7 +77,7 @@ export function diagram(chord, voicing, opts) {
   const { open, zoneFrom, zoneTo, flipped } = opts;
   const ord = stringOrder(open.length, flipped);
   const n = zoneTo - zoneFrom + 1;
-  const PL = 20, PT = 17, PB = 19, ROW = 23, CW = 32;
+  const PL = 24, PT = 20, PB = 22, ROW = 28, CW = 40;
   const W = PL + CW * n + 10, H = PT + ROW * (open.length - 1) + PB;
   const cx = f => PL + CW * (f - zoneFrom) + CW / 2;
   const sy = r => PT + r * ROW;
@@ -92,15 +92,15 @@ export function diagram(chord, voicing, opts) {
     s += `<line x1="${PL - 6}" y1="${y}" x2="${PL + CW * n}" y2="${y}" stroke="var(--string)" stroke-width="1" opacity=".35"/>`;
   });
   for (let f = zoneFrom; f <= zoneTo; f++)
-    s += `<text x="${cx(f)}" y="${H - 5}" text-anchor="middle" font-size="9" font-family="${MONO}" fill="var(--faint)">${f}</text>`;
+    s += `<text x="${cx(f)}" y="${H - 6}" text-anchor="middle" font-size="11" font-family="${MONO}" fill="var(--faint)">${f}</text>`;
 
   voicing.shape.forEach((note, i) => {
     const row = ord.indexOf(note.si);
     if (row < 0) return;
     const x = cx(note.f), y = sy(row), text = degreeName(note.iv, chord);
     s += `<g class="note" data-pos="${note.si}:${note.f}">`
-      + `<circle cx="${x}" cy="${y}" r="10.5" fill="${degreeColor(note.iv)}"/>`
-      + `<text x="${x}" y="${y + 3.5}" text-anchor="middle" font-size="${text.length > 2 ? 7.5 : 9}" font-weight="600" font-family="${MONO}" fill="#1A1512">${text}</text></g>`;
+      + `<circle cx="${x}" cy="${y}" r="12.5" fill="${degreeColor(note.iv)}"/>`
+      + `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="${text.length > 2 ? 9 : 11}" font-weight="600" font-family="${MONO}" fill="#1A1512">${text}</text></g>`;
     if (!voicing.block)
       s += `<text x="${x}" y="${y - 13}" text-anchor="middle" font-size="8" font-family="${MONO}" fill="var(--faint)">${i + 1}</text>`;
   });

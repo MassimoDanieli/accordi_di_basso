@@ -85,6 +85,7 @@ const D = {
     'tab.press': 'Premi Genera.',
     'tab.head': (g, b, a, e, v) => `griglia: ${g}\nbasso: ${b}   zona: tasti ${a}-${e}   voicing: ${v}`,
 
+    'chip.bad': 'sigla non riconosciuta',
     'close': 'Chiudi',
     'foot': 'Manico &copy; 2026 Massimo Danieli &middot; software libero sotto <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>, senza alcuna garanzia &middot; <a href="https://github.com/MassimoDanieli/accordi_di_basso">sorgenti su GitHub</a>'
   },
@@ -171,6 +172,7 @@ const D = {
     'tab.press': 'Press Generate.',
     'tab.head': (g, b, a, e, v) => `chart: ${g}\nbass: ${b}   zone: frets ${a}-${e}   voicing: ${v}`,
 
+    'chip.bad': 'symbol not recognised',
     'close': 'Close',
     'foot': 'Manico &copy; 2026 Massimo Danieli &middot; free software under <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>, with no warranty &middot; <a href="https://github.com/MassimoDanieli/accordi_di_basso">source on GitHub</a>'
   }

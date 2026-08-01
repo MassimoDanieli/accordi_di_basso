@@ -3,6 +3,22 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [2.1.0] — 2026-08-01
+
+### Modificato
+- I diagrammi di accordo e rivolti sono tornati sempre in vista: pannello dedicato a
+  destra del manico, largo fino a 470px, con le card grandi in colonna. Durante
+  l'esecuzione il pannello segue l'accordo corrente e la card scelta resta in vista.
+  Il cassetto a scomparsa della 2.0 e' stato eliminato.
+- Gli accordi della griglia tornano in nastro orizzontale sopra il manico.
+- Diagrammi delle card ingranditi: celle da 40 unita', pallini piu' grandi, numeri
+  leggibili.
+
+### Corretto
+- La descrizione della zona non si aggiornava quando la zona inseguiva l'accordo
+  durante l'esecuzione.
+- La dicitura per le sigle non riconosciute non era tradotta.
+
 ## [2.0.1] — 2026-08-01
 
 ### Corretto

@@ -109,6 +109,7 @@ function setZone(from, quiet) {
   $('zs').value = from;
   $('zsv').textContent = from;
   cache = new Map();
+  describeZone();
   quiet ? renderStrip() : render();
 }
 
@@ -121,7 +122,7 @@ function renderChips() {
     bar = x.bar;
     if (x.ok) html += `<button class="chip${i === state.index ? ' on' : ''}" data-pick="${i}">${x.chord.symbol}</button>`;
     else if (x.rest) html += `<span class="chip rest">N.C.</span>`;
-    else html += `<span class="chip bad" title="non riconosciuto">${x.raw}</span>`;
+    else html += `<span class="chip bad" title="${t('chip.bad')}">${x.raw}</span>`;
   });
   $('chips').innerHTML = html;
   const attivo = $('chips').querySelector('.chip.on');
@@ -215,6 +216,8 @@ function renderVoicings() {
         <button class="play-s" data-hear="${k}" aria-label="${t('v.listen')}">&#9654;</button>
       </div></div>`;
   }).join('');
+  const sel = $('voices').querySelector('.voice.sel');
+  if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'nearest' });
 }
 
 function previousVoicing(i) {
@@ -535,17 +538,6 @@ function init() {
   });
 
   $('spanwrap').style.display = 'none';
-
-  const dock = $('dock');
-  try {
-    const salvato = localStorage.getItem('manico-cassetto');
-    if (salvato === 'no') dock.dataset.aperto = 'no';
-  } catch (e) { /* archiviazione non disponibile */ }
-  $('docktab').onclick = () => {
-    const aperto = dock.dataset.aperto !== 'no';
-    dock.dataset.aperto = aperto ? 'no' : 'si';
-    try { localStorage.setItem('manico-cassetto', aperto ? 'no' : 'si'); } catch (e) { /* niente */ }
-  };
 
   document.querySelectorAll('[data-apre]').forEach(b => {
     b.onclick = () => {
