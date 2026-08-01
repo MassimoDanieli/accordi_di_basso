@@ -3,6 +3,16 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [2.3.3] — 2026-08-01
+
+### Corretto
+- L'importazione da iReal Pro falliva sui link reali: il corpo del brano era letto da
+  una posizione fissa dei campi, ma il formato vero dell'app ne usa un'altra. Ora il
+  corpo si riconosce dal suo marcatore, in qualunque posizione sia, con ripiego sul
+  vecchio formato irealbook in chiaro. Verificato su un link autentico di Autumn
+  Leaves: titolo, compositore, tonalita' e tutte le 21 battute della griglia, sigla
+  per sigla. Il link e' entrato nei test come regressione permanente.
+
 ## [2.3.2] — 2026-08-01
 
 ### Corretto

@@ -683,16 +683,22 @@ __mod.ireal = (function () {
     s.split('===').forEach(part => {
       const f = part.split('=');
       if (f.length < 6) return;
-      let body = f[5];
-      if (!body) return;
-      if (modern || body.includes(MARKER)) {
-        const k = body.indexOf(MARKER);
-        if (k >= 0) body = body.slice(k + MARKER.length);
-        body = deobfuscate(body);
+      // Formato irealb: Titolo=Compositore==Stile=Tonalita==<marcatore+corpo>=...
+      // Il corpo si riconosce dal marcatore, non dalla posizione: le versioni
+      // dell'app differiscono sul numero di campi vuoti.
+      let body = f.find(x => x.includes(MARKER));
+      let key = f[4] || f[3] || '';
+      if (body) {
+        body = deobfuscate(body.slice(body.indexOf(MARKER) + MARKER.length));
+      } else {
+        // irealbook, in chiaro: Titolo=Compositore=Stile=Tonalita=n=corpo
+        body = f[5];
+        key = f[3] || '';
+        if (!body) return;
       }
       const bars = readBody(body).filter(b => b.length);
       if (bars.length > 1) {
-        songs.push({ title: f[0] || 'senza titolo', composer: f[1] || '', key: f[3] || '', bars });
+        songs.push({ title: f[0] || 'senza titolo', composer: f[1] || '', key, bars });
       }
     });
     return songs;

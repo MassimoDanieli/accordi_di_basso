@@ -97,5 +97,19 @@ check('lettore iReal in chiaro', () => {
   assert.ok(grid.startsWith('D-7 G7 C^7'));
 });
 
+// --- link irealb reale (Autumn Leaves), regressione sul de-offuscamento
+check('lettore iReal su link reale (Autumn Leaves)', () => {
+  const url = 'irealb://Autumn%20Leaves=Kosma%20Joseph==Medium%20Swing=G%2D==1r34LbKcu7QyX314C%2D7XyX7hA%7CQyX7%5EbE%7CyQX7%5EbB%7CQyX7F%7CQyQ%7CD7b4T%7BA%2AQyX7%2DyQKclcKQyX6%2DG%7CQyX317bD%7CQyX7hA%5BB%2A%7D%20%20l%20LZCX6%2DG%7CL7bG%20Q%7CBb%5EyX31b7D%7CQyX7hAC%5B%2A%5DQyX7%5EbE%7CQyX7Q%7CG%2D7yX7F%7CZF%2D7%20E7LZAh7XyQ%7CD7b13XyQ%7CG%2D6XyQKcl%20%20Z=Jazz%2DMedium%20Swing=85=0';
+  const songs = IReal.parse(url);
+  assert.equal(songs.length, 1);
+  assert.equal(songs[0].title, 'Autumn Leaves');
+  assert.equal(songs[0].key, 'G-');
+  const grid = IReal.toGrid(songs[0]);
+  assert.match(grid, /^C-7 F7 Bb\^7 Eb\^7 Ah7 D7b13 G-6/);
+  for (const sym of grid.replace(/,/g, ' ').split(/\s+/)) {
+    assert.ok(parseChord(sym), 'sigla non riconosciuta: ' + sym);
+  }
+});
+
 console.log(failed ? '\n' + failed + ' test falliti' : '\nTutti i test passati');
 process.exit(failed ? 1 : 0);
