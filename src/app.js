@@ -534,21 +534,22 @@ function loadGrid(text, autozone) {
 
 function buildMenus() {
   const keep = { lib: $('lib').value, vtype: $('vtype').value, tun: $('tun').value,
-                 nfrets: $('nfrets').value, mode: $('mode').value, perline: $('perline').value,
+                 nfrets: $('nfrets').value, perline: $('perline').value,
                  tabmode: $('tabmode').value };
   $('lib').innerHTML = LIBRARY.map((x, i) =>
     `<option value="${i}">${x[lang() === 'en' ? 1 : 0]} \u00b7 ${x[2]} \u00b7 ${x[3]} bpm</option>`).join('');
   $('vtype').innerHTML = V.VOICING_TYPES.map(x => `<option value="${x.id}">${t('vt.' + x.id + '.name')}</option>`).join('');
   $('tun').innerHTML = ['4', '5', '5c', '6'].map(k => `<option value="${k}">${t('tun.' + k)}</option>`).join('');
   $('nfrets').innerHTML = [12, 15, 18, 24].map(n => `<option value="${n}">${t('set.fretsTo', n)}</option>`).join('');
-  $('mode').innerHTML = ['voicing', 'root', 'walking', 'mute'].map(m => `<option value="${m}">${t('play.' + m)}</option>`).join('');
+  $('modes').innerHTML = ['voicing', 'root', 'walking', 'mute'].map(m =>
+    `<button class="seg${state.playMode === m ? ' on' : ''}" data-mode="${m}" title="${t('play.' + m)}">${t('mode.' + m)}</button>`).join('');
   $('perline').innerHTML = [4, 2, 6].map(n => `<option value="${n}">${t('tab.perline', n)}</option>`).join('');
   $('tabmode').innerHTML = `<option value="blocks">${t('tab.blocks')}</option><option value="walk">${t('tab.walk')}</option>`;
   $('lib').value = keep.lib || '0';
   $('vtype').value = keep.vtype || state.vtype;
   $('tun').value = keep.tun || state.tuning;
   $('nfrets').value = keep.nfrets || String(state.frets);
-  $('mode').value = keep.mode || state.playMode;
+
   $('perline').value = keep.perline || '4';
   $('tabmode').value = keep.tabmode || 'blocks';
   $('tlab').textContent = state.labels === 'degrees' ? t('set.degrees') : t('set.names');
@@ -646,7 +647,13 @@ function init() {
   $('pp').onclick = toggleTransport;
   $('bpm').oninput = e => { state.bpm = +e.target.value; $('bpmv').textContent = state.bpm; };
   $('beats').onchange = e => { state.beats = +e.target.value; };
-  $('mode').onchange = e => { state.playMode = e.target.value; renderBoard(); };
+  $('modes').addEventListener('click', e => {
+    const b = e.target.closest('[data-mode]');
+    if (!b) return;
+    state.playMode = b.dataset.mode;
+    $('modes').querySelectorAll('.seg').forEach(x => x.classList.toggle('on', x === b));
+    renderBoard();
+  });
   $('clk').onclick = e => { state.metronome = !state.metronome; e.target.classList.toggle('on', state.metronome); };
   $('lock').onclick = () => setLock(!state.lockZone);
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-versione="2.5.0">
+<html lang="en" data-versione="2.6.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,600..700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=2.5.0">
+<link rel="stylesheet" href="assets/styles.css?v=2.6.0">
 <script>
   // Applicato subito, prima del disegno, per non far lampeggiare la pagina.
   (function () {
@@ -44,7 +44,7 @@
       <button data-lang="it" onclick="location.href='index.html'" title="Italiano">🇮🇹</button>
       <button data-lang="en" class="on" onclick="location.href='index.en.html'" title="English">🇬🇧</button>
     </span>
-    <span class="ver">v2.5.0</span>
+    <span class="ver">v2.6.0</span>
     <button id="tema" class="tog">Chiaro</button>
     <a class="cta" href="app.html">Open the tool &rarr;</a>
   </div>
@@ -107,20 +107,30 @@
   <p>The optimiser never leaves the chosen zone: that would defeat the purpose.</p>
 
   <h2>5. Playing</h2>
-  <p><b>Play</b>, or the space bar, loops the chart. While it runs, <b>each note lights up on the neck
-    exactly when you hear it</b>: one at a time for arpeggios, all together on the attack for block
-    voicings. It is the most direct way to tie what you see to what you hear.</p>
+  <p>In the bar, next to <b>Play</b>, you choose <b>what plays</b> — visible before you start:</p>
+  <table>
+    <tr><th>Mode</th><th>What you hear</th></tr>
+    <tr><td>Voicing</td><td>the voicing chosen for each chord: as a block or arpeggiated, by type</td></tr>
+    <tr><td>Root</td><td>the root alone, to focus on the form</td></tr>
+    <tr><td>Walking</td><td>a walking line inside the zone: root, chord tones moving towards the next
+      change, chromatic approach from the side of the motion</td></tr>
+    <tr><td>Mute</td><td>click only, so you play on top</td></tr>
+  </table>
+  <p>While it runs, <b>each note lights up on the neck exactly when you hear it</b>. In walking mode the
+    passing notes appear as <b>red dots</b> and the phrasing varies chorus by chorus: swung eighths on
+    the last beat, percussive ghosts on the off-beat, octave jumps — the quarter notes stay the backbone.</p>
   <ul>
-    <li>Tempo from 40 to 200 bpm, in 4/4, 3/4, 2/4 and 6/8.</li>
-    <li>The click accents the first beat of the bar.</li>
-    <li>By default the zone follows the current chord. With <b>Lock zone</b> it stays put: you remain in
-      position and see what is really under your fingers.</li>
+    <li>Metre sits next to the modes: 4/4, 3/4 and 2/4 with their own pulse, 6/8 on two dotted pulses.</li>
+    <li>Tempo from 40 to 200 bpm; the click accents beat one. Space bar starts and stops.</li>
+    <li>By default the zone follows the current chord, staying close to where you are. Touching the zone
+      sliders switches <b>Lock zone</b> on by itself: your choice holds until you release it.</li>
     <li>Left and right arrows step through the chords. Clicking a note on the neck sounds it.</li>
   </ul>
 
   <h2>6. ASCII tab</h2>
-  <p>Generates the tab of the chart using the voicings you picked, to copy or download as
-    <code>.txt</code>.</p>
+  <p>Generates the tab of the chart to copy or download as <code>.txt</code>, with two contents to
+    choose from: the <b>block voicings</b> you selected, or the <b>walking line</b> note by note, with
+    passing notes in brackets.</p>
   <pre>   D-7               G7
 G |-----------5--7--|--------7--|
 D |--------7--------|--5--9-----|
@@ -152,7 +162,7 @@ E |-----------------|-----------|</pre>
 </div>
 
 <script type="module">
-  import { initTheme } from './src/theme.js?v=2.5.0';
+  import { initTheme } from './src/theme.js?v=2.6.0';
   initTheme();
 </script>
 </body>

@@ -36,10 +36,14 @@ quartale. Vincoli di suonabilita' (corde crescenti, apertura della mano regolabi
 scomparsa con una linguetta. "Ottimizza voice leading" sceglie su tutta la griglia i
 voicing con il minimo movimento complessivo, senza mai uscire dalla zona.
 
-**Esecuzione.** Play in loop da 40 a 200 bpm in 4/4, 3/4, 2/4 e 6/8, click con
-accento, quattro modalita': voicing scelto, sola fondamentale, linea walking
-(fondamentale, note dell'accordo, cromatica di avvicinamento alla fondamentale
-successiva), muta. Ogni nota si accende sul manico nel momento in cui la senti.
+**Esecuzione.** La modalita' e' sempre in vista nella barra, accanto al Play:
+Voicing, Fondamentale, Walking o Muto, con il metro a fianco. Play in loop da 40 a
+200 bpm; 4/4, 3/4 e 2/4 con la loro pulsazione, 6/8 su due pulsazioni puntate. La
+linea walking percorre le note dell'accordo nella direzione del prossimo cambio con
+la cromatica dal lato del moto, e il fraseggio varia a ogni giro (ottavi swingati,
+ghost sul levare, salti d'ottava) restando deterministico per battuta e giro. Ogni
+nota si accende sul manico nel momento in cui la senti; in walking le note di
+passaggio compaiono come pallini rossi.
 
 **Repertorio.** 26 voci con stile e tempo consigliato: forme essenziali (blues, rhythm
 changes, II-V-I, cicli), giri pop e reggae, versioni semplificate di brani celebri,
@@ -49,7 +53,9 @@ formato "iReal Pro"), decodificati nel browser senza che nulla esca dalla pagina
 L'importazione e' collaudata su link autentici dell'app, con un link reale nei test
 come regressione permanente.
 
-**Tab ASCII.** Esporta la griglia con i voicing scelti, da copiare o scaricare.
+**Tab ASCII.** Esporta la griglia da copiare o scaricare, in due contenuti: i
+voicing a blocchi scelti, oppure la linea walking nota per nota con le note di
+passaggio fra parentesi.
 
 **Basso.** Quattro accordature (4, 5, 5 con Do acuto, 6 corde), corde disposte come
 nelle tab con vista invertibile, da 12 a 24 tasti mostrati, spaziatura reale dei tasti

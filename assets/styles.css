@@ -70,6 +70,12 @@ button:active{transform:scale(.98)}
 button.pri{background:var(--root);border-color:var(--root);color:#221803;font-weight:500}
 button.pri:hover{background:#F0BC61}
 .play{min-width:44px;font-size:12px}
+.modes{display:flex;flex:none;border:1px solid var(--line-2);border-radius:var(--r);overflow:hidden}
+.seg{border:0;border-radius:0;padding:8px 11px;font-size:12px;color:var(--muted);background:transparent}
+.seg + .seg{border-left:1px solid var(--line)}
+.seg.on{background:var(--root);color:#221803;font-weight:500}
+.seg:hover:not(.on){background:var(--panel-2);color:var(--paper)}
+select.slim{padding:7px 8px;font-size:12px}
 .tog{font-size:12px;padding:7px 10px}
 .tog.on{background:var(--panel-2);border-color:var(--root);color:var(--root)}
 .togs{display:flex;gap:6px;flex-wrap:wrap}

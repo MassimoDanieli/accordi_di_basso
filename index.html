@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" data-versione="2.5.0">
+<html lang="it" data-versione="2.6.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,600..700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=2.5.0">
+<link rel="stylesheet" href="assets/styles.css?v=2.6.0">
 <script>
   // Applicato subito, prima del disegno, per non far lampeggiare la pagina.
   (function () {
@@ -44,7 +44,7 @@
       <button data-lang="it" class="on" onclick="location.href='index.html'" title="Italiano">🇮🇹</button>
       <button data-lang="en" onclick="location.href='index.en.html'" title="English">🇬🇧</button>
     </span>
-    <span class="ver">v2.5.0</span>
+    <span class="ver">v2.6.0</span>
     <button id="tema" class="tog">Chiaro</button>
     <a class="cta" href="app.html">Apri lo strumento &rarr;</a>
   </div>
@@ -108,19 +108,30 @@
   <p>L'ottimizzazione non esce mai dalla zona scelta: sarebbe barare rispetto allo scopo.</p>
 
   <h2>5. Suonare</h2>
-  <p><b>Play</b>, o la barra spaziatrice, fa girare la griglia in loop. Mentre suona, <b>ogni nota si
-    accende sul manico nel momento in cui la senti</b>: sugli arpeggi una alla volta, sui voicing a blocco
-    tutte insieme sull'attacco. E' il modo piu' diretto per collegare quello che vedi a quello che senti.</p>
+  <p>Nella barra, accanto a <b>Play</b>, scegli <b>cosa suona</b> — e lo vedi prima di partire:</p>
+  <table>
+    <tr><th>Modalita'</th><th>Cosa senti</th></tr>
+    <tr><td>Voicing</td><td>il voicing scelto per ogni accordo: a blocco o in arpeggio secondo il tipo</td></tr>
+    <tr><td>Fondam.</td><td>la sola fondamentale, per concentrarti sulla forma</td></tr>
+    <tr><td>Walking</td><td>una linea walking dentro la zona: fondamentale, note dell'accordo nella direzione
+      del prossimo cambio, cromatica di avvicinamento dal lato del moto</td></tr>
+    <tr><td>Muto</td><td>solo il click, per suonarci sopra tu</td></tr>
+  </table>
+  <p>Mentre suona, <b>ogni nota si accende sul manico nel momento in cui la senti</b>. In walking le note
+    di passaggio compaiono come <b>pallini rossi</b> e il fraseggio varia a ogni giro: ottavi swingati
+    sull'ultimo movimento, ghost percussive sul levare, salti d'ottava — le semiminime restano l'impianto.</p>
   <ul>
-    <li>Il tempo va da 40 a 200 bpm, con metri 4/4, 3/4, 2/4 e 6/8.</li>
-    <li>Il click ha l'accento sul primo movimento della battuta.</li>
-    <li>Di norma la zona insegue l'accordo corrente. Con <b>Zona fissa</b> resta ferma: resti in posizione
-      e vedi cosa hai davvero sotto le dita.</li>
+    <li>Metro accanto alle modalita': 4/4, 3/4 e 2/4 con la loro pulsazione, 6/8 su due pulsazioni puntate.</li>
+    <li>Il tempo va da 40 a 200 bpm; il click accenta il primo movimento. Barra spaziatrice per avviare.</li>
+    <li>Di norma la zona insegue l'accordo corrente restando vicina a dove sei. Toccare i cursori della
+      zona attiva da solo <b>Zona fissa</b>: la tua scelta vale finche' non la sblocchi.</li>
     <li>Le frecce sinistra e destra cambiano accordo a mano. Un clic su una nota del manico la fa suonare.</li>
   </ul>
 
   <h2>6. Tab ASCII</h2>
-  <p>Genera il tab della griglia usando i voicing che hai scelto, da copiare o scaricare in <code>.txt</code>.</p>
+  <p>Genera il tab della griglia da copiare o scaricare in <code>.txt</code>, in due contenuti a scelta:
+    i <b>voicing a blocchi</b> che hai selezionato, oppure la <b>linea walking</b> nota per nota, con le
+    note di passaggio fra parentesi.</p>
   <pre>   D-7               G7
 G |-----------5--7--|--------7--|
 D |--------7--------|--5--9-----|
@@ -152,7 +163,7 @@ E |-----------------|-----------|</pre>
 </div>
 
 <script type="module">
-  import { initTheme } from './src/theme.js?v=2.5.0';
+  import { initTheme } from './src/theme.js?v=2.6.0';
   initTheme();
 </script>
 </body>

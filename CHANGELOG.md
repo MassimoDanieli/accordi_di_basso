@@ -3,6 +3,14 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [2.6.0] — 2026-08-01
+
+### Modificato
+- Cosa suona e' visibile prima di premere Play: la scelta fra Voicing, Fondamentale,
+  Walking e Muto e' diventata una fila di pulsanti in barra accanto al trasporto,
+  con il metro li' a fianco. Le impostazioni tengono solo cio' che si regola una
+  volta: strumento, vista, click, zona fissa.
+
 ## [2.5.0] — 2026-08-01
 
 ### Modificato
