@@ -134,8 +134,13 @@ function renderChips() {
     else html += `<span class="chip bad" title="${t('chip.bad')}">${x.raw}</span>`;
   });
   $('chips').innerHTML = html;
+  // Scorrimento del solo nastro: scrollIntoView su iOS trascina l'intera pagina.
   const attivo = $('chips').querySelector('.chip.on');
-  if (attivo && attivo.scrollIntoView) attivo.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  if (attivo) {
+    const r = $('chips');
+    const x = Math.max(0, attivo.offsetLeft - (r.clientWidth - attivo.offsetWidth) / 2);
+    if (r.scrollTo) r.scrollTo({ left: x, behavior: 'smooth' }); else r.scrollLeft = x;
+  }
 }
 
 function describeZone() {
@@ -233,7 +238,11 @@ function renderVoicings() {
       </div></div>`;
   }).join('');
   const sel = $('voices').querySelector('.voice.sel');
-  if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'nearest' });
+  if (sel) {
+    const v = $('voices');
+    const y = Math.max(0, sel.offsetTop - (v.clientHeight - sel.offsetHeight) / 2);
+    if (v.scrollTo) v.scrollTo({ top: y, behavior: 'smooth' }); else v.scrollTop = y;
+  }
 }
 
 function previousVoicing(i) {

@@ -3,6 +3,15 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [2.6.1] — 2026-08-01
+
+### Corretto
+- Su iPhone la pagina saltellava a ogni battuta fra la barra e gli accordi: lo
+  scorrimento automatico verso l'accordo corrente e la card scelta usava
+  scrollIntoView, che su iOS trascina l'intera pagina oltre al contenitore. Ora lo
+  scorrimento e' calcolato e applicato solo al nastro e al pannello dei voicing;
+  la pagina non si muove piu' da sola.
+
 ## [2.6.0] — 2026-08-01
 
 ### Modificato

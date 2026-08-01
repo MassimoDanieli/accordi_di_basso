@@ -101,7 +101,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radiu
 .songline{margin:0;padding:9px 16px 0;font-family:var(--serif);font-size:16px;letter-spacing:-.01em}
 .songline .by{color:var(--muted);font-size:13px;font-family:var(--sans)}
 .ribbon{display:flex;align-items:center;gap:6px;padding:9px 16px;overflow-x:auto;overscroll-behavior:contain;
-  border-bottom:1px solid var(--line);scrollbar-width:thin;flex:none}
+  border-bottom:1px solid var(--line);scrollbar-width:thin;flex:none;position:relative}
 .chip{padding:6px 12px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
   font-family:var(--mono);font-size:13px;font-weight:600;color:var(--paper);flex:none;
   display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.25}
@@ -145,7 +145,7 @@ body[data-pannello="no"] .vgrip-ch{transform:rotate(180deg)}
 .vrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .vrow select{flex:1;min-width:140px}
 .vrow .mini input[type=range]{width:82px}
-.voices{overflow-y:auto;overscroll-behavior:contain;padding:0 14px 14px;min-height:0;
+.voices{overflow-y:auto;overscroll-behavior:contain;padding:0 14px 14px;min-height:0;position:relative;
   display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:11px;align-content:start}
 .voice{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
   padding:11px 12px;cursor:pointer;transition:border-color .12s}

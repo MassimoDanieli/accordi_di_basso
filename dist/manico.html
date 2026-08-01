@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" data-versione="2.6.0">
+<html lang="it" data-versione="2.6.1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -112,7 +112,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radiu
 .songline{margin:0;padding:9px 16px 0;font-family:var(--serif);font-size:16px;letter-spacing:-.01em}
 .songline .by{color:var(--muted);font-size:13px;font-family:var(--sans)}
 .ribbon{display:flex;align-items:center;gap:6px;padding:9px 16px;overflow-x:auto;overscroll-behavior:contain;
-  border-bottom:1px solid var(--line);scrollbar-width:thin;flex:none}
+  border-bottom:1px solid var(--line);scrollbar-width:thin;flex:none;position:relative}
 .chip{padding:6px 12px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
   font-family:var(--mono);font-size:13px;font-weight:600;color:var(--paper);flex:none;
   display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.25}
@@ -156,7 +156,7 @@ body[data-pannello="no"] .vgrip-ch{transform:rotate(180deg)}
 .vrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .vrow select{flex:1;min-width:140px}
 .vrow .mini input[type=range]{width:82px}
-.voices{overflow-y:auto;overscroll-behavior:contain;padding:0 14px 14px;min-height:0;
+.voices{overflow-y:auto;overscroll-behavior:contain;padding:0 14px 14px;min-height:0;position:relative;
   display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:11px;align-content:start}
 .voice{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
   padding:11px 12px;cursor:pointer;transition:border-color .12s}
@@ -318,7 +318,7 @@ html{scroll-behavior:smooth}
     <button data-lang="en" title="English" aria-label="English"><span class="fl">🇬🇧</span></button>
   </span>
   <button id="tema" class="tog">Chiaro</button>
-  <span class="ver">v2.6.0</span>
+  <span class="ver">v2.6.1</span>
 </header>
 
 <main class="stage">
@@ -1667,8 +1667,13 @@ __mod.app = (function () {
       else html += `<span class="chip bad" title="${t('chip.bad')}">${x.raw}</span>`;
     });
     $('chips').innerHTML = html;
+    // Scorrimento del solo nastro: scrollIntoView su iOS trascina l'intera pagina.
     const attivo = $('chips').querySelector('.chip.on');
-    if (attivo && attivo.scrollIntoView) attivo.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    if (attivo) {
+      const r = $('chips');
+      const x = Math.max(0, attivo.offsetLeft - (r.clientWidth - attivo.offsetWidth) / 2);
+      if (r.scrollTo) r.scrollTo({ left: x, behavior: 'smooth' }); else r.scrollLeft = x;
+    }
   }
 
   function describeZone() {
@@ -1766,7 +1771,11 @@ __mod.app = (function () {
         </div></div>`;
     }).join('');
     const sel = $('voices').querySelector('.voice.sel');
-    if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'nearest' });
+    if (sel) {
+      const v = $('voices');
+      const y = Math.max(0, sel.offsetTop - (v.clientHeight - sel.offsetHeight) / 2);
+      if (v.scrollTo) v.scrollTo({ top: y, behavior: 'smooth' }); else v.scrollTop = y;
+    }
   }
 
   function previousVoicing(i) {
