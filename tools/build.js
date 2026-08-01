@@ -47,11 +47,15 @@ const bundle = ['(function () {', '"use strict";', 'const __mod = {};']
   .concat(['})();'])
   .join('\n\n');
 
+// Il sito carica questo bundle, non i moduli: un file solo, una versione sola.
+// Elimina alla radice il rischio di moduli misti fra versioni in cache.
+writeFileSync(join(root, 'assets', 'app.bundle.js'), bundle);
+
 const css = readFileSync(join(root, 'assets', 'styles.css'), 'utf8');
 
 let html = readFileSync(join(root, 'app.html'), 'utf8')
   .replace(/<link rel="stylesheet" href="assets\/styles\.css[^"]*">/, `<style>\n${css}\n</style>`)
-  .replace(/<script type="module" src="src\/app\.js[^"]*"><\/script>/, `<script>\n${bundle}\n</script>`)
+  .replace(/<script src="assets\/app\.bundle\.js[^"]*"><\/script>/, `<script>\n${bundle}\n</script>`)
   // Nel file unico la guida non e' accanto: si punta al sito.
   .replace(/href="index\.html"/g, 'href="https://basso.massimodanieli.com/"')
   .replace(/\?v=[0-9.]+/g, '');
@@ -59,4 +63,5 @@ let html = readFileSync(join(root, 'app.html'), 'utf8')
 mkdirSync(join(root, 'dist'), { recursive: true });
 writeFileSync(join(root, 'dist', 'manico.html'), html);
 
+console.log(`assets/app.bundle.js scritto, ${(bundle.length / 1024).toFixed(0)} kB`);
 console.log(`dist/manico.html scritto, ${(html.length / 1024).toFixed(0)} kB`);

@@ -9,6 +9,12 @@ Nessuna dipendenza, nessun passaggio di build: HTML, CSS e moduli ES nativi.
 
 ![licenza](https://img.shields.io/badge/licenza-GPL--3.0-E9B04A) [![sito](https://img.shields.io/badge/sito-basso.massimodanieli.com-63B7A6)](https://basso.massimodanieli.com/)
 
+## Come si rilascia
+
+Dopo ogni modifica ai sorgenti va lanciato `node tools/build.js`: genera
+`assets/app.bundle.js` (quello che il sito carica davvero) e `dist/manico.html`
+(file unico autonomo). Il bundle va committato insieme ai sorgenti.
+
 ## Pagine
 
 `index.html` e' la guida in italiano, `index.en.html` quella in inglese, `app.html` e' lo

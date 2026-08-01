@@ -7,7 +7,7 @@ import * as R from './render.js';
 import * as Tab from './tab.js';
 import * as IReal from './ireal.js';
 import { LIBRARY } from './library.js';
-import { initTheme } from './theme.js';
+import { initTheme, refreshThemeLabel } from './theme.js';
 import { t, initLang, applyStatic, lang } from './i18n.js';
 
 const $ = id => document.getElementById(id);
@@ -465,7 +465,7 @@ function closeDialog(d) {
 
 function init() {
   initTheme();
-  initLang(() => { buildMenus(); render(); });
+  initLang(() => { buildMenus(); refreshThemeLabel(); render(); });
   parseGrid();
   render();
 

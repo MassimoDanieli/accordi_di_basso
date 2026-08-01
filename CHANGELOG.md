@@ -3,6 +3,18 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [2.2.1] — 2026-08-01
+
+### Corretto
+- L'app poteva morire al caricamento con la cache di mezzo: la pagina prendeva
+  `app.js` nuovo ma gli import interni dei moduli, senza versione, potevano arrivare
+  vecchi dalla cache di Pages (10 minuti), e il primo accesso a una funzione cambiata
+  fermava tutto. Ora il sito carica un bundle unico versionato
+  (`assets/app.bundle.js?v=...`), generato da `node tools/build.js` e committato;
+  i moduli in `src/` restano per lo sviluppo.
+- Il pulsante del tema diceva Chiaro/Scuro anche in inglese: ora segue la lingua
+  (Light/Dark) e si aggiorna quando la cambi.
+
 ## [2.2.0] — 2026-08-01
 
 ### Aggiunto

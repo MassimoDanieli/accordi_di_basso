@@ -11,16 +11,30 @@ export function readTheme() {
   return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'scuro' : 'chiaro';
 }
 
+function inglese() {
+  try {
+    const l = localStorage.getItem('manico-lingua');
+    if (l === 'en' || l === 'it') return l === 'en';
+  } catch (e) { /* archiviazione non disponibile */ }
+  return (document.documentElement.lang || 'it').toLowerCase().startsWith('en');
+}
+
+/** Aggiorna la scritta del pulsante nella lingua corrente. */
+export function refreshThemeLabel() {
+  const btn = document.getElementById('tema');
+  if (!btn) return;
+  const chiaro = document.documentElement.getAttribute('data-tema') === 'chiaro';
+  const en = inglese();
+  btn.textContent = chiaro ? (en ? 'Dark' : 'Scuro') : (en ? 'Light' : 'Chiaro');
+  btn.title = chiaro ? (en ? 'Switch to the dark theme' : 'Passa al tema scuro')
+                     : (en ? 'Switch to the light theme' : 'Passa al tema chiaro');
+  btn.setAttribute('aria-label', btn.title);
+}
+
 export function applyTheme(theme) {
   document.documentElement.setAttribute('data-tema', theme);
   try { localStorage.setItem(KEY, theme); } catch (e) { /* niente da fare */ }
-  const btn = document.getElementById('tema');
-  if (btn) {
-    const chiaro = theme === 'chiaro';
-    btn.textContent = chiaro ? 'Scuro' : 'Chiaro';
-    btn.title = chiaro ? 'Passa al tema scuro' : 'Passa al tema chiaro';
-    btn.setAttribute('aria-label', btn.title);
-  }
+  refreshThemeLabel();
 }
 
 export function toggleTheme() {
