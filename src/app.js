@@ -420,7 +420,7 @@ function buildTab() {
     v.shape.forEach((n, k) => current.columns.push({ si: n.si, f: n.f, newGroup: v.block && k === 0 }));
   });
 
-  const header = t('tab.head', $('seq').value, TUNINGS[state.tuning].label,
+  const header = t('tab.head', $('seq').value, t('tun.' + state.tuning),
     state.zoneFrom, zoneTo(), t('vt.' + state.vtype + '.name'));
   $('tab').textContent = Tab.render(bars, open(), state.flipped, +$('perline').value, header);
   $('tab').dataset.vuoto = 'no';
@@ -441,7 +441,7 @@ function buildMenus() {
   $('lib').innerHTML = LIBRARY.map((x, i) =>
     `<option value="${i}">${x[lang() === 'en' ? 1 : 0]} \u00b7 ${x[2]} \u00b7 ${x[3]} bpm</option>`).join('');
   $('vtype').innerHTML = V.VOICING_TYPES.map(x => `<option value="${x.id}">${t('vt.' + x.id + '.name')}</option>`).join('');
-  $('tun').innerHTML = Object.entries(TUNINGS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+  $('tun').innerHTML = ['4', '5', '5c', '6'].map(k => `<option value="${k}">${t('tun.' + k)}</option>`).join('');
   $('nfrets').innerHTML = [12, 15, 18, 24].map(n => `<option value="${n}">${t('set.fretsTo', n)}</option>`).join('');
   $('mode').innerHTML = ['voicing', 'root', 'walking', 'mute'].map(m => `<option value="${m}">${t('play.' + m)}</option>`).join('');
   $('perline').innerHTML = [4, 2, 6].map(n => `<option value="${n}">${t('tab.perline', n)}</option>`).join('');
@@ -610,6 +610,18 @@ function init() {
   });
 
   $('spanwrap').style.display = 'none';
+
+  // Pannello dei voicing a scomparsa: chi suona decide se vederlo.
+  try {
+    if (localStorage.getItem('manico-pannello') === 'no') document.body.dataset.pannello = 'no';
+  } catch (e) { /* archiviazione non disponibile */ }
+  $('vtoggle').onclick = () => {
+    const chiuso = document.body.dataset.pannello === 'no';
+    if (chiuso) delete document.body.dataset.pannello;
+    else document.body.dataset.pannello = 'no';
+    try { localStorage.setItem('manico-pannello', chiuso ? 'si' : 'no'); } catch (e) { /* niente */ }
+    fitBoard();
+  };
 
   document.querySelectorAll('[data-apre]').forEach(b => {
     b.onclick = () => {

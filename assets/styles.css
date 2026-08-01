@@ -108,7 +108,14 @@ button.chip:hover{border-color:var(--faint)}
 .bl{color:var(--faint);font-family:var(--mono);user-select:none;flex:none}
 
 /* ------------------------------------------------------- manico e zona */
-.stage{display:grid;grid-template-columns:minmax(0,1fr) clamp(330px,30vw,470px);min-height:0}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) auto auto;min-height:0}
+.vgrip{display:flex;flex-direction:column;align-items:center;gap:8px;border:0;border-left:1px solid var(--line);
+  border-radius:0;background:var(--panel-2);padding:12px 5px;cursor:pointer;width:30px}
+.vgrip:hover{background:var(--panel)}
+.vgrip-ch{color:var(--root);font-size:13px;transition:transform .2s}
+.vgrip-txt{writing-mode:vertical-rl;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+body[data-pannello="no"] .vpanel{display:none}
+body[data-pannello="no"] .vgrip-ch{transform:rotate(180deg)}
 .left{display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-width:0;min-height:0}
 .board{display:flex;align-items:center;justify-content:center;padding:8px 12px;min-height:180px;overflow:auto}
 .board svg{display:block;max-width:100%;height:auto}
@@ -125,7 +132,7 @@ button.chip:hover{border-color:var(--faint)}
 .key i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
 
 /* ------------------------------------------------------ pannello rivolti */
-.vpanel{border-left:1px solid var(--line);background:var(--panel);
+.vpanel{border-left:1px solid var(--line);background:var(--panel);width:clamp(330px,30vw,470px);
   display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;min-width:0}
 .vhead{padding:12px 14px 8px;display:flex;flex-direction:column;gap:9px}
 .vhead h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.02em}
@@ -150,12 +157,11 @@ button.chip:hover{border-color:var(--faint)}
 .empty{color:var(--faint);font-size:12px;line-height:1.7;padding:6px 0;grid-column:1/-1}
 
 /* ----------------------------------------------------------------- attrezzi */
-.tools{display:flex;align-items:center;gap:8px;padding:8px 18px;flex:none;
-  border-top:1px solid var(--line);background:var(--panel-2)}
-.tools a{font-size:12.5px;color:var(--muted);text-decoration:none;
-  border:1px solid var(--line-2);border-radius:var(--r);padding:7px 11px}
-.tools a:hover,.tools button:hover{color:var(--root);border-color:var(--root)}
-.tools button{font-size:12.5px;color:var(--muted)}
+.tools{display:flex;align-items:center;gap:10px;padding:10px 18px;flex:none;
+  border-top:2px solid var(--root);background:var(--panel)}
+.tools a,.tools button{font-size:13.5px;font-weight:500;color:var(--paper);text-decoration:none;
+  border:1px solid var(--line-2);border-radius:var(--r);padding:9px 16px;background:var(--panel-2)}
+.tools a:hover,.tools button:hover{color:var(--root);border-color:var(--root);background:var(--panel)}
 
 /* --------------------------------------------------------------- finestre */
 dialog{background:var(--panel);color:var(--paper);border:1px solid var(--line-2);border-radius:12px;
@@ -179,8 +185,10 @@ pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r
 @media (max-width:900px){
   body{height:auto;overflow:auto;display:block}
   .bar{flex-wrap:wrap;height:auto;padding:10px 14px}
-  .stage{grid-template-columns:1fr;grid-template-rows:auto auto}
-  .vpanel{border-left:0;border-top:1px solid var(--line-2)}
+  .stage{grid-template-columns:1fr;grid-template-rows:auto auto auto}
+  .vgrip{width:auto;flex-direction:row;padding:8px 14px;border-left:0;border-top:1px solid var(--line)}
+  .vgrip-txt{writing-mode:horizontal-tb}
+  .vpanel{border-left:0;border-top:1px solid var(--line-2);width:auto}
   .voices{max-height:56vh}
   .voices{max-height:none;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
   .field>span:first-child{width:100px}

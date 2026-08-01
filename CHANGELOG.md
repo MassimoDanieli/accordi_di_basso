@@ -3,6 +3,20 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [2.3.0] — 2026-08-01
+
+### Aggiunto
+- Il pannello dei voicing e' a scomparsa: una linguetta verticale sul bordo lo apre e
+  lo chiude, il manico si allarga di conseguenza e la scelta resta memorizzata.
+
+### Corretto
+- Le accordature nel menu Basso erano solo in italiano: ora seguono la lingua, anche
+  nell'intestazione del tab esportato.
+
+### Modificato
+- Barra degli attrezzi in fondo piu' evidente: bordo superiore color ambra, pulsanti
+  piu' grandi e a contrasto pieno.
+
 ## [2.2.1] — 2026-08-01
 
 ### Corretto

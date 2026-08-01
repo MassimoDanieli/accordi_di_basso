@@ -892,6 +892,8 @@ __mod.i18n = (function () {
       'vt.triad.name': 'Triade \u2014 R + 3 + 5', 'vt.triad.hint': 'triade in posizione stretta',
       'vt.quartal.name': 'Quartale', 'vt.quartal.hint': 'quarte sovrapposte, dove l\u2019accordo lo consente',
 
+      'tun.4': '4 corde \u00b7 E A D G', 'tun.5': '5 corde \u00b7 B E A D G',
+      'tun.5c': '5 corde con Do acuto \u00b7 E A D G C', 'tun.6': '6 corde \u00b7 B E A D G C',
       'set.title': 'Strumento e vista',
       'set.bass': 'Basso', 'set.frets': 'Tasti mostrati', 'set.fretsTo': n => 'fino al ' + n,
       'set.notes': 'Note sul manico', 'set.degrees': 'Gradi', 'set.names': 'Note',
@@ -980,6 +982,8 @@ __mod.i18n = (function () {
       'vt.triad.name': 'Triad \u2014 R + 3 + 5', 'vt.triad.hint': 'close position triad',
       'vt.quartal.name': 'Quartal', 'vt.quartal.hint': 'stacked fourths, where the chord allows it',
 
+      'tun.4': '4 strings \u00b7 E A D G', 'tun.5': '5 strings \u00b7 B E A D G',
+      'tun.5c': '5 strings, high C \u00b7 E A D G C', 'tun.6': '6 strings \u00b7 B E A D G C',
       'set.title': 'Instrument and view',
       'set.bass': 'Bass', 'set.frets': 'Frets shown', 'set.fretsTo': n => 'up to ' + n,
       'set.notes': 'Notes on the neck', 'set.degrees': 'Degrees', 'set.names': 'Names',
@@ -1489,7 +1493,7 @@ __mod.app = (function () {
       v.shape.forEach((n, k) => current.columns.push({ si: n.si, f: n.f, newGroup: v.block && k === 0 }));
     });
 
-    const header = t('tab.head', $('seq').value, TUNINGS[state.tuning].label,
+    const header = t('tab.head', $('seq').value, t('tun.' + state.tuning),
       state.zoneFrom, zoneTo(), t('vt.' + state.vtype + '.name'));
     $('tab').textContent = Tab.render(bars, open(), state.flipped, +$('perline').value, header);
     $('tab').dataset.vuoto = 'no';
@@ -1510,7 +1514,7 @@ __mod.app = (function () {
     $('lib').innerHTML = LIBRARY.map((x, i) =>
       `<option value="${i}">${x[lang() === 'en' ? 1 : 0]} \u00b7 ${x[2]} \u00b7 ${x[3]} bpm</option>`).join('');
     $('vtype').innerHTML = V.VOICING_TYPES.map(x => `<option value="${x.id}">${t('vt.' + x.id + '.name')}</option>`).join('');
-    $('tun').innerHTML = Object.entries(TUNINGS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+    $('tun').innerHTML = ['4', '5', '5c', '6'].map(k => `<option value="${k}">${t('tun.' + k)}</option>`).join('');
     $('nfrets').innerHTML = [12, 15, 18, 24].map(n => `<option value="${n}">${t('set.fretsTo', n)}</option>`).join('');
     $('mode').innerHTML = ['voicing', 'root', 'walking', 'mute'].map(m => `<option value="${m}">${t('play.' + m)}</option>`).join('');
     $('perline').innerHTML = [4, 2, 6].map(n => `<option value="${n}">${t('tab.perline', n)}</option>`).join('');
@@ -1679,6 +1683,18 @@ __mod.app = (function () {
     });
 
     $('spanwrap').style.display = 'none';
+
+    // Pannello dei voicing a scomparsa: chi suona decide se vederlo.
+    try {
+      if (localStorage.getItem('manico-pannello') === 'no') document.body.dataset.pannello = 'no';
+    } catch (e) { /* archiviazione non disponibile */ }
+    $('vtoggle').onclick = () => {
+      const chiuso = document.body.dataset.pannello === 'no';
+      if (chiuso) delete document.body.dataset.pannello;
+      else document.body.dataset.pannello = 'no';
+      try { localStorage.setItem('manico-pannello', chiuso ? 'si' : 'no'); } catch (e) { /* niente */ }
+      fitBoard();
+    };
 
     document.querySelectorAll('[data-apre]').forEach(b => {
       b.onclick = () => {

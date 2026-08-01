@@ -56,6 +56,8 @@ const D = {
     'vt.triad.name': 'Triade \u2014 R + 3 + 5', 'vt.triad.hint': 'triade in posizione stretta',
     'vt.quartal.name': 'Quartale', 'vt.quartal.hint': 'quarte sovrapposte, dove l\u2019accordo lo consente',
 
+    'tun.4': '4 corde \u00b7 E A D G', 'tun.5': '5 corde \u00b7 B E A D G',
+    'tun.5c': '5 corde con Do acuto \u00b7 E A D G C', 'tun.6': '6 corde \u00b7 B E A D G C',
     'set.title': 'Strumento e vista',
     'set.bass': 'Basso', 'set.frets': 'Tasti mostrati', 'set.fretsTo': n => 'fino al ' + n,
     'set.notes': 'Note sul manico', 'set.degrees': 'Gradi', 'set.names': 'Note',
@@ -144,6 +146,8 @@ const D = {
     'vt.triad.name': 'Triad \u2014 R + 3 + 5', 'vt.triad.hint': 'close position triad',
     'vt.quartal.name': 'Quartal', 'vt.quartal.hint': 'stacked fourths, where the chord allows it',
 
+    'tun.4': '4 strings \u00b7 E A D G', 'tun.5': '5 strings \u00b7 B E A D G',
+    'tun.5c': '5 strings, high C \u00b7 E A D G C', 'tun.6': '6 strings \u00b7 B E A D G C',
     'set.title': 'Instrument and view',
     'set.bass': 'Bass', 'set.frets': 'Frets shown', 'set.fretsTo': n => 'up to ' + n,
     'set.notes': 'Notes on the neck', 'set.degrees': 'Degrees', 'set.names': 'Names',
