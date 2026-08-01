@@ -11,8 +11,9 @@ Nessuna dipendenza, nessun passaggio di build: HTML, CSS e moduli ES nativi.
 
 ## Pagine
 
-`index.html` e' la guida all'uso, `app.html` e' lo strumento. Su GitHub Pages la guida fa
-quindi da pagina d'ingresso.
+`index.html` e' la guida in italiano, `index.en.html` quella in inglese, `app.html` e' lo
+strumento. Su GitHub Pages la guida fa da pagina d'ingresso. L'interfaccia dello strumento
+e' bilingue e cambia lingua al volo dalle bandierine nella barra.
 
 ## Interfaccia
 
@@ -139,7 +140,8 @@ sull'indirizzo di progetto <https://massimodanieli.github.io/accordi_di_basso/>.
 ## Struttura
 
 ```
-index.html            guida all'uso
+index.html            guida in italiano
+index.en.html         guida in inglese
 app.html              lo strumento
 assets/styles.css     stile
 src/theory.js         note, sigle di accordo, gradi
@@ -150,6 +152,7 @@ src/tab.js            esportazione in tab ASCII
 src/ireal.js          lettura dei link iReal Pro
 src/library.js        forme armoniche e brani tradizionali
 src/theme.js          tema chiaro/scuro
+src/i18n.js           dizionario italiano e inglese
 src/app.js            stato e collegamento fra i moduli
 tools/build.js        genera dist/manico.html, file unico autonomo
 test/smoke.test.js    test, senza dipendenze

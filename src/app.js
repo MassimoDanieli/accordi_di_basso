@@ -8,6 +8,7 @@ import * as Tab from './tab.js';
 import * as IReal from './ireal.js';
 import { LIBRARY } from './library.js';
 import { initTheme } from './theme.js';
+import { t, initLang, applyStatic, lang } from './i18n.js';
 
 const $ = id => document.getElementById(id);
 
@@ -128,9 +129,7 @@ function renderChips() {
 function describeZone() {
   const el = $('zdesc');
   if (!el) return;
-  el.textContent = state.zoneFrom === 0
-    ? `tasti 0\u2013${zoneTo()}, corde a vuoto incluse`
-    : `tasti ${state.zoneFrom}\u2013${zoneTo()}`;
+  el.textContent = t('zone.desc', state.zoneFrom, zoneTo());
 }
 
 function renderStrip() {
@@ -140,7 +139,7 @@ function renderStrip() {
     const s = ok.length ? Math.min(...ok.map(x => coverage(x.chord, from))) : 1;
     html += `<button class="cell${from === state.zoneFrom ? ' sel' : ''}" data-zone="${from}"`
       + ` style="background:rgba(233,176,74,${(0.12 + s * 0.78).toFixed(2)})"`
-      + ` title="tasti ${from}\u2013${from + state.zoneWidth - 1}, copertura ${Math.round(s * 100)}%">${from}</button>`;
+      + ` title="${t('zone.cell', from, from + state.zoneWidth - 1, Math.round(s * 100))}">${from}</button>`;
   }
   $('strip').innerHTML = html;
 }
@@ -156,25 +155,28 @@ function renderBoard() {
   });
 }
 
+function invLabel(chord, bassIv) {
+  const k = V.inversion(chord, bassIv);
+  return k === null ? t('inv.x') : t('inv.' + k);
+}
+
 function renderVoicings() {
   const item = state.grid[state.index];
   const type = V.typeById(state.vtype);
-  $('vhint').textContent = type.hint;
+  $('vhint').textContent = t('vt.' + type.id + '.hint');
 
   if (!item || !item.ok) {
     $('vcount').textContent = '';
-    $('voices').innerHTML = '<p class="empty">Nessun accordo selezionato.</p>';
+    $('voices').innerHTML = `<p class="empty">${t('v.none')}</p>`;
     return;
   }
 
   const list = candidates(state.index);
   $('vcount').textContent = list.length
-    ? `\u2014 ${list.length} per ${item.chord.symbol}, tasti ${state.zoneFrom}\u2013${zoneTo()}`
-    : `\u2014 ${item.chord.symbol}`;
+    ? t('v.count', list.length, item.chord.symbol, state.zoneFrom, zoneTo())
+    : item.chord.symbol;
   if (!list.length) {
-    $('voices').innerHTML = `<p class="empty">Nessun ${type.name.toLowerCase()} per <b>${item.chord.symbol}</b>`
-      + ` fra il tasto ${state.zoneFrom} e il ${zoneTo()}. Allarga la zona, aumenta l\u2019apertura della mano`
-      + ` o cambia tipo di voicing.</p>`;
+    $('voices').innerHTML = `<p class="empty">${t('v.empty', t('vt.' + type.id + '.name'), state.zoneFrom, zoneTo())}</p>`;
     return;
   }
 
@@ -184,12 +186,12 @@ function renderVoicings() {
   $('voices').innerHTML = list.map((v, k) => {
     const mv = V.motion(prev, v);
     return `<div class="voice${cur === v ? ' sel' : ''}" data-voicing="${k}">
-      <div class="head"><h4>${v.label}</h4><span class="mv">${mv === null ? '' : 'moto ' + mv}</span></div>
-      <div class="meta">${V.describe(v, item.chord)} \u00b7 apertura ${v.span}</div>
+      <div class="head"><h4>${invLabel(item.chord, v.bassIv)}</h4><span class="mv">${mv === null ? '' : t('v.motion', mv)}</span></div>
+      <div class="meta">${V.describe(v, item.chord)} \u00b7 ${t('v.spanOf', v.span)}</div>
       ${R.diagram(item.chord, v, { open: open(), zoneFrom: state.zoneFrom, zoneTo: zoneTo(), flipped: state.flipped })}
       <div class="foot">
         <span class="deg">${V.degrees(v, item.chord)}</span>
-        <button class="play-s" data-hear="${k}" aria-label="ascolta">&#9654;</button>
+        <button class="play-s" data-hear="${k}" aria-label="${t('v.listen')}">&#9654;</button>
       </div></div>`;
   }).join('');
 }
@@ -289,11 +291,11 @@ function stop() {
   state.playing = false;
   clearTimeout(state.timer);
   clearFlashes();
-  $('pp').innerHTML = '&#9654; Play';
+  $('pp').innerHTML = '&#9654;';
 }
 function toggleTransport() {
   state.playing = !state.playing;
-  $('pp').innerHTML = state.playing ? '&#9632; Stop' : '&#9654; Play';
+  $('pp').innerHTML = state.playing ? '&#9632;' : '&#9654;';
   if (state.playing) { A.audio(); tick(); } else { clearTimeout(state.timer); clearFlashes(); }
 }
 
@@ -305,7 +307,7 @@ function optimiseVoiceLeading() {
   picks.forEach((p, i) => { if (p >= 0) state.pick[i] = p; });
   render();
   const total = totalMotion();
-  $('vlinfo').textContent = total === null ? '' : `moto complessivo: ${total} semitoni`;
+  $('vlinfo').textContent = total === null ? '' : t('v.total', total);
 }
 function totalMotion() {
   let sum = 0, prev = null, seen = false;
@@ -334,10 +336,10 @@ function buildTab() {
     v.shape.forEach((n, k) => current.columns.push({ si: n.si, f: n.f, newGroup: v.block && k === 0 }));
   });
 
-  const header = `griglia: ${$('seq').value}\n`
-    + `basso: ${TUNINGS[state.tuning].label}   zona: tasti ${state.zoneFrom}-${zoneTo()}   `
-    + `voicing: ${V.typeById(state.vtype).name}`;
+  const header = t('tab.head', $('seq').value, TUNINGS[state.tuning].label,
+    state.zoneFrom, zoneTo(), t('vt.' + state.vtype + '.name'));
   $('tab').textContent = Tab.render(bars, open(), state.flipped, +$('perline').value, header);
+  $('tab').dataset.vuoto = 'no';
 }
 
 // ---------------------------------------------------------------- eventi
@@ -349,15 +351,36 @@ function loadGrid(text, autozone) {
   render();
 }
 
+function buildMenus() {
+  const keep = { lib: $('lib').value, vtype: $('vtype').value, tun: $('tun').value,
+                 nfrets: $('nfrets').value, mode: $('mode').value, perline: $('perline').value };
+  $('lib').innerHTML = LIBRARY.map((x, i) => `<option value="${i}">${x[lang() === 'en' ? 1 : 0]}</option>`).join('');
+  $('vtype').innerHTML = V.VOICING_TYPES.map(x => `<option value="${x.id}">${t('vt.' + x.id + '.name')}</option>`).join('');
+  $('tun').innerHTML = Object.entries(TUNINGS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+  $('nfrets').innerHTML = [12, 15, 18, 24].map(n => `<option value="${n}">${t('set.fretsTo', n)}</option>`).join('');
+  $('mode').innerHTML = ['voicing', 'root', 'mute'].map(m => `<option value="${m}">${t('play.' + m)}</option>`).join('');
+  $('perline').innerHTML = [4, 2, 6].map(n => `<option value="${n}">${t('tab.perline', n)}</option>`).join('');
+  $('lib').value = keep.lib || '0';
+  $('vtype').value = keep.vtype || state.vtype;
+  $('tun').value = keep.tun || state.tuning;
+  $('nfrets').value = keep.nfrets || String(state.frets);
+  $('mode').value = keep.mode || state.playMode;
+  $('perline').value = keep.perline || '4';
+  $('tlab').textContent = state.labels === 'degrees' ? t('set.degrees') : t('set.names');
+  $('pp').innerHTML = state.playing ? '&#9632;' : '&#9654;';
+  $('zwv').textContent = t('zone.frets', state.zoneWidth);
+  if ($('tab').textContent.trim() === '' || $('tab').dataset.vuoto === 'si') {
+    $('tab').textContent = t('tab.press'); $('tab').dataset.vuoto = 'si';
+  }
+}
+
 function init() {
   initTheme();
+  initLang(() => { buildMenus(); render(); });
   parseGrid();
   render();
 
-  $('lib').innerHTML = LIBRARY.map((x, i) => `<option value="${i}">${x[0]}</option>`).join('');
-  $('lib').value = '0';
-  $('vtype').innerHTML = V.VOICING_TYPES.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-  $('tun').innerHTML = Object.entries(TUNINGS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+  buildMenus();
 
   $('go').onclick = () => { parseGrid(); render(); };
   $('seq').addEventListener('keydown', e => { if (e.key === 'Enter') { parseGrid(); render(); } });
@@ -370,7 +393,7 @@ function init() {
     attesa = setTimeout(() => { parseGrid(); render(); }, 550);
   });
 
-  $('libgo').onclick = () => loadGrid(LIBRARY[+$('lib').value][1], true);
+  $('libgo').onclick = () => { loadGrid(LIBRARY[+$('lib').value][2], true); $('dlgforme').close(); };
 
   $('vtype').onchange = e => {
     state.vtype = e.target.value;
@@ -399,7 +422,7 @@ function init() {
   $('zs').oninput = e => setZone(+e.target.value);
   $('zw').oninput = e => {
     state.zoneWidth = +e.target.value;
-    $('zwv').textContent = state.zoneWidth + ' tasti';
+    $('zwv').textContent = t('zone.frets', state.zoneWidth);
     $('zs').max = state.frets - state.zoneWidth + 1;
     state.pick = {}; cache = new Map();
     if (state.zoneFrom > state.frets - state.zoneWidth + 1) setZone(state.frets - state.zoneWidth + 1);
@@ -407,7 +430,7 @@ function init() {
   };
   $('tlab').onclick = e => {
     state.labels = state.labels === 'degrees' ? 'notes' : 'degrees';
-    e.target.textContent = state.labels === 'degrees' ? 'Gradi' : 'Note';
+    e.target.textContent = state.labels === 'degrees' ? t('set.degrees') : t('set.names');
     e.target.classList.toggle('on', state.labels === 'degrees');
     render();
   };
@@ -422,11 +445,12 @@ function init() {
   $('lock').onclick = e => { state.lockZone = !state.lockZone; e.target.classList.toggle('on', state.lockZone); };
 
   $('mktab').onclick = buildTab;
+  $('tab').dataset.vuoto = 'si';
   $('perline').onchange = buildTab;
   $('cptab').onclick = () => {
     navigator.clipboard && navigator.clipboard.writeText($('tab').textContent).then(() => {
-      $('cptab').textContent = 'Copiato';
-      setTimeout(() => { $('cptab').textContent = 'Copia'; }, 1200);
+      $('cptab').textContent = t('tab.copied');
+      setTimeout(() => { $('cptab').textContent = t('tab.copy'); }, 1200);
     });
   };
   $('dltab').onclick = () => {
@@ -441,13 +465,12 @@ function init() {
   $('irgo').onclick = () => {
     const info = $('irinfo'), list = $('irlist');
     const raw = $('ireal').value.trim();
-    if (!raw) { info.innerHTML = '<span class="err">Incolla prima un link.</span>'; return; }
+    if (!raw) { info.innerHTML = `<span class="err">${t('ir.empty')}</span>`; return; }
     let songs = [];
     try { songs = IReal.parse(raw); } catch (e) { songs = []; }
     if (!songs.length) {
       list.style.display = 'none';
-      info.innerHTML = '<span class="err">Non sono riuscito a leggere il link.</span> '
-        + 'Deve iniziare con irealb:// oppure irealbook://. In alternativa scrivi gli accordi a mano nella barra in alto.';
+      info.innerHTML = `<span class="err">${t('ir.bad')}</span>`;
       return;
     }
     state.songs = songs;
@@ -483,19 +506,43 @@ function init() {
 
   document.addEventListener('keydown', e => {
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+    if (document.querySelector('dialog[open]')) return;
     if (e.code === 'Space') { e.preventDefault(); toggleTransport(); }
     if (e.key === 'ArrowRight' && state.index < state.grid.length - 1) select(state.index + 1);
     if (e.key === 'ArrowLeft' && state.index > 0) select(state.index - 1);
   });
 
   $('spanwrap').style.display = 'none';
+
+  const dock = $('dock');
+  try {
+    const salvato = localStorage.getItem('manico-cassetto');
+    if (salvato === 'no') dock.dataset.aperto = 'no';
+  } catch (e) { /* archiviazione non disponibile */ }
+  $('docktab').onclick = () => {
+    const aperto = dock.dataset.aperto !== 'no';
+    dock.dataset.aperto = aperto ? 'no' : 'si';
+    try { localStorage.setItem('manico-cassetto', aperto ? 'no' : 'si'); } catch (e) { /* niente */ }
+  };
+
+  document.querySelectorAll('[data-apre]').forEach(b => {
+    b.onclick = () => {
+      const d = $(b.dataset.apre);
+      if (b.dataset.apre === 'dlgtab') buildTab();
+      if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+    };
+  });
+  document.querySelectorAll('dialog').forEach(d => {
+    d.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => d.close(); });
+    d.addEventListener('click', e => { if (e.target === d) d.close(); });
+  });
 }
 
 function loadSong(k) {
   const song = state.songs[k];
   if (!song) return;
   loadGrid(IReal.toGrid(song), true);
-  $('irinfo').textContent = `${song.title}${song.composer ? ' \u2014 ' + song.composer : ''} \u00b7 tonalit\u00e0 ${song.key} \u00b7 ${song.bars.length} battute`;
+  $('irinfo').textContent = t('ir.loaded', song.title, song.composer, song.key, song.bars.length);
 }
 
 window.MANICO = { versione: document.documentElement.dataset.versione || '?' };

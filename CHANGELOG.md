@@ -3,6 +3,26 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [2.0.0] — 2026-08-01
+
+### Aggiunto
+- Italiano e inglese, con due bandierine nella barra. La scelta resta memorizzata e alla
+  prima visita segue la lingua del browser. Tutti i testi passano da un dizionario unico,
+  compresi i nomi dei rivolti, dei tipi di voicing e delle forme armoniche.
+- Guida tradotta in `index.en.html`, collegata dalle stesse bandierine.
+
+### Modificato
+- Impianto rifatto attorno al manico. La pagina e' divisa in cinque fasce fisse: barra,
+  accordi, manico, cassetto dei voicing, attrezzi. Il manico prende tutto lo spazio che
+  resta e non ha piu' vuoti attorno.
+- I voicing stanno in un cassetto che si apre e chiude con un clic sulla sua linguetta,
+  la quale mostra sempre quanti ne ha trovati e per quale accordo. Chiuso, il manico si
+  allarga. La scelta resta memorizzata.
+- Forme armoniche, iReal, tab e impostazioni sono tornati in finestre, ma richiamate da
+  una barra di attrezzi con le etichette scritte, sempre visibile in fondo.
+- Il motore dei voicing non produce piu' testo: restituisce solo dati, e le etichette
+  vengono dalla lingua scelta.
+
 ## [1.5.0] — 2026-08-01
 
 ### Modificato

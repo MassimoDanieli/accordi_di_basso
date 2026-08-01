@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-versione="2.0.0">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manico — how to use it</title>
+<meta name="description" content="How to use Manico: chord charts, fretboard zones, voicing types, voice leading, ASCII tab and iReal Pro import.">
+<meta name="theme-color" content="#131110">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css?v=2.0.0">
+<script>
+  // Applicato subito, prima del disegno, per non far lampeggiare la pagina.
+  (function () {
+    var t = 'scuro';
+    try { var v = localStorage.getItem('manico-tema'); if (v === 'chiaro' || v === 'scuro') t = v; else
+      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'chiaro' : 'scuro';
+    } catch (e) {}
+    document.documentElement.setAttribute('data-tema', t);
+  })();
+</script>
+</head>
+<body>
+<div class="doc">
+
+  <div class="doc-bar">
+    <span class="brand">
+      <svg class="mark" viewBox="0 0 30 24" aria-hidden="true">
+        <rect x="0.5" y="2.5" width="29" height="19" rx="3" class="mk-board"/>
+        <line x1="4" y1="2.5" x2="4" y2="21.5" class="mk-nut"/>
+        <line x1="12" y1="2.5" x2="12" y2="21.5" class="mk-fret"/>
+        <line x1="20" y1="2.5" x2="20" y2="21.5" class="mk-fret"/>
+        <line x1="0.5" y1="6.5" x2="29.5" y2="6.5" class="mk-string"/>
+        <line x1="0.5" y1="11" x2="29.5" y2="11" class="mk-string"/>
+        <line x1="0.5" y1="15.5" x2="29.5" y2="15.5" class="mk-string"/>
+        <line x1="0.5" y1="20" x2="29.5" y2="20" class="mk-string"/>
+        <circle cx="16" cy="11" r="3.2" class="mk-dot"/>
+      </svg>
+      <span class="word">Manico<b>.</b></span>
+    </span>
+    <span class="grow"></span>
+    <span class="flags">
+      <button data-lang="it" onclick="location.href='index.html'" title="Italiano">🇮🇹</button>
+      <button data-lang="en" class="on" onclick="location.href='index.en.html'" title="English">🇬🇧</button>
+    </span>
+    <span class="ver">v2.0.0</span>
+    <button id="tema" class="tog">Chiaro</button>
+    <a class="cta" href="app.html">Open the tool &rarr;</a>
+  </div>
+
+  <h1>Voicings and positions on the bass fretboard</h1>
+  <p class="lede">Type a chord chart, choose a zone of four to seven frets, and Manico shows you which
+    voicings fit inside it, how to connect them with the least hand movement, plays them in time and
+    exports them as ASCII tab.</p>
+
+  <h2>1. Writing the chart</h2>
+  <p>The field at the top takes chords separated by spaces. A <b>space</b> starts a new bar, a
+    <b>comma</b> puts two chords inside the same bar.</p>
+  <pre>D-7 G7 C^7,A7 D-7</pre>
+  <p>That is four bars: the third holds two chords of half a bar each, and playback divides the time
+    accordingly.</p>
+
+  <h3>Symbols understood</h3>
+  <table>
+    <tr><th>Type this</th><th>You get</th></tr>
+    <tr><td>C  Cm  C-</td><td>major, minor (both notations work)</td></tr>
+    <tr><td>C7  C^7  Cmaj7  C-7  Cm7</td><td>dominant, major and minor sevenths</td></tr>
+    <tr><td>Ch7  Cm7b5</td><td>half diminished</td></tr>
+    <tr><td>Co7  Cdim7</td><td>diminished</td></tr>
+    <tr><td>C6  C69  Cadd9  Csus4  Caug</td><td>sixths, added notes, suspensions, augmented</td></tr>
+    <tr><td>C9  C11  C13  C7b9  C7#9  C7#5  Calt</td><td>extensions and alterations</td></tr>
+    <tr><td>C/E</td><td>chord over a specified bass note</td></tr>
+    <tr><td>N.C.</td><td>rest, no chord</td></tr>
+  </table>
+  <p>The shorthand <code>G-A-D</code> works too: a hyphen followed by a note letter separates bars,
+    while a hyphen followed by a digit means minor, as in <code>C-7</code>.</p>
+
+  <h2>2. The zone</h2>
+  <p>Two sliders under the neck set the first fret and the width of the zone. Everything the tool
+    proposes lives inside those frets: it is how you work a progression without leaving the position.</p>
+  <p>The <b>coverage by position</b> strip gives each starting point the share of chord tones you can
+    reach without shifting, measured on the worst chord in the chart. The darker the cell, the less
+    that position is worth. One click takes you there.</p>
+  <div class="note-box"><p>When the zone starts at fret 0 the open strings are included, and they do
+    not count towards the hand span.</p></div>
+
+  <h2>3. Voicing types</h2>
+  <table>
+    <tr><th>Type</th><th>Notes</th><th>What it is for</th></tr>
+    <tr><td>Arpeggio</td><td>all of them, in sequence</td><td>learning the position, walking lines</td></tr>
+    <tr><td>Shell</td><td>R + 7 + 3</td><td>the chord stripped to the bone, still unmistakable</td></tr>
+    <tr><td>Guide tones</td><td>3 + 7</td><td>comping, duo with a soloist</td></tr>
+    <tr><td>Tenths</td><td>R + 3</td><td>the classic bass and piano sound</td></tr>
+    <tr><td>Triad</td><td>R + 3 + 5</td><td>double stops and close position chords</td></tr>
+    <tr><td>Quartal</td><td>stacked fourths</td><td>modal colour, on minor sevenths</td></tr>
+  </table>
+  <p>Voicings played as a block must sit on separate, ascending strings, within the hand span you set,
+    from three to six frets. Each proposal names the bass note and therefore the inversion, the span it
+    asks for, and the degrees it contains. Click one to select it: that is what plays and what ends up
+    in the tab.</p>
+
+  <h2>4. Voice leading</h2>
+  <p><b>Optimise voice leading</b> walks the whole chart and picks, for each chord, the voicing that
+    minimises total movement: how far the individual voices travel plus how far the hand shifts. Each
+    card shows the motion in semitones from the previous chord, and the total appears alongside.</p>
+  <p>The optimiser never leaves the chosen zone: that would defeat the purpose.</p>
+
+  <h2>5. Playing</h2>
+  <p><b>Play</b>, or the space bar, loops the chart. While it runs, <b>each note lights up on the neck
+    exactly when you hear it</b>: one at a time for arpeggios, all together on the attack for block
+    voicings. It is the most direct way to tie what you see to what you hear.</p>
+  <ul>
+    <li>Tempo from 40 to 200 bpm, in 4/4, 3/4, 2/4 and 6/8.</li>
+    <li>The click accents the first beat of the bar.</li>
+    <li>By default the zone follows the current chord. With <b>Lock zone</b> it stays put: you remain in
+      position and see what is really under your fingers.</li>
+    <li>Left and right arrows step through the chords. Clicking a note on the neck sounds it.</li>
+  </ul>
+
+  <h2>6. ASCII tab</h2>
+  <p>Generates the tab of the chart using the voicings you picked, to copy or download as
+    <code>.txt</code>.</p>
+  <pre>   D-7               G7
+G |-----------5--7--|--------7--|
+D |--------7--------|--5--9-----|
+A |--5--8-----------|-----------|
+E |-----------------|-----------|</pre>
+
+  <h2>7. Importing from iReal Pro</h2>
+  <p>In iReal Pro use Share and copy the link of a song or a playlist, then paste it into the
+    <b>iReal</b> panel. Bars, repeats, repeat signs and bass notes are all read.</p>
+  <div class="note-box"><p>The link is decoded here in the browser: nothing is sent anywhere, and the
+    page makes no network requests. Charts of copyrighted standards are deliberately not bundled with
+    the tool for the same reason: you use your own.</p></div>
+  <p>The <b>Forms</b> panel instead holds generic shapes — blues, rhythm changes, cycles of II-V-I, the
+    Andalusian cadence, the major thirds cycle — and traditional tunes in the public domain.</p>
+
+  <h2>8. The bass</h2>
+  <p>Four tunings: four strings <code>E A D G</code>, five strings <code>B E A D G</code>, five with a
+    high C <code>E A D G C</code>, six strings <code>B E A D G C</code>. Strings are laid out as in tab,
+    highest on top; <b>Flip strings</b> turns the view over.</p>
+  <p>Fret spacing follows the real formula <code>1 &minus; 2^(&minus;n/12)</code>, so the drawing is an
+    actual neck and not a grid of equal steps.</p>
+
+  <p style="margin-top:30px"><a class="cta" href="app.html">Open the tool &rarr;</a></p>
+
+  <footer class="doc-foot">
+    Manico &copy; 2026 Massimo Danieli &middot; free software under
+    <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>, with no warranty &middot;
+    <a href="https://github.com/MassimoDanieli/accordi_di_basso">source on GitHub</a>
+  </footer>
+</div>
+
+<script type="module">
+  import { initTheme } from './src/theme.js?v=2.0.0';
+  initTheme();
+</script>
+</body>
+</html>

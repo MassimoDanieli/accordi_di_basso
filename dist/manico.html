@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="it" data-versione="1.5.0">
+<html lang="it" data-versione="2.0.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Manico — voicing e posizioni per basso elettrico</title>
-<meta name="description" content="Visualizzatore di accordi, voicing e voice leading sul manico del basso elettrico. Esporta in tab ASCII e importa le griglie da iReal Pro.">
+<title>Manico</title>
 <meta name="theme-color" content="#131110">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,144 +42,159 @@ body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);
 }
 
 /* ------------------------------------------------------------------ barra */
-.bar{display:flex;align-items:flex-end;gap:12px;padding:14px 18px 12px;
-  border-bottom:1px solid var(--line);flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;padding-bottom:5px}
-.brand .word{font-weight:700;font-size:17px;letter-spacing:-.015em}
+body{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;height:100vh;height:100dvh;overflow:hidden}
+.bar{display:flex;align-items:center;gap:9px;padding:0 16px;height:56px;
+  border-bottom:1px solid var(--line);background:var(--panel);flex:none}
+.brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;flex:none}
+.brand .word{font-weight:700;font-size:16px;letter-spacing:-.015em}
 .brand .word b{color:var(--root)}
 .brand:hover .word{color:var(--root)}
 .mark{width:30px;height:24px;flex:none}
-.mk-board{fill:var(--wood);stroke:none}
-.mk-nut{stroke:var(--nut);stroke-width:2.4}
+.mk-board{fill:var(--wood)} .mk-nut{stroke:var(--nut);stroke-width:2.4}
 .mk-fret{stroke:var(--fretwire);stroke-width:1.1;opacity:.75}
-.mk-string{stroke:var(--string);stroke-width:.9;opacity:.65}
-.mk-dot{fill:var(--root)}
-.bar-links{display:flex;align-items:center;gap:10px;padding-bottom:5px}
-.bar-links a{color:var(--muted);font-size:13px;text-decoration:none;border-bottom:1px solid var(--line-2)}
-.bar-links a:hover{color:var(--root);border-color:var(--root)}
-.cap{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);white-space:nowrap}
-.grid-in{flex:1;min-width:260px;display:flex;flex-direction:column;gap:5px}
-.tempo{display:flex;flex-direction:column;gap:5px}
-.tempo-row{display:flex;align-items:center;gap:9px}
-.tempo input[type=range]{width:110px}
-.tip{margin:8px 18px 0;font-size:12px;color:var(--faint);line-height:1.6}
-.tip a{color:var(--muted)}
-.tip a:hover{color:var(--root)}
-.ver{font-family:var(--mono);font-size:11px;color:var(--faint);margin-left:10px;
-  border:1px solid var(--line);border-radius:4px;padding:1px 6px}
-.tip b{color:var(--muted);font-weight:500}
-.tip code{background:var(--panel-2);padding:1px 5px;border-radius:4px;font-family:var(--mono);color:var(--muted)}
+.mk-string{stroke:var(--string);stroke-width:.9;opacity:.65} .mk-dot{fill:var(--root)}
+.bar input[type=text]{flex:1;min-width:150px;max-width:520px}
+.sep{width:1px;height:22px;background:var(--line-2);flex:none}
+.tempo{display:flex;align-items:center;gap:8px;flex:none}
+.tempo input[type=range]{width:96px}
+.grow{flex:1}
+.flags{display:flex;gap:4px;flex:none}
+.flags button{padding:5px 8px;font-size:15px;line-height:1;opacity:.42;border-color:transparent}
+.flags button.on{opacity:1;border-color:var(--root);background:var(--panel-2)}
+.ver{font-family:var(--mono);font-size:10px;color:var(--faint);border:1px solid var(--line);
+  border-radius:4px;padding:1px 5px;flex:none}
+.cap{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);white-space:nowrap}
 
 /* ------------------------------------------------------------- controlli */
 input[type=text],textarea,select{background:var(--panel-2);border:1px solid var(--line-2);
-  color:var(--paper);border-radius:var(--r);padding:9px 11px;font:inherit;outline:none;max-width:100%}
-input[type=text]{width:100%;font-family:var(--mono);font-size:14px}
+  color:var(--paper);border-radius:var(--r);padding:8px 10px;font:inherit;outline:none;max-width:100%}
+input[type=text]{font-family:var(--mono);font-size:14px}
 textarea{width:100%;min-height:84px;resize:vertical;font-family:var(--mono);font-size:12px;line-height:1.5}
 select{cursor:pointer;font-size:13px}
 input:focus,textarea:focus,select:focus{border-color:var(--root)}
 button{background:transparent;border:1px solid var(--line-2);color:var(--paper);border-radius:var(--r);
-  padding:9px 12px;font:inherit;font-size:13px;cursor:pointer;
-  transition:background .12s,border-color .12s;white-space:nowrap}
+  padding:8px 11px;font:inherit;font-size:13px;cursor:pointer;
+  transition:background .12s,border-color .12s,opacity .12s;white-space:nowrap}
 button:hover{background:var(--panel-2);border-color:var(--faint)}
 button:active{transform:scale(.98)}
 :focus-visible{outline:2px solid var(--root);outline-offset:2px}
 button.pri{background:var(--root);border-color:var(--root);color:#221803;font-weight:500}
 button.pri:hover{background:#F0BC61}
-.play{min-width:82px}
+.play{min-width:44px;font-size:12px}
 .tog{font-size:12px;padding:7px 10px}
 .tog.on{background:var(--panel-2);border-color:var(--root);color:var(--root)}
-.togs{display:flex;gap:7px;flex-wrap:wrap}
+.togs{display:flex;gap:6px;flex-wrap:wrap}
 .val{font-family:var(--mono);font-size:12px;color:var(--paper);white-space:nowrap}
 .val.dim{color:var(--faint)}
-.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.mini{display:flex;align-items:center;gap:8px;flex:none}
+.mini input[type=range]{width:104px}
 .field{display:flex;align-items:center;gap:12px;margin-bottom:10px}
-.field>span:first-child{width:118px;flex:none;font-size:12px;color:var(--muted)}
+.field>span:first-child{width:126px;flex:none;font-size:12px;color:var(--muted)}
 .field select{flex:1;min-width:0}
-.hint{font-size:12px;color:var(--faint);line-height:1.7;margin:8px 0 0}
+.hint{font-size:12px;color:var(--faint);line-height:1.7;margin:0}
 .hint b{color:var(--muted);font-weight:500}
 .hint code{background:var(--panel-2);padding:1px 5px;border-radius:4px;font-family:var(--mono)}
 .err{color:#D9695A}
-
 input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;margin:0;height:18px}
 input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--line-2);border-radius:2px}
 input[type=range]::-moz-range-track{height:3px;background:var(--line-2);border-radius:2px}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
-  background:var(--root);margin-top:-6px;cursor:pointer}
-input[type=range]::-moz-range-thumb{width:15px;height:15px;border:0;border-radius:50%;background:var(--root);cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--root);margin-top:-5.5px;cursor:pointer}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--root);cursor:pointer}
 
 /* ---------------------------------------------------------------- accordi */
-.ribbon{display:flex;align-items:center;gap:6px;padding:10px 18px 8px;overflow-x:auto;scrollbar-width:thin}
-.chip{padding:8px 13px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
-  font-family:var(--mono);font-size:14px;font-weight:600;color:var(--paper);flex:none}
+.ribbon{display:flex;align-items:center;gap:6px;padding:9px 16px;overflow-x:auto;flex:none;
+  border-bottom:1px solid var(--line);scrollbar-width:thin}
+.chip{padding:7px 12px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
+  font-family:var(--mono);font-size:13px;font-weight:600;color:var(--paper);flex:none}
 button.chip:hover{border-color:var(--faint)}
 .chip.on{background:var(--root);border-color:var(--root);color:#221803}
 .chip.bad{color:#D9695A;border-style:dashed}
 .chip.rest{color:var(--faint)}
-.bl{color:var(--faint);font-family:var(--mono);user-select:none;flex:none;padding:0 2px}
+.bl{color:var(--faint);font-family:var(--mono);user-select:none;flex:none}
 
-/* ------------------------------------------------------------- manico e zona */
-.board{display:flex;align-items:flex-start;justify-content:center;padding:8px 18px 2px;overflow-x:auto}
-.board svg{width:100%;height:auto;max-height:42vh;min-width:560px}
+/* ------------------------------------------------------- manico e zona */
+.stage{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0}
+.board{display:flex;align-items:center;justify-content:center;padding:10px 20px;min-height:0;overflow:auto}
+.board svg{width:100%;height:auto;max-height:100%;min-width:560px}
 .board .note{cursor:pointer}
-
-.zonebar{padding:10px 18px 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel);
-  display:flex;flex-direction:column;gap:10px}
-.zline{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.mini{display:flex;align-items:center;gap:8px;flex:none}
-.mini input[type=range]{width:120px}
+.zoneline{display:flex;align-items:center;gap:16px;padding:9px 18px;flex-wrap:wrap;
+  border-top:1px solid var(--line);background:var(--panel)}
 .zdesc{font-size:12px;color:var(--muted)}
-.strip{display:flex;gap:2px;flex:1;min-width:200px}
-.cell{flex:1;height:24px;padding:0;border-radius:3px;border:1px solid transparent;
+.strip{display:flex;gap:2px;flex:1;min-width:180px}
+.cell{flex:1;height:22px;padding:0;border-radius:3px;border:1px solid transparent;
   font-size:10px;font-family:var(--mono);color:rgba(0,0,0,.6);min-width:0}
 .cell:hover{border-color:var(--faint)}
 .cell.sel{border-color:var(--paper)}
-.key{display:flex;gap:14px;font-size:11px;color:var(--faint);flex-wrap:wrap;align-items:center}
+.key{display:flex;gap:13px;font-size:11px;color:var(--faint);flex-wrap:wrap;align-items:center}
 .key i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
 
-/* ---------------------------------------------------------------- voicing */
+/* --------------------------------------------------------------- cassetto */
+.dock{background:var(--panel);border-top:1px solid var(--line-2);display:grid;
+  grid-template-rows:auto 0fr;transition:grid-template-rows .28s ease;min-height:0}
+.dock[data-aperto="si"]{grid-template-rows:auto 1fr}
+.dock-body{overflow:hidden;min-height:0}
+.dock-tab{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:0;
+  background:transparent;padding:9px 18px;text-align:left}
+.dock-tab:hover{background:var(--panel-2)}
+.dock-title{font-size:13px;font-weight:600;letter-spacing:.02em}
+.dock-sub{font-size:12px;color:var(--faint);font-weight:400;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dock-chevron{color:var(--root);transition:transform .28s ease}
+.dock[data-aperto="si"] .dock-chevron{transform:rotate(180deg)}
+.vhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:2px 18px 10px}
+.vhead select{min-width:160px}
+.vhead .hint{max-width:36ch}
+.voices{overflow-y:auto;overscroll-behavior:contain;padding:0 18px 14px;max-height:34vh;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:11px;align-content:start}
 .voice{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
-  padding:10px 11px;cursor:pointer;transition:border-color .12s}
+  padding:9px 10px;cursor:pointer;transition:border-color .12s}
 .voice:hover{border-color:var(--line-2)}
 .voice.sel{border-color:var(--root)}
 .voice .head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .voice h4{margin:0;font-size:12px;font-weight:500}
 .voice .mv{font-family:var(--mono);font-size:10px;color:var(--faint);white-space:nowrap}
-.voice .meta{font-size:10px;color:var(--faint);font-family:var(--mono);margin:3px 0 7px}
+.voice .meta{font-size:10px;color:var(--faint);font-family:var(--mono);margin:3px 0 6px}
 .voice svg{display:block;width:100%;height:auto}
-.voice .foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px}
+.voice .foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:5px}
 .voice .deg{font-family:var(--mono);font-size:11px;color:var(--muted)}
-.play-s{padding:4px 9px;font-size:11px}
-.empty{color:var(--faint);font-size:12px;line-height:1.7;padding:10px 0}
+.play-s{padding:3px 8px;font-size:10px}
+.empty{color:var(--faint);font-size:12px;line-height:1.7;padding:6px 0;grid-column:1/-1}
 
-/* --------------------------------------------------------------- pannelli */
-.panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;
-  padding:22px 18px 40px;border-top:1px solid var(--line-2);background:var(--ink)}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
-.panel.wide{grid-column:1/-1}
-.panel h2{margin:0 0 10px;font-size:13px;font-weight:600;letter-spacing:.02em}
-pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r);padding:13px;margin:12px 0 0;
+/* ----------------------------------------------------------------- attrezzi */
+.tools{display:flex;align-items:center;gap:8px;padding:8px 18px;flex:none;
+  border-top:1px solid var(--line);background:var(--panel-2)}
+.tools a{font-size:12.5px;color:var(--muted);text-decoration:none;
+  border:1px solid var(--line-2);border-radius:var(--r);padding:7px 11px}
+.tools a:hover,.tools button:hover{color:var(--root);border-color:var(--root)}
+.tools button{font-size:12.5px;color:var(--muted)}
+
+/* --------------------------------------------------------------- finestre */
+dialog{background:var(--panel);color:var(--paper);border:1px solid var(--line-2);border-radius:12px;
+  padding:20px;width:min(500px,93vw);max-height:88vh;overflow:auto;font-family:var(--sans)}
+dialog.wide{width:min(780px,95vw)}
+dialog::backdrop{background:rgba(10,9,8,.74)}
+dialog h2{margin:0 0 10px;font-size:14px;font-weight:600}
+dialog .hint{margin-bottom:12px}
+dialog select[size]{width:100%;margin-bottom:4px}
+.dlg-foot{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin:0;
   overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.55;white-space:pre}
-.foot{grid-column:1/-1;font-size:11px;color:var(--faint);line-height:1.8;padding-top:6px}
-.foot a{color:var(--muted)}
 
 /* La nota che sta suonando si accende. */
-@keyframes hitpulse{
-  0%{transform:scale(1.5)}
-  55%{transform:scale(1.08)}
-  100%{transform:scale(1)}
-}
+@keyframes hitpulse{0%{transform:scale(1.5)}55%{transform:scale(1.08)}100%{transform:scale(1)}}
 .note.hit{opacity:1!important;transform-box:fill-box;transform-origin:center;
   animation:hitpulse .42s cubic-bezier(.2,.8,.3,1)}
 .note.hit circle{filter:drop-shadow(0 0 7px rgba(233,176,74,.75))}
 [data-tema="chiaro"] .note.hit circle{filter:drop-shadow(0 0 6px rgba(0,0,0,.35))}
 
 @media (max-width:900px){
-  .deck{min-height:0}
-  .board svg{min-width:560px}
-  .field>span:first-child{width:96px}
+  body{height:auto;overflow:auto;display:block}
+  .bar{flex-wrap:wrap;height:auto;padding:10px 14px}
+  .board svg{min-width:520px}
+  .voices{max-height:none;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+  .field>span:first-child{width:100px}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
-
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 /* ---------------------------------------------------------------- guida */
 .doc{max-width:860px;margin:0 auto;padding:34px 22px 72px}
@@ -248,181 +262,156 @@ html{scroll-behavior:smooth}
 </head>
 <body>
 
-<!-- ============================================================ banco di lavoro -->
-<div class="deck">
+<header class="bar">
+  <a class="brand" href="https://basso.massimodanieli.com/" data-tt="bar.guide">
+    <svg class="mark" viewBox="0 0 30 24" aria-hidden="true">
+      <rect x="0.5" y="2.5" width="29" height="19" rx="3" class="mk-board"/>
+      <line x1="4" y1="2.5" x2="4" y2="21.5" class="mk-nut"/>
+      <line x1="12" y1="2.5" x2="12" y2="21.5" class="mk-fret"/>
+      <line x1="20" y1="2.5" x2="20" y2="21.5" class="mk-fret"/>
+      <line x1="0.5" y1="6.5" x2="29.5" y2="6.5" class="mk-string"/>
+      <line x1="0.5" y1="11" x2="29.5" y2="11" class="mk-string"/>
+      <line x1="0.5" y1="15.5" x2="29.5" y2="15.5" class="mk-string"/>
+      <line x1="0.5" y1="20" x2="29.5" y2="20" class="mk-string"/>
+      <circle cx="16" cy="11" r="3.2" class="mk-dot"/>
+    </svg>
+    <span class="word">Manico<b>.</b></span>
+  </a>
 
-  <header class="bar">
-    <a class="brand" href="https://basso.massimodanieli.com/" title="Guida all'uso">
-      <svg class="mark" viewBox="0 0 30 24" aria-hidden="true">
-        <rect x="0.5" y="2.5" width="29" height="19" rx="3" class="mk-board"/>
-        <line x1="4" y1="2.5" x2="4" y2="21.5" class="mk-nut"/>
-        <line x1="12" y1="2.5" x2="12" y2="21.5" class="mk-fret"/>
-        <line x1="20" y1="2.5" x2="20" y2="21.5" class="mk-fret"/>
-        <line x1="0.5" y1="6.5" x2="29.5" y2="6.5" class="mk-string"/>
-        <line x1="0.5" y1="11" x2="29.5" y2="11" class="mk-string"/>
-        <line x1="0.5" y1="15.5" x2="29.5" y2="15.5" class="mk-string"/>
-        <line x1="0.5" y1="20" x2="29.5" y2="20" class="mk-string"/>
-        <circle cx="16" cy="11" r="3.2" class="mk-dot"/>
-      </svg>
-      <span class="word">Manico<b>.</b></span>
-    </a>
+  <input type="text" id="seq" value="C-7 F7 Bbdim7 Ebdim7" spellcheck="false" autocomplete="off"
+         data-tt="bar.gridTitle" aria-label="chart">
+  <button class="pri" id="go" data-t="bar.show">Mostra</button>
 
-    <label class="grid-in">
-      <span class="cap">Griglia di accordi</span>
-      <input type="text" id="seq" value="C-7 F7 Bbdim7 Ebdim7" spellcheck="false" autocomplete="off">
-    </label>
-    <button class="pri" id="go">Mostra</button>
+  <span class="sep"></span>
+  <button class="pri play" id="pp">&#9654;</button>
+  <label class="tempo" data-tt="bar.tempo">
+    <input type="range" id="bpm" min="40" max="200" step="1" value="92">
+    <span class="val" id="bpmv">92</span>
+  </label>
 
-    <span class="bar-links">
-      <a href="https://basso.massimodanieli.com/">Guida</a>
-      <button id="tema" class="tog">Chiaro</button>
+  <span class="grow"></span>
+
+  <span class="flags">
+    <button data-lang="it" title="Italiano" aria-label="Italiano"><span class="fl">🇮🇹</span></button>
+    <button data-lang="en" title="English" aria-label="English"><span class="fl">🇬🇧</span></button>
+  </span>
+  <button id="tema" class="tog">Chiaro</button>
+  <span class="ver">v2.0.0</span>
+</header>
+
+<nav class="ribbon" id="chips"></nav>
+
+<main class="stage">
+  <div class="board" id="board"></div>
+
+  <div class="zoneline">
+    <label class="mini"><span class="cap" data-t="zone.from">Zona, dal tasto</span>
+      <input type="range" id="zs" min="0" max="8" step="1" value="0"><span class="val" id="zsv">0</span></label>
+    <label class="mini"><span class="cap" data-t="zone.width">ampiezza</span>
+      <input type="range" id="zw" min="3" max="7" step="1" value="5"><span class="val" id="zwv">5</span></label>
+    <span class="zdesc" id="zdesc"></span>
+    <div class="strip" id="strip" data-tt="zone.coverageTitle"></div>
+    <span class="key">
+      <span><i style="background:var(--root)"></i><span data-t="key.root">fondamentale</span></span>
+      <span><i style="background:var(--third)"></i><span data-t="key.third">terza</span></span>
+      <span><i style="background:var(--fifth)"></i><span data-t="key.fifth">quinta</span></span>
+      <span><i style="background:var(--sev)"></i><span data-t="key.sev">sesta e settima</span></span>
+      <span><i style="background:var(--ext)"></i><span data-t="key.ext">estensioni</span></span>
     </span>
-
-    <label class="tempo">
-      <span class="cap">Tempo</span>
-      <span class="tempo-row">
-        <button class="play" id="pp">&#9654; Play</button>
-        <input type="range" id="bpm" min="40" max="200" step="1" value="92">
-        <span class="val" id="bpmv">92</span>
-      </span>
-    </label>
-  </header>
-
-  <p class="tip">Spazio fra le battute, virgola dentro la battuta: <code>D-7 G7 C^7,A7</code> &middot;
-     <a href="https://basso.massimodanieli.com/">guida completa</a> <span class="ver">v1.5.0</span></p>
-
-  <nav class="ribbon" id="chips" aria-label="Accordi della griglia"></nav>
-
-  <main class="board" id="board"></main>
-
-  <div class="zonebar">
-    <div class="zline">
-      <label class="mini"><span class="cap">Zona, dal tasto</span>
-        <input type="range" id="zs" min="0" max="8" step="1" value="0"><span class="val" id="zsv">0</span></label>
-      <label class="mini"><span class="cap">ampiezza</span>
-        <input type="range" id="zw" min="3" max="7" step="1" value="5"><span class="val" id="zwv">5 tasti</span></label>
-      <span class="zdesc" id="zdesc"></span>
-      <span class="grow"></span>
-      <span class="key">
-        <span><i style="background:var(--root)"></i>fondamentale</span>
-        <span><i style="background:var(--third)"></i>terza</span>
-        <span><i style="background:var(--fifth)"></i>quinta</span>
-        <span><i style="background:var(--sev)"></i>sesta e settima</span>
-        <span><i style="background:var(--ext)"></i>estensioni</span>
-      </span>
-    </div>
-    <div class="zline">
-      <span class="cap">Copertura per posizione</span>
-      <div class="strip" id="strip" title="Percentuale di note raggiungibili senza spostarsi, sul peggiore accordo della griglia"></div>
-    </div>
   </div>
+</main>
 
-  <section class="voicing">
+<section class="dock" id="dock" data-aperto="si">
+  <button class="dock-tab" id="docktab">
+    <span class="dock-title" data-t="v.title">Voicing</span>
+    <span class="dock-sub" id="vcount"></span>
+    <span class="dock-chevron" aria-hidden="true">&#9662;</span>
+  </button>
+
+  <div class="dock-body">
     <div class="vhead">
-      <h2>Voicing <small id="vcount"></small></h2>
-      <label class="mini"><span class="cap">Tipo</span><select id="vtype"></select></label>
-      <label class="mini" id="spanwrap"><span class="cap">apertura mano</span>
+      <label class="mini"><span class="cap" data-t="v.type">Tipo</span><select id="vtype"></select></label>
+      <label class="mini" id="spanwrap"><span class="cap" data-t="v.span">apertura mano</span>
         <input type="range" id="span" min="3" max="6" step="1" value="4"><span class="val" id="spanv">4</span></label>
-      <button id="vl">Ottimizza voice leading</button>
+      <button id="vl" data-t="v.lead">Ottimizza voice leading</button>
       <span class="val dim" id="vlinfo"></span>
       <span class="grow"></span>
       <span class="hint" id="vhint"></span>
     </div>
     <div class="voices" id="voices"></div>
-  </section>
+  </div>
+</section>
 
-  <nav class="shelf" aria-label="Altri comandi">
-    <span class="shelf-cap">Altro qui sotto</span>
-    <a href="#p-strumento">Strumento e vista</a>
-    <a href="#p-esecuzione">Esecuzione</a>
-    <a href="#p-forme">Forme armoniche</a>
-    <a href="#p-ireal">Importa da iReal</a>
-    <a href="#p-tab">Tab ASCII</a>
-    <span class="shelf-arrow" aria-hidden="true">&darr;</span>
-  </nav>
-</div>
+<nav class="tools">
+  <button data-apre="dlgforme" data-t="bar.forms">Forme</button>
+  <button data-apre="dlgireal" data-t="bar.ireal">iReal</button>
+  <button data-apre="dlgtab" data-t="bar.tab">Tab</button>
+  <button data-apre="dlgset" data-t="bar.settings">Impostazioni</button>
+  <a href="https://basso.massimodanieli.com/" data-t="bar.guide">Guida</a>
+</nav>
 
-<!-- ================================================================ pannelli -->
-<div class="panels">
+<dialog id="dlgforme">
+  <h2 data-t="lib.title">Forme armoniche</h2>
+  <p class="hint" data-th="lib.hint"></p>
+  <select id="lib" size="12"></select>
+  <div class="dlg-foot"><span class="grow"></span>
+    <button data-close data-t="close">Chiudi</button>
+    <button class="pri" id="libgo" data-t="lib.load">Carica</button></div>
+</dialog>
 
-  <section class="panel" id="p-strumento">
-    <h2>Strumento e vista</h2>
-    <label class="field"><span>Basso</span><select id="tun"></select></label>
-    <label class="field"><span>Tasti mostrati</span>
-      <select id="nfrets"><option value="12">fino al 12</option><option value="15">fino al 15</option><option value="18">fino al 18</option><option value="24">fino al 24</option></select>
-    </label>
-    <div class="field"><span>Note sul manico</span>
-      <div class="togs">
-        <button class="tog on" id="tlab">Gradi</button>
-        <button class="tog" id="tflip">Inverti corde</button>
-        <button class="tog on" id="tdim">Sfuma fuori zona</button>
-      </div>
+<dialog id="dlgireal">
+  <h2 data-t="ir.title">Importa da iReal Pro</h2>
+  <p class="hint" data-th="ir.hint"></p>
+  <textarea id="ireal" spellcheck="false" placeholder="irealb://..."></textarea>
+  <select id="irlist" style="display:none;margin-top:10px"></select>
+  <p class="hint" id="irinfo"></p>
+  <div class="dlg-foot"><span class="grow"></span>
+    <button data-close data-t="close">Chiudi</button>
+    <button class="pri" id="irgo" data-t="ir.go">Importa</button></div>
+</dialog>
+
+<dialog id="dlgtab" class="wide">
+  <h2 data-t="tab.title">Tab ASCII</h2>
+  <p class="hint" data-th="tab.hint"></p>
+  <pre id="tab"></pre>
+  <div class="dlg-foot">
+    <select id="perline"><option value="4">4</option><option value="2">2</option><option value="6">6</option></select>
+    <span class="grow"></span>
+    <button data-close data-t="close">Chiudi</button>
+    <button id="dltab" data-t="tab.dl">Scarica</button>
+    <button id="cptab" data-t="tab.copy">Copia</button>
+    <button class="pri" id="mktab" data-t="tab.make">Genera</button>
+  </div>
+</dialog>
+
+<dialog id="dlgset">
+  <h2 data-t="set.title">Strumento e vista</h2>
+  <label class="field"><span data-t="set.bass">Basso</span><select id="tun"></select></label>
+  <label class="field"><span data-t="set.frets">Tasti mostrati</span><select id="nfrets"></select></label>
+  <div class="field"><span data-t="set.notes">Note sul manico</span>
+    <div class="togs">
+      <button class="tog on" id="tlab">Gradi</button>
+      <button class="tog" id="tflip" data-t="set.flip">Inverti corde</button>
+      <button class="tog on" id="tdim" data-t="set.dim">Sfuma fuori zona</button>
     </div>
-    <p class="hint"><b>Gradi</b> mostra R, 3, 5, ♭7 invece dei nomi delle note. <b>Inverti corde</b> mette la corda
-      piu grave in alto, al posto della disposizione da tab. <b>Sfuma fuori zona</b> lascia visibili in trasparenza
-      le note che stanno fuori dalla zona scelta.</p>
-  </section>
+  </div>
+  <p class="hint" data-th="set.viewHint"></p>
 
-  <section class="panel" id="p-esecuzione">
-    <h2>Esecuzione</h2>
-    <label class="field"><span>Metro</span>
-      <select id="beats"><option value="4">4/4</option><option value="3">3/4</option><option value="2">2/4</option><option value="6">6/8</option></select>
-    </label>
-    <label class="field"><span>Cosa suona</span>
-      <select id="mode">
-        <option value="voicing">il voicing scelto</option>
-        <option value="root">solo la fondamentale</option>
-        <option value="mute">niente, solo il click</option>
-      </select>
-    </label>
-    <div class="field"><span>Opzioni</span>
-      <div class="togs">
-        <button class="tog on" id="clk">Click</button>
-        <button class="tog" id="lock">Zona fissa</button>
-      </div>
+  <h2 style="margin-top:22px" data-t="play.title">Esecuzione</h2>
+  <label class="field"><span data-t="play.meter">Metro</span>
+    <select id="beats"><option value="4">4/4</option><option value="3">3/4</option><option value="2">2/4</option><option value="6">6/8</option></select>
+  </label>
+  <label class="field"><span data-t="play.what">Cosa suona</span><select id="mode"></select></label>
+  <div class="field"><span data-t="play.options">Opzioni</span>
+    <div class="togs">
+      <button class="tog on" id="clk" data-t="play.click">Click</button>
+      <button class="tog" id="lock" data-t="play.lock">Zona fissa</button>
     </div>
-    <p class="hint"><b>Zona fissa</b> impedisce alla zona di inseguire l'accordo corrente: resti in posizione e vedi
-      cosa hai davvero sotto le dita.</p>
-  </section>
-
-  <section class="panel" id="p-forme">
-    <h2>Forme armoniche</h2>
-    <p class="hint">Forme generiche e brani tradizionali di pubblico dominio. Per gli standard usa l'importazione
-      dalle tue carte iReal.</p>
-    <div class="row"><select id="lib" style="flex:1"></select><button class="pri" id="libgo">Carica</button></div>
-  </section>
-
-  <section class="panel" id="p-ireal">
-    <h2>Importa da iReal Pro</h2>
-    <p class="hint">Incolla un link <code>irealb://</code> o <code>irealbook://</code> preso dal tasto Condividi
-      dell'app. Viene letto qui nel browser: non esce niente dalla pagina.</p>
-    <textarea id="ireal" spellcheck="false" placeholder="irealb://..."></textarea>
-    <div class="row"><select id="irlist" style="flex:1;display:none"></select><button class="pri" id="irgo">Importa</button></div>
-    <p class="hint" id="irinfo"></p>
-  </section>
-
-  <section class="panel wide" id="p-tab">
-    <h2>Tab ASCII</h2>
-    <p class="hint">Usa il voicing selezionato per ogni accordo. Clicca una card di voicing per cambiarlo, poi rigenera.</p>
-    <div class="row">
-      <button class="pri" id="mktab">Genera</button>
-      <button id="cptab">Copia</button>
-      <button id="dltab">Scarica .txt</button>
-      <select id="perline" style="max-width:190px">
-        <option value="4">4 battute per riga</option>
-        <option value="2">2 battute per riga</option>
-        <option value="6">6 battute per riga</option>
-      </select>
-    </div>
-    <pre id="tab">Premi Genera.</pre>
-  </section>
-
-  <footer class="foot">
-    Manico &copy; 2026 Massimo Danieli &middot; software libero sotto
-    <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>, senza alcuna garanzia &middot;
-    <a href="https://github.com/MassimoDanieli/accordi_di_basso">sorgenti su GitHub</a>
-  </footer>
-</div>
+  </div>
+  <p class="hint" data-th="play.hint"></p>
+  <p class="hint" data-th="foot"></p>
+  <div class="dlg-foot"><span class="grow"></span><button class="pri" data-close data-t="close">Chiudi</button></div>
+</dialog>
 
 <script>
 (function () {
@@ -563,12 +552,12 @@ __mod.voicings = (function () {
 
 
   const VOICING_TYPES = [
-    { id: 'arp',     name: 'Arpeggio',            block: false, size: 0, hint: 'tutte le note dell\u2019accordo in successione' },
-    { id: 'shell',   name: 'Shell — R + 7 + 3',   block: true,  size: 3, hint: 'fondamentale e le due note guida' },
-    { id: 'guide',   name: 'Note guida — 3 + 7',  block: true,  size: 2, hint: 'solo terza e settima, per il comping' },
-    { id: 'tenth',   name: 'Decime — R + 3',      block: true,  size: 2, hint: 'fondamentale e terza a un\u2019ottava e mezza' },
-    { id: 'triad',   name: 'Triade — R + 3 + 5',  block: true,  size: 3, hint: 'triade in posizione stretta' },
-    { id: 'quartal', name: 'Quartale',            block: true,  size: 3, hint: 'quarte sovrapposte, dove l\u2019accordo lo consente' }
+    { id: 'arp',     block: false, size: 0 },
+    { id: 'shell',   block: true,  size: 3 },
+    { id: 'guide',   block: true,  size: 2 },
+    { id: 'tenth',   block: true,  size: 2 },
+    { id: 'triad',   block: true,  size: 3 },
+    { id: 'quartal', block: true,  size: 3 }
   ];
 
   function typeById(id) { return VOICING_TYPES.find(t => t.id === id) || VOICING_TYPES[0]; }
@@ -647,17 +636,16 @@ __mod.voicings = (function () {
     return f.length ? Math.max(...f) - Math.min(...f) : 0;
   }
 
-  const INVERSION = ['fondamentale al basso', '1\u00b0 rivolto', '2\u00b0 rivolto', '3\u00b0 rivolto', '4\u00b0 rivolto', '5\u00b0 rivolto'];
-
-  function inversionLabel(chord, bassIv) {
-    if (bassIv === -1) return 'nota al basso indicata';
+  /** -1 nota al basso indicata, 0..n rivolto, null estensione. */
+  function inversion(chord, bassIv) {
+    if (bassIv === -1) return -1;
     const k = chord.intervals.indexOf(bassIv);
-    return k >= 0 ? (INVERSION[k] || 'estensione al basso') : 'estensione al basso';
+    return k >= 0 && k <= 5 ? k : null;
   }
 
   /**
    * Genera i voicing di un accordo dentro la zona.
-   * Ritorna un array di { shape, bassIv, span, label, block }.
+   * Ritorna un array di { shape, bassIv, span, block }.
    */
   function generate(chord, open, from, to, type, maxSpan) {
     const notes = zoneNotes(chord, open, from, to);
@@ -672,7 +660,7 @@ __mod.voicings = (function () {
         if (!start) continue;
         const shape = ascend(start, notes, Math.min(chord.intervals.length + 1, 6));
         if (shape.length < Math.min(3, chord.intervals.length)) continue;
-        out.push({ shape, bassIv: iv, span: span(shape), block: false, label: inversionLabel(chord, iv) });
+        out.push({ shape, bassIv: iv, span: span(shape), block: false });
       }
       return out;
     }
@@ -686,7 +674,7 @@ __mod.voicings = (function () {
         if (!c) continue;
         const shape = [a, b, c];
         if (span(shape) > maxSpan) continue;
-        out.push({ shape, bassIv: a.iv, span: span(shape), block: true, label: inversionLabel(chord, a.iv) });
+        out.push({ shape, bassIv: a.iv, span: span(shape), block: true });
       }
       return dedupe(out);
     }
@@ -698,7 +686,7 @@ __mod.voicings = (function () {
 
     let out = sets
       .filter(s => sameSet(s.map(n => n.iv).sort((x, y) => x - y), target))
-      .map(s => ({ shape: s, bassIv: s[0].iv, span: span(s), block: true, label: inversionLabel(chord, s[0].iv) }));
+      .map(s => ({ shape: s, bassIv: s[0].iv, span: span(s), block: true }));
 
     if (type === 'tenth') {
       out = out.filter(v => {
@@ -785,7 +773,7 @@ __mod.voicings = (function () {
     return out;
   }
 
-  return { VOICING_TYPES, typeById, zoneNotes, span, inversionLabel, generate, describe, degrees, moveCost, motion, optimise };
+  return { VOICING_TYPES, typeById, zoneNotes, span, inversion, generate, describe, degrees, moveCost, motion, optimise };
 })();
 
 __mod.audio = (function () {
@@ -1123,28 +1111,29 @@ __mod.ireal = (function () {
 __mod.library = (function () {
 
   // Forme armoniche generiche e brani tradizionali di pubblico dominio.
+  // Ogni voce e': [nome italiano, nome inglese, griglia].
   // Gli standard protetti da diritto d'autore non sono inclusi: per quelli
   // si usa l'importazione dai propri file iReal Pro.
 
   const LIBRARY = [
-    ['Blues maggiore, 12 battute (Fa)', 'F7 Bb7 F7 F7 Bb7 Bb7 F7 F7 C7 Bb7 F7 C7'],
-    ['Blues jazz, 12 battute (Sib)', 'Bb7 Eb7 Bb7 F-7,Bb7 Eb7 Edim7 Bb7 D-7,G7 C-7 F7 Bb7,G7 C-7,F7'],
-    ['Blues minore (Do)', 'C-7 C-7 C-7 C-7 F-7 F-7 C-7 C-7 Ab7 G7 C-7 G7'],
-    ['Rhythm changes, sezione A (Sib)', 'Bb^7,G-7 C-7,F7 Bb^7,G-7 C-7,F7 Bb7 Eb7,Edim7 Bb^7,F7 Bb6'],
-    ['II-V-I che scende per quarte', 'D-7 G7 C^7 C^7 G-7 C7 F^7 F^7 C-7 F7 Bb^7 Bb^7 F-7 Bb7 Eb^7 Eb^7'],
-    ['II-V-I minore', 'D-7b5 G7b9 C-6 C-6 G-7b5 C7b9 F-6 F-6'],
-    ['Turnaround I-VI-II-V (Do)', 'C^7 A7 D-7 G7'],
-    ['Giro anni Cinquanta I-vi-IV-V (Do)', 'C A-7 F G7'],
-    ['Cadenza andalusa (La minore)', 'A- G F E7'],
-    ['Ciclo di terze maggiori', 'C^7 Eb7 Ab^7 B7 E^7 G7 C^7 C^7'],
-    ['Vamp dorico a due accordi', 'D-7 D-7 D-7 D-7 E-7 E-7 E-7 E-7'],
-    ['Canone di Pachelbel (Re)', 'D A B- F# G D G A'],
-    ['House of the Rising Sun (trad.)', 'A- C D F A- C E7 E7'],
-    ['Greensleeves (trad.)', 'A- C G E7 A- C E7 A-'],
-    ['St. James Infirmary (trad.)', 'D- A7 D- D7 G- D- A7 D-'],
-    ['Amazing Grace (trad.)', 'G G C G G G D7 D7 G G C G G D7 G G'],
-    ['Scarborough Fair (trad.)', 'A- A- C A- A- G A- A-'],
-    ['Sinner Man, vamp minore (trad.)', 'A- A- A- A- D- D- A- A- E7 D- A- A-']
+    ['Blues maggiore, 12 battute (Fa)', 'Major blues, 12 bars (F)', 'F7 Bb7 F7 F7 Bb7 Bb7 F7 F7 C7 Bb7 F7 C7'],
+    ['Blues jazz, 12 battute (Sib)', 'Jazz blues, 12 bars (Bb)', 'Bb7 Eb7 Bb7 F-7,Bb7 Eb7 Edim7 Bb7 D-7,G7 C-7 F7 Bb7,G7 C-7,F7'],
+    ['Blues minore (Do)', 'Minor blues (C)', 'C-7 C-7 C-7 C-7 F-7 F-7 C-7 C-7 Ab7 G7 C-7 G7'],
+    ['Rhythm changes, sezione A (Sib)', 'Rhythm changes, A section (Bb)', 'Bb^7,G-7 C-7,F7 Bb^7,G-7 C-7,F7 Bb7 Eb7,Edim7 Bb^7,F7 Bb6'],
+    ['II-V-I che scende per quarte', 'II-V-I moving down in fourths', 'D-7 G7 C^7 C^7 G-7 C7 F^7 F^7 C-7 F7 Bb^7 Bb^7 F-7 Bb7 Eb^7 Eb^7'],
+    ['II-V-I minore', 'Minor II-V-I', 'D-7b5 G7b9 C-6 C-6 G-7b5 C7b9 F-6 F-6'],
+    ['Turnaround I-VI-II-V (Do)', 'Turnaround I-VI-II-V (C)', 'C^7 A7 D-7 G7'],
+    ['Giro anni Cinquanta I-vi-IV-V (Do)', 'Fifties progression I-vi-IV-V (C)', 'C A-7 F G7'],
+    ['Cadenza andalusa (La minore)', 'Andalusian cadence (A minor)', 'A- G F E7'],
+    ['Ciclo di terze maggiori', 'Major thirds cycle', 'C^7 Eb7 Ab^7 B7 E^7 G7 C^7 C^7'],
+    ['Vamp dorico a due accordi', 'Two-chord Dorian vamp', 'D-7 D-7 D-7 D-7 E-7 E-7 E-7 E-7'],
+    ['Canone di Pachelbel (Re)', 'Pachelbel canon (D)', 'D A B- F# G D G A'],
+    ['House of the Rising Sun (trad.)', 'House of the Rising Sun (trad.)', 'A- C D F A- C E7 E7'],
+    ['Greensleeves (trad.)', 'Greensleeves (trad.)', 'A- C G E7 A- C E7 A-'],
+    ['St. James Infirmary (trad.)', 'St. James Infirmary (trad.)', 'D- A7 D- D7 G- D- A7 D-'],
+    ['Amazing Grace (trad.)', 'Amazing Grace (trad.)', 'G G C G G G D7 D7 G G C G G D7 G G'],
+    ['Scarborough Fair (trad.)', 'Scarborough Fair (trad.)', 'A- A- C A- A- G A- A-'],
+    ['Sinner Man, vamp minore (trad.)', 'Sinner Man, minor vamp (trad.)', 'A- A- A- A- D- D- A- A- E7 D- A- A-']
   ];
 
   return { LIBRARY };
@@ -1195,6 +1184,233 @@ __mod.theme = (function () {
   return { readTheme, applyTheme, toggleTheme, initTheme };
 })();
 
+__mod.i18n = (function () {
+
+  // Testi in italiano e inglese. La lingua si sceglie dalla barra e resta memorizzata.
+
+  const KEY = 'manico-lingua';
+
+  const D = {
+    it: {
+      'bar.grid': 'Griglia di accordi',
+      'bar.show': 'Mostra',
+      'bar.play': 'Play',
+      'bar.stop': 'Stop',
+      'bar.tempo': 'Tempo',
+      'bar.guide': 'Guida',
+      'bar.forms': 'Forme',
+      'bar.ireal': 'iReal',
+      'bar.tab': 'Tab',
+      'bar.settings': 'Impostazioni',
+      'bar.gridTitle': 'Spazio fra le battute, virgola dentro la battuta',
+
+      'tip.syntax': 'Spazio fra le battute, virgola dentro la battuta:',
+      'tip.guide': 'guida completa',
+
+      'zone.from': 'Zona, dal tasto',
+      'zone.width': 'ampiezza',
+      'zone.frets': n => n + (n === 1 ? ' tasto' : ' tasti'),
+      'zone.desc': (a, b) => a === 0 ? `tasti 0\u2013${b}, corde a vuoto incluse` : `tasti ${a}\u2013${b}`,
+      'zone.coverage': 'Copertura per posizione',
+      'zone.coverageTitle': 'Percentuale di note raggiungibili senza spostarsi, sul peggiore accordo della griglia',
+      'zone.cell': (a, b, p) => `tasti ${a}\u2013${b}, copertura ${p}%`,
+
+      'key.root': 'fondamentale', 'key.third': 'terza', 'key.fifth': 'quinta',
+      'key.sev': 'sesta e settima', 'key.ext': 'estensioni',
+
+      'v.title': 'Voicing',
+      'v.count': (n, ch, a, b) => `\u2014 ${n} per ${ch}, tasti ${a}\u2013${b}`,
+      'v.type': 'Tipo',
+      'v.span': 'apertura mano',
+      'v.lead': 'Ottimizza voice leading',
+      'v.total': n => `moto complessivo: ${n} semitoni`,
+      'v.motion': n => `moto ${n}`,
+      'v.spanOf': n => `apertura ${n}`,
+      'v.none': 'Nessun accordo selezionato.',
+      'v.empty': (tipo, a, b) => `Nessun ${tipo} fra il tasto ${a} e il ${b}. Allarga la zona, aumenta l\u2019apertura della mano o cambia tipo di voicing.`,
+      'v.open': 'Mostra i voicing',
+      'v.close': 'Nascondi i voicing',
+      'v.listen': 'ascolta',
+
+      'inv.-1': 'nota al basso indicata',
+      'inv.0': 'fondamentale al basso',
+      'inv.1': '1\u00b0 rivolto', 'inv.2': '2\u00b0 rivolto', 'inv.3': '3\u00b0 rivolto',
+      'inv.4': '4\u00b0 rivolto', 'inv.5': '5\u00b0 rivolto', 'inv.x': 'estensione al basso',
+
+      'vt.arp.name': 'Arpeggio', 'vt.arp.hint': 'tutte le note dell\u2019accordo in successione',
+      'vt.shell.name': 'Shell \u2014 R + 7 + 3', 'vt.shell.hint': 'fondamentale e le due note guida',
+      'vt.guide.name': 'Note guida \u2014 3 + 7', 'vt.guide.hint': 'solo terza e settima, per il comping',
+      'vt.tenth.name': 'Decime \u2014 R + 3', 'vt.tenth.hint': 'fondamentale e terza a un\u2019ottava e mezza',
+      'vt.triad.name': 'Triade \u2014 R + 3 + 5', 'vt.triad.hint': 'triade in posizione stretta',
+      'vt.quartal.name': 'Quartale', 'vt.quartal.hint': 'quarte sovrapposte, dove l\u2019accordo lo consente',
+
+      'set.title': 'Strumento e vista',
+      'set.bass': 'Basso', 'set.frets': 'Tasti mostrati', 'set.fretsTo': n => 'fino al ' + n,
+      'set.notes': 'Note sul manico', 'set.degrees': 'Gradi', 'set.names': 'Note',
+      'set.flip': 'Inverti corde', 'set.dim': 'Sfuma fuori zona',
+      'set.viewHint': '<b>Gradi</b> mostra R, 3, 5, \u266d7 invece dei nomi delle note. <b>Inverti corde</b> mette la corda piu\u0300 grave in alto. <b>Sfuma fuori zona</b> lascia visibili in trasparenza le note fuori dalla zona.',
+      'play.title': 'Esecuzione',
+      'play.meter': 'Metro', 'play.what': 'Cosa suona',
+      'play.voicing': 'il voicing scelto', 'play.root': 'solo la fondamentale', 'play.mute': 'niente, solo il click',
+      'play.options': 'Opzioni', 'play.click': 'Click', 'play.lock': 'Zona fissa',
+      'play.hint': '<b>Zona fissa</b> impedisce alla zona di inseguire l\u2019accordo corrente: resti in posizione e vedi cosa hai davvero sotto le dita.',
+
+      'lib.title': 'Forme armoniche',
+      'lib.hint': 'Forme generiche e brani tradizionali di pubblico dominio. Per gli standard usa l\u2019importazione dalle tue carte iReal.',
+      'lib.load': 'Carica',
+
+      'ir.title': 'Importa da iReal Pro',
+      'ir.hint': 'Incolla un link <code>irealb://</code> o <code>irealbook://</code> preso dal tasto Condividi dell\u2019app. Viene letto qui nel browser: non esce niente dalla pagina.',
+      'ir.go': 'Importa',
+      'ir.empty': 'Incolla prima un link.',
+      'ir.bad': '<b>Non sono riuscito a leggere il link.</b> Deve iniziare con irealb:// oppure irealbook://. In alternativa scrivi gli accordi a mano nella barra in alto.',
+      'ir.loaded': (t, c, k, n) => `${t}${c ? ' \u2014 ' + c : ''} \u00b7 tonalit\u00e0 ${k} \u00b7 ${n} battute`,
+
+      'tab.title': 'Tab ASCII',
+      'tab.hint': 'Usa il voicing selezionato per ogni accordo. Clicca una card per cambiarlo, poi rigenera.',
+      'tab.make': 'Genera', 'tab.copy': 'Copia', 'tab.copied': 'Copiato', 'tab.dl': 'Scarica .txt',
+      'tab.perline': n => n + ' battute per riga',
+      'tab.press': 'Premi Genera.',
+      'tab.head': (g, b, a, e, v) => `griglia: ${g}\nbasso: ${b}   zona: tasti ${a}-${e}   voicing: ${v}`,
+
+      'close': 'Chiudi',
+      'foot': 'Manico &copy; 2026 Massimo Danieli &middot; software libero sotto <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>, senza alcuna garanzia &middot; <a href="https://github.com/MassimoDanieli/accordi_di_basso">sorgenti su GitHub</a>'
+    },
+
+    en: {
+      'bar.grid': 'Chord chart',
+      'bar.show': 'Show',
+      'bar.play': 'Play',
+      'bar.stop': 'Stop',
+      'bar.tempo': 'Tempo',
+      'bar.guide': 'Guide',
+      'bar.forms': 'Forms',
+      'bar.ireal': 'iReal',
+      'bar.tab': 'Tab',
+      'bar.settings': 'Settings',
+      'bar.gridTitle': 'Space between bars, comma within a bar',
+
+      'tip.syntax': 'Space between bars, comma within a bar:',
+      'tip.guide': 'full guide',
+
+      'zone.from': 'Zone, from fret',
+      'zone.width': 'width',
+      'zone.frets': n => n + (n === 1 ? ' fret' : ' frets'),
+      'zone.desc': (a, b) => a === 0 ? `frets 0\u2013${b}, open strings included` : `frets ${a}\u2013${b}`,
+      'zone.coverage': 'Coverage by position',
+      'zone.coverageTitle': 'Share of chord tones reachable without shifting, taken on the worst chord in the chart',
+      'zone.cell': (a, b, p) => `frets ${a}\u2013${b}, coverage ${p}%`,
+
+      'key.root': 'root', 'key.third': 'third', 'key.fifth': 'fifth',
+      'key.sev': 'sixth and seventh', 'key.ext': 'extensions',
+
+      'v.title': 'Voicings',
+      'v.count': (n, ch, a, b) => `\u2014 ${n} for ${ch}, frets ${a}\u2013${b}`,
+      'v.type': 'Type',
+      'v.span': 'hand span',
+      'v.lead': 'Optimise voice leading',
+      'v.total': n => `total motion: ${n} semitones`,
+      'v.motion': n => `motion ${n}`,
+      'v.spanOf': n => `span ${n}`,
+      'v.none': 'No chord selected.',
+      'v.empty': (tipo, a, b) => `No ${tipo} between fret ${a} and ${b}. Widen the zone, allow a larger hand span, or pick another voicing type.`,
+      'v.open': 'Show voicings',
+      'v.close': 'Hide voicings',
+      'v.listen': 'listen',
+
+      'inv.-1': 'specified bass note',
+      'inv.0': 'root in the bass',
+      'inv.1': '1st inversion', 'inv.2': '2nd inversion', 'inv.3': '3rd inversion',
+      'inv.4': '4th inversion', 'inv.5': '5th inversion', 'inv.x': 'extension in the bass',
+
+      'vt.arp.name': 'Arpeggio', 'vt.arp.hint': 'every chord tone, one after another',
+      'vt.shell.name': 'Shell \u2014 R + 7 + 3', 'vt.shell.hint': 'root plus the two guide tones',
+      'vt.guide.name': 'Guide tones \u2014 3 + 7', 'vt.guide.hint': 'third and seventh only, for comping',
+      'vt.tenth.name': 'Tenths \u2014 R + 3', 'vt.tenth.hint': 'root and third a tenth apart',
+      'vt.triad.name': 'Triad \u2014 R + 3 + 5', 'vt.triad.hint': 'close position triad',
+      'vt.quartal.name': 'Quartal', 'vt.quartal.hint': 'stacked fourths, where the chord allows it',
+
+      'set.title': 'Instrument and view',
+      'set.bass': 'Bass', 'set.frets': 'Frets shown', 'set.fretsTo': n => 'up to ' + n,
+      'set.notes': 'Notes on the neck', 'set.degrees': 'Degrees', 'set.names': 'Names',
+      'set.flip': 'Flip strings', 'set.dim': 'Dim outside zone',
+      'set.viewHint': '<b>Degrees</b> shows R, 3, 5, \u266d7 instead of note names. <b>Flip strings</b> puts the lowest string on top. <b>Dim outside zone</b> keeps notes outside the zone faintly visible.',
+      'play.title': 'Playback',
+      'play.meter': 'Metre', 'play.what': 'What plays',
+      'play.voicing': 'the chosen voicing', 'play.root': 'the root only', 'play.mute': 'nothing, click only',
+      'play.options': 'Options', 'play.click': 'Click', 'play.lock': 'Lock zone',
+      'play.hint': '<b>Lock zone</b> stops the zone from following the current chord: you stay in position and see what is really under your fingers.',
+
+      'lib.title': 'Harmonic forms',
+      'lib.hint': 'Generic forms and traditional tunes in the public domain. For standards, import your own iReal charts.',
+      'lib.load': 'Load',
+
+      'ir.title': 'Import from iReal Pro',
+      'ir.hint': 'Paste an <code>irealb://</code> or <code>irealbook://</code> link from the app\u2019s Share button. It is decoded here in the browser: nothing leaves the page.',
+      'ir.go': 'Import',
+      'ir.empty': 'Paste a link first.',
+      'ir.bad': '<b>I could not read that link.</b> It must start with irealb:// or irealbook://. Otherwise type the chords by hand in the bar above.',
+      'ir.loaded': (t, c, k, n) => `${t}${c ? ' \u2014 ' + c : ''} \u00b7 key ${k} \u00b7 ${n} bars`,
+
+      'tab.title': 'ASCII tab',
+      'tab.hint': 'Uses the voicing selected for each chord. Click a card to change it, then generate again.',
+      'tab.make': 'Generate', 'tab.copy': 'Copy', 'tab.copied': 'Copied', 'tab.dl': 'Download .txt',
+      'tab.perline': n => n + ' bars per line',
+      'tab.press': 'Press Generate.',
+      'tab.head': (g, b, a, e, v) => `chart: ${g}\nbass: ${b}   zone: frets ${a}-${e}   voicing: ${v}`,
+
+      'close': 'Close',
+      'foot': 'Manico &copy; 2026 Massimo Danieli &middot; free software under <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>, with no warranty &middot; <a href="https://github.com/MassimoDanieli/accordi_di_basso">source on GitHub</a>'
+    }
+  };
+
+  let current = 'it';
+
+  function readLang() {
+    try {
+      const v = localStorage.getItem(KEY);
+      if (v === 'it' || v === 'en') return v;
+    } catch (e) { /* archiviazione non disponibile */ }
+    return (navigator.language || 'it').toLowerCase().startsWith('it') ? 'it' : 'en';
+  }
+
+  function lang() { return current; }
+
+  function t(key, ...args) {
+    const v = (D[current] && D[current][key]) !== undefined ? D[current][key] : D.it[key];
+    if (v === undefined) return key;
+    return typeof v === 'function' ? v(...args) : v;
+  }
+
+  /** Riempie gli elementi marcati nell'HTML. */
+  function applyStatic(root = document) {
+    root.querySelectorAll('[data-t]').forEach(el => { el.textContent = t(el.dataset.t); });
+    root.querySelectorAll('[data-th]').forEach(el => { el.innerHTML = t(el.dataset.th); });
+    root.querySelectorAll('[data-tt]').forEach(el => { el.title = t(el.dataset.tt); });
+    root.querySelectorAll('[data-tp]').forEach(el => { el.placeholder = t(el.dataset.tp); });
+    document.documentElement.setAttribute('lang', current);
+  }
+
+  function setLang(l, onChange) {
+    current = (l === 'en') ? 'en' : 'it';
+    try { localStorage.setItem(KEY, current); } catch (e) { /* niente da fare */ }
+    document.querySelectorAll('[data-lang]').forEach(b =>
+      b.classList.toggle('on', b.dataset.lang === current));
+    applyStatic();
+    if (onChange) onChange();
+  }
+
+  function initLang(onChange) {
+    setLang(readLang(), null);
+    document.addEventListener('click', e => {
+      const b = e.target && e.target.closest && e.target.closest('[data-lang]');
+      if (b) setLang(b.dataset.lang, onChange);
+    });
+  }
+
+  return { readLang, lang, t, applyStatic, setLang, initLang };
+})();
+
 __mod.app = (function () {
   const V = __mod.voicings;
   const A = __mod.audio;
@@ -1204,7 +1420,9 @@ __mod.app = (function () {
   const { TUNINGS, parseChord, degreeName, noteName } = __mod.theory;
   const { LIBRARY } = __mod.library;
   const { initTheme } = __mod.theme;
+  const { t, initLang, applyStatic, lang } = __mod.i18n;
   // Stato dell'applicazione e collegamento fra i moduli.
+
 
 
 
@@ -1328,9 +1546,7 @@ __mod.app = (function () {
   function describeZone() {
     const el = $('zdesc');
     if (!el) return;
-    el.textContent = state.zoneFrom === 0
-      ? `tasti 0\u2013${zoneTo()}, corde a vuoto incluse`
-      : `tasti ${state.zoneFrom}\u2013${zoneTo()}`;
+    el.textContent = t('zone.desc', state.zoneFrom, zoneTo());
   }
 
   function renderStrip() {
@@ -1340,7 +1556,7 @@ __mod.app = (function () {
       const s = ok.length ? Math.min(...ok.map(x => coverage(x.chord, from))) : 1;
       html += `<button class="cell${from === state.zoneFrom ? ' sel' : ''}" data-zone="${from}"`
         + ` style="background:rgba(233,176,74,${(0.12 + s * 0.78).toFixed(2)})"`
-        + ` title="tasti ${from}\u2013${from + state.zoneWidth - 1}, copertura ${Math.round(s * 100)}%">${from}</button>`;
+        + ` title="${t('zone.cell', from, from + state.zoneWidth - 1, Math.round(s * 100))}">${from}</button>`;
     }
     $('strip').innerHTML = html;
   }
@@ -1356,25 +1572,28 @@ __mod.app = (function () {
     });
   }
 
+  function invLabel(chord, bassIv) {
+    const k = V.inversion(chord, bassIv);
+    return k === null ? t('inv.x') : t('inv.' + k);
+  }
+
   function renderVoicings() {
     const item = state.grid[state.index];
     const type = V.typeById(state.vtype);
-    $('vhint').textContent = type.hint;
+    $('vhint').textContent = t('vt.' + type.id + '.hint');
 
     if (!item || !item.ok) {
       $('vcount').textContent = '';
-      $('voices').innerHTML = '<p class="empty">Nessun accordo selezionato.</p>';
+      $('voices').innerHTML = `<p class="empty">${t('v.none')}</p>`;
       return;
     }
 
     const list = candidates(state.index);
     $('vcount').textContent = list.length
-      ? `\u2014 ${list.length} per ${item.chord.symbol}, tasti ${state.zoneFrom}\u2013${zoneTo()}`
-      : `\u2014 ${item.chord.symbol}`;
+      ? t('v.count', list.length, item.chord.symbol, state.zoneFrom, zoneTo())
+      : item.chord.symbol;
     if (!list.length) {
-      $('voices').innerHTML = `<p class="empty">Nessun ${type.name.toLowerCase()} per <b>${item.chord.symbol}</b>`
-        + ` fra il tasto ${state.zoneFrom} e il ${zoneTo()}. Allarga la zona, aumenta l\u2019apertura della mano`
-        + ` o cambia tipo di voicing.</p>`;
+      $('voices').innerHTML = `<p class="empty">${t('v.empty', t('vt.' + type.id + '.name'), state.zoneFrom, zoneTo())}</p>`;
       return;
     }
 
@@ -1384,12 +1603,12 @@ __mod.app = (function () {
     $('voices').innerHTML = list.map((v, k) => {
       const mv = V.motion(prev, v);
       return `<div class="voice${cur === v ? ' sel' : ''}" data-voicing="${k}">
-        <div class="head"><h4>${v.label}</h4><span class="mv">${mv === null ? '' : 'moto ' + mv}</span></div>
-        <div class="meta">${V.describe(v, item.chord)} \u00b7 apertura ${v.span}</div>
+        <div class="head"><h4>${invLabel(item.chord, v.bassIv)}</h4><span class="mv">${mv === null ? '' : t('v.motion', mv)}</span></div>
+        <div class="meta">${V.describe(v, item.chord)} \u00b7 ${t('v.spanOf', v.span)}</div>
         ${R.diagram(item.chord, v, { open: open(), zoneFrom: state.zoneFrom, zoneTo: zoneTo(), flipped: state.flipped })}
         <div class="foot">
           <span class="deg">${V.degrees(v, item.chord)}</span>
-          <button class="play-s" data-hear="${k}" aria-label="ascolta">&#9654;</button>
+          <button class="play-s" data-hear="${k}" aria-label="${t('v.listen')}">&#9654;</button>
         </div></div>`;
     }).join('');
   }
@@ -1489,11 +1708,11 @@ __mod.app = (function () {
     state.playing = false;
     clearTimeout(state.timer);
     clearFlashes();
-    $('pp').innerHTML = '&#9654; Play';
+    $('pp').innerHTML = '&#9654;';
   }
   function toggleTransport() {
     state.playing = !state.playing;
-    $('pp').innerHTML = state.playing ? '&#9632; Stop' : '&#9654; Play';
+    $('pp').innerHTML = state.playing ? '&#9632;' : '&#9654;';
     if (state.playing) { A.audio(); tick(); } else { clearTimeout(state.timer); clearFlashes(); }
   }
 
@@ -1505,7 +1724,7 @@ __mod.app = (function () {
     picks.forEach((p, i) => { if (p >= 0) state.pick[i] = p; });
     render();
     const total = totalMotion();
-    $('vlinfo').textContent = total === null ? '' : `moto complessivo: ${total} semitoni`;
+    $('vlinfo').textContent = total === null ? '' : t('v.total', total);
   }
   function totalMotion() {
     let sum = 0, prev = null, seen = false;
@@ -1534,10 +1753,10 @@ __mod.app = (function () {
       v.shape.forEach((n, k) => current.columns.push({ si: n.si, f: n.f, newGroup: v.block && k === 0 }));
     });
 
-    const header = `griglia: ${$('seq').value}\n`
-      + `basso: ${TUNINGS[state.tuning].label}   zona: tasti ${state.zoneFrom}-${zoneTo()}   `
-      + `voicing: ${V.typeById(state.vtype).name}`;
+    const header = t('tab.head', $('seq').value, TUNINGS[state.tuning].label,
+      state.zoneFrom, zoneTo(), t('vt.' + state.vtype + '.name'));
     $('tab').textContent = Tab.render(bars, open(), state.flipped, +$('perline').value, header);
+    $('tab').dataset.vuoto = 'no';
   }
 
   // ---------------------------------------------------------------- eventi
@@ -1549,15 +1768,36 @@ __mod.app = (function () {
     render();
   }
 
+  function buildMenus() {
+    const keep = { lib: $('lib').value, vtype: $('vtype').value, tun: $('tun').value,
+                   nfrets: $('nfrets').value, mode: $('mode').value, perline: $('perline').value };
+    $('lib').innerHTML = LIBRARY.map((x, i) => `<option value="${i}">${x[lang() === 'en' ? 1 : 0]}</option>`).join('');
+    $('vtype').innerHTML = V.VOICING_TYPES.map(x => `<option value="${x.id}">${t('vt.' + x.id + '.name')}</option>`).join('');
+    $('tun').innerHTML = Object.entries(TUNINGS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+    $('nfrets').innerHTML = [12, 15, 18, 24].map(n => `<option value="${n}">${t('set.fretsTo', n)}</option>`).join('');
+    $('mode').innerHTML = ['voicing', 'root', 'mute'].map(m => `<option value="${m}">${t('play.' + m)}</option>`).join('');
+    $('perline').innerHTML = [4, 2, 6].map(n => `<option value="${n}">${t('tab.perline', n)}</option>`).join('');
+    $('lib').value = keep.lib || '0';
+    $('vtype').value = keep.vtype || state.vtype;
+    $('tun').value = keep.tun || state.tuning;
+    $('nfrets').value = keep.nfrets || String(state.frets);
+    $('mode').value = keep.mode || state.playMode;
+    $('perline').value = keep.perline || '4';
+    $('tlab').textContent = state.labels === 'degrees' ? t('set.degrees') : t('set.names');
+    $('pp').innerHTML = state.playing ? '&#9632;' : '&#9654;';
+    $('zwv').textContent = t('zone.frets', state.zoneWidth);
+    if ($('tab').textContent.trim() === '' || $('tab').dataset.vuoto === 'si') {
+      $('tab').textContent = t('tab.press'); $('tab').dataset.vuoto = 'si';
+    }
+  }
+
   function init() {
     initTheme();
+    initLang(() => { buildMenus(); render(); });
     parseGrid();
     render();
 
-    $('lib').innerHTML = LIBRARY.map((x, i) => `<option value="${i}">${x[0]}</option>`).join('');
-    $('lib').value = '0';
-    $('vtype').innerHTML = V.VOICING_TYPES.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-    $('tun').innerHTML = Object.entries(TUNINGS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+    buildMenus();
 
     $('go').onclick = () => { parseGrid(); render(); };
     $('seq').addEventListener('keydown', e => { if (e.key === 'Enter') { parseGrid(); render(); } });
@@ -1570,7 +1810,7 @@ __mod.app = (function () {
       attesa = setTimeout(() => { parseGrid(); render(); }, 550);
     });
 
-    $('libgo').onclick = () => loadGrid(LIBRARY[+$('lib').value][1], true);
+    $('libgo').onclick = () => { loadGrid(LIBRARY[+$('lib').value][2], true); $('dlgforme').close(); };
 
     $('vtype').onchange = e => {
       state.vtype = e.target.value;
@@ -1599,7 +1839,7 @@ __mod.app = (function () {
     $('zs').oninput = e => setZone(+e.target.value);
     $('zw').oninput = e => {
       state.zoneWidth = +e.target.value;
-      $('zwv').textContent = state.zoneWidth + ' tasti';
+      $('zwv').textContent = t('zone.frets', state.zoneWidth);
       $('zs').max = state.frets - state.zoneWidth + 1;
       state.pick = {}; cache = new Map();
       if (state.zoneFrom > state.frets - state.zoneWidth + 1) setZone(state.frets - state.zoneWidth + 1);
@@ -1607,7 +1847,7 @@ __mod.app = (function () {
     };
     $('tlab').onclick = e => {
       state.labels = state.labels === 'degrees' ? 'notes' : 'degrees';
-      e.target.textContent = state.labels === 'degrees' ? 'Gradi' : 'Note';
+      e.target.textContent = state.labels === 'degrees' ? t('set.degrees') : t('set.names');
       e.target.classList.toggle('on', state.labels === 'degrees');
       render();
     };
@@ -1622,11 +1862,12 @@ __mod.app = (function () {
     $('lock').onclick = e => { state.lockZone = !state.lockZone; e.target.classList.toggle('on', state.lockZone); };
 
     $('mktab').onclick = buildTab;
+    $('tab').dataset.vuoto = 'si';
     $('perline').onchange = buildTab;
     $('cptab').onclick = () => {
       navigator.clipboard && navigator.clipboard.writeText($('tab').textContent).then(() => {
-        $('cptab').textContent = 'Copiato';
-        setTimeout(() => { $('cptab').textContent = 'Copia'; }, 1200);
+        $('cptab').textContent = t('tab.copied');
+        setTimeout(() => { $('cptab').textContent = t('tab.copy'); }, 1200);
       });
     };
     $('dltab').onclick = () => {
@@ -1641,13 +1882,12 @@ __mod.app = (function () {
     $('irgo').onclick = () => {
       const info = $('irinfo'), list = $('irlist');
       const raw = $('ireal').value.trim();
-      if (!raw) { info.innerHTML = '<span class="err">Incolla prima un link.</span>'; return; }
+      if (!raw) { info.innerHTML = `<span class="err">${t('ir.empty')}</span>`; return; }
       let songs = [];
       try { songs = IReal.parse(raw); } catch (e) { songs = []; }
       if (!songs.length) {
         list.style.display = 'none';
-        info.innerHTML = '<span class="err">Non sono riuscito a leggere il link.</span> '
-          + 'Deve iniziare con irealb:// oppure irealbook://. In alternativa scrivi gli accordi a mano nella barra in alto.';
+        info.innerHTML = `<span class="err">${t('ir.bad')}</span>`;
         return;
       }
       state.songs = songs;
@@ -1683,19 +1923,43 @@ __mod.app = (function () {
 
     document.addEventListener('keydown', e => {
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+      if (document.querySelector('dialog[open]')) return;
       if (e.code === 'Space') { e.preventDefault(); toggleTransport(); }
       if (e.key === 'ArrowRight' && state.index < state.grid.length - 1) select(state.index + 1);
       if (e.key === 'ArrowLeft' && state.index > 0) select(state.index - 1);
     });
 
     $('spanwrap').style.display = 'none';
+
+    const dock = $('dock');
+    try {
+      const salvato = localStorage.getItem('manico-cassetto');
+      if (salvato === 'no') dock.dataset.aperto = 'no';
+    } catch (e) { /* archiviazione non disponibile */ }
+    $('docktab').onclick = () => {
+      const aperto = dock.dataset.aperto !== 'no';
+      dock.dataset.aperto = aperto ? 'no' : 'si';
+      try { localStorage.setItem('manico-cassetto', aperto ? 'no' : 'si'); } catch (e) { /* niente */ }
+    };
+
+    document.querySelectorAll('[data-apre]').forEach(b => {
+      b.onclick = () => {
+        const d = $(b.dataset.apre);
+        if (b.dataset.apre === 'dlgtab') buildTab();
+        if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+      };
+    });
+    document.querySelectorAll('dialog').forEach(d => {
+      d.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => d.close(); });
+      d.addEventListener('click', e => { if (e.target === d) d.close(); });
+    });
   }
 
   function loadSong(k) {
     const song = state.songs[k];
     if (!song) return;
     loadGrid(IReal.toGrid(song), true);
-    $('irinfo').textContent = `${song.title}${song.composer ? ' \u2014 ' + song.composer : ''} \u00b7 tonalit\u00e0 ${song.key} \u00b7 ${song.bars.length} battute`;
+    $('irinfo').textContent = t('ir.loaded', song.title, song.composer, song.key, song.bars.length);
   }
 
   window.MANICO = { versione: document.documentElement.dataset.versione || '?' };

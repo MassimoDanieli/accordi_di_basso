@@ -3,12 +3,12 @@
 import { degreeName, noteName } from './theory.js';
 
 export const VOICING_TYPES = [
-  { id: 'arp',     name: 'Arpeggio',            block: false, size: 0, hint: 'tutte le note dell\u2019accordo in successione' },
-  { id: 'shell',   name: 'Shell — R + 7 + 3',   block: true,  size: 3, hint: 'fondamentale e le due note guida' },
-  { id: 'guide',   name: 'Note guida — 3 + 7',  block: true,  size: 2, hint: 'solo terza e settima, per il comping' },
-  { id: 'tenth',   name: 'Decime — R + 3',      block: true,  size: 2, hint: 'fondamentale e terza a un\u2019ottava e mezza' },
-  { id: 'triad',   name: 'Triade — R + 3 + 5',  block: true,  size: 3, hint: 'triade in posizione stretta' },
-  { id: 'quartal', name: 'Quartale',            block: true,  size: 3, hint: 'quarte sovrapposte, dove l\u2019accordo lo consente' }
+  { id: 'arp',     block: false, size: 0 },
+  { id: 'shell',   block: true,  size: 3 },
+  { id: 'guide',   block: true,  size: 2 },
+  { id: 'tenth',   block: true,  size: 2 },
+  { id: 'triad',   block: true,  size: 3 },
+  { id: 'quartal', block: true,  size: 3 }
 ];
 
 export function typeById(id) { return VOICING_TYPES.find(t => t.id === id) || VOICING_TYPES[0]; }
@@ -87,17 +87,16 @@ export function span(shape) {
   return f.length ? Math.max(...f) - Math.min(...f) : 0;
 }
 
-const INVERSION = ['fondamentale al basso', '1\u00b0 rivolto', '2\u00b0 rivolto', '3\u00b0 rivolto', '4\u00b0 rivolto', '5\u00b0 rivolto'];
-
-export function inversionLabel(chord, bassIv) {
-  if (bassIv === -1) return 'nota al basso indicata';
+/** -1 nota al basso indicata, 0..n rivolto, null estensione. */
+export function inversion(chord, bassIv) {
+  if (bassIv === -1) return -1;
   const k = chord.intervals.indexOf(bassIv);
-  return k >= 0 ? (INVERSION[k] || 'estensione al basso') : 'estensione al basso';
+  return k >= 0 && k <= 5 ? k : null;
 }
 
 /**
  * Genera i voicing di un accordo dentro la zona.
- * Ritorna un array di { shape, bassIv, span, label, block }.
+ * Ritorna un array di { shape, bassIv, span, block }.
  */
 export function generate(chord, open, from, to, type, maxSpan) {
   const notes = zoneNotes(chord, open, from, to);
@@ -112,7 +111,7 @@ export function generate(chord, open, from, to, type, maxSpan) {
       if (!start) continue;
       const shape = ascend(start, notes, Math.min(chord.intervals.length + 1, 6));
       if (shape.length < Math.min(3, chord.intervals.length)) continue;
-      out.push({ shape, bassIv: iv, span: span(shape), block: false, label: inversionLabel(chord, iv) });
+      out.push({ shape, bassIv: iv, span: span(shape), block: false });
     }
     return out;
   }
@@ -126,7 +125,7 @@ export function generate(chord, open, from, to, type, maxSpan) {
       if (!c) continue;
       const shape = [a, b, c];
       if (span(shape) > maxSpan) continue;
-      out.push({ shape, bassIv: a.iv, span: span(shape), block: true, label: inversionLabel(chord, a.iv) });
+      out.push({ shape, bassIv: a.iv, span: span(shape), block: true });
     }
     return dedupe(out);
   }
@@ -138,7 +137,7 @@ export function generate(chord, open, from, to, type, maxSpan) {
 
   let out = sets
     .filter(s => sameSet(s.map(n => n.iv).sort((x, y) => x - y), target))
-    .map(s => ({ shape: s, bassIv: s[0].iv, span: span(s), block: true, label: inversionLabel(chord, s[0].iv) }));
+    .map(s => ({ shape: s, bassIv: s[0].iv, span: span(s), block: true }));
 
   if (type === 'tenth') {
     out = out.filter(v => {
