@@ -3,6 +3,14 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [1.3.4] — 2026-08-01
+
+### Corretto
+- Il manico restava troppo in basso. Ora la colonna di sinistra ha tre righe per due
+  elementi: manico e barra della zona si appoggiano in alto e lo spazio che avanza
+  finisce sotto, dove non puo' spingere niente. L'altezza del manico e' inoltre limitata
+  a poco piu' di meta' schermata.
+
 ## [1.3.3] — 2026-08-01
 
 ### Corretto
