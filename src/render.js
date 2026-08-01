@@ -11,14 +11,21 @@ export function stringOrder(count, flipped) {
   return flipped ? idx : idx.reverse();
 }
 
-export function fretboard(opts) {
-  const { chord, open, zoneFrom, zoneTo, frets, labels, flipped, dimOutside } = opts;
+/** Geometria del manico, condivisa dal disegno e dal livello del movimento. */
+export function boardGeometry(open, frets, flipped) {
   const ord = stringOrder(open.length, flipped);
   const PT = 32, PB = 36, ROW = 60, W = 800, NUT = 78, BW = W - NUT - 12;
   const H = PT + ROW * (open.length - 1) + PB;
   const fx = f => NUT + (fretPos(f) / fretPos(frets)) * BW;
   const cx = f => (f === 0 ? NUT - 21 : (fx(f - 1) + fx(f)) / 2);
   const sy = r => PT + r * ROW;
+  return { ord, PT, PB, ROW, W, H, NUT, BW, fx, cx, sy,
+    pos(si, f) { const row = ord.indexOf(si); return row < 0 ? null : { x: cx(f), y: sy(row) }; } };
+}
+
+export function fretboard(opts) {
+  const { chord, open, zoneFrom, zoneTo, frets, labels, flipped, dimOutside } = opts;
+  const { ord, PT, PB, ROW, W, H, NUT, BW, fx, cx, sy } = boardGeometry(open, frets, flipped);
 
   let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
   s += `<defs>

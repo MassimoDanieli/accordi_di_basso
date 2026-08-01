@@ -168,7 +168,7 @@ function renderStrip() {
  */
 function fitBoard() {
   const box = $('board');
-  const svg = box && box.querySelector('svg');
+  const svg = box && box.querySelector('.bstatic svg');
   if (!svg) return;
   const vb = (svg.getAttribute('viewBox') || '0 0 800 250').split(/\s+/).map(Number);
   const ratio = vb[2] / vb[3];
@@ -179,16 +179,87 @@ function fitBoard() {
   svg.style.height = 'auto';
 }
 
+/**
+ * Il movimento delle voci: un anello per ogni nota del voicing scelto, che plana
+ * dalla posizione vecchia alla nuova con una scia. Il livello sopravvive al
+ * ridisegno del manico, quindi la transizione attraversa il cambio di accordo.
+ */
+function updateFlow(idx) {
+  const wrap = ensureBoardWrap();
+  const flow = wrap.querySelector('.flow');
+  const geo = R.boardGeometry(open(), state.frets, state.flipped);
+  const vb = `0 0 ${geo.W} ${geo.H}`;
+  if (flow.getAttribute('viewBox') !== vb) { flow.setAttribute('viewBox', vb); flow.innerHTML = ''; }
+
+  const item = state.grid[idx];
+  const v = item && item.ok ? chosen(idx) : null;
+  const mete = v ? v.shape
+    .map(n => ({ ...n, p: geo.pos(n.si, n.f) }))
+    .filter(n => n.p)
+    .sort((a, b) => a.midi - b.midi) : [];
+
+  const anelli = [...flow.querySelectorAll('.ring')];
+  const scie = [...flow.querySelectorAll('.trail')];
+
+  mete.forEach((n, k) => {
+    let ring = anelli[k], trail = scie[k];
+    if (!ring) {
+      trail = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      trail.setAttribute('class', 'trail');
+      flow.appendChild(trail);
+      ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      ring.setAttribute('class', 'ring');
+      ring.setAttribute('r', '25');
+      ring.style.transform = `translate(${n.p.x}px, ${n.p.y}px)`;
+      flow.appendChild(ring);
+    }
+    const daX = parseFloat(ring.dataset.x), daY = parseFloat(ring.dataset.y);
+    const mosso = !Number.isNaN(daX) && (Math.abs(daX - n.p.x) > 0.5 || Math.abs(daY - n.p.y) > 0.5);
+    if (mosso && trail) {
+      trail.setAttribute('x1', daX); trail.setAttribute('y1', daY);
+      trail.setAttribute('x2', n.p.x); trail.setAttribute('y2', n.p.y);
+      trail.classList.remove('viva');
+      void trail.getBoundingClientRect();
+      trail.classList.add('viva');
+    }
+    ring.dataset.x = n.p.x; ring.dataset.y = n.p.y;
+    ring.style.opacity = '1';
+    ring.style.stroke = degreeVar(n.iv, item ? item.chord : null);
+    ring.style.transform = `translate(${n.p.x}px, ${n.p.y}px)`;
+  });
+
+  for (let k = mete.length; k < anelli.length; k++) anelli[k].style.opacity = '0';
+}
+
+/** Colore del grado, per gli anelli. */
+function degreeVar(iv, chord) {
+  if (!chord) return 'var(--root)';
+  if (iv === 0) return 'var(--root)';
+  if (iv === chord.third) return 'var(--third)';
+  if (iv === chord.fifth) return 'var(--fifth)';
+  if (iv >= 9 && iv <= 11) return 'var(--sev)';
+  return 'var(--ext)';
+}
+
 function walkGhosts() {
   if (state.playMode !== 'walking') return [];
   const nb = Math.max(1, Math.round(state.beats * ((state.grid[state.index] || {}).dur || 1)));
   return walkingLine(state.index, nb).filter(n => n && n.pass);
 }
 
+function ensureBoardWrap() {
+  const box = $('board');
+  if (!box.querySelector('.bwrap')) {
+    box.innerHTML = '<div class="bwrap"><div class="bstatic"></div>'
+      + '<svg class="flow" xmlns="http://www.w3.org/2000/svg"></svg></div>';
+  }
+  return box.querySelector('.bwrap');
+}
+
 function renderBoard() {
   const item = state.grid[state.index];
   const v = chosen(state.index);
-  $('board').innerHTML = R.fretboard({
+  ensureBoardWrap().querySelector('.bstatic').innerHTML = R.fretboard({
     chord: item && item.ok ? item.chord : null,
     open: open(), zoneFrom: state.zoneFrom, zoneTo: zoneTo(), frets: state.frets,
     labels: state.labels, flipped: state.flipped, dimOutside: state.dimOutside,
@@ -196,6 +267,7 @@ function renderBoard() {
     ghosts: walkGhosts()
   });
   fitBoard();
+  updateFlow(state.index);
 }
 
 function invLabel(chord, bassIv) {
@@ -457,6 +529,12 @@ function tick() {
         } else hear(v, seconds * 0.92);
       }
     }
+  }
+  // Le voci partono verso il prossimo accordo poco prima del cambio,
+  // cosi' arrivano sull'attacco: il voice leading si vede accadere.
+  const prossimo = (state.index + 1) % state.grid.length;
+  if (state.grid[prossimo] && state.grid[prossimo].ok) {
+    flashes.push(setTimeout(() => updateFlow(prossimo), Math.max(60, (seconds - 0.38) * 1000)));
   }
   state.timer = setTimeout(() => {
     state.index = (state.index + 1) % state.grid.length;

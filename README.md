@@ -43,7 +43,9 @@ linea walking percorre le note dell'accordo nella direzione del prossimo cambio 
 la cromatica dal lato del moto, e il fraseggio varia a ogni giro (ottavi swingati,
 ghost sul levare, salti d'ottava) restando deterministico per battuta e giro. Ogni
 nota si accende sul manico nel momento in cui la senti; in walking le note di
-passaggio compaiono come pallini rossi.
+passaggio compaiono come pallini rossi. Al cambio di accordo le voci del voicing
+planano verso le nuove posizioni come anelli colorati con la scia, partendo poco
+prima del cambio: il voice leading si vede accadere.
 
 **Repertorio.** 26 voci con stile e tempo consigliato: forme essenziali (blues, rhythm
 changes, II-V-I, cicli), giri pop e reggae, versioni semplificate di brani celebri,
