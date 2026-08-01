@@ -3,6 +3,17 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [2.3.4] — 2026-08-01
+
+### Aggiunto
+- Titolo e compositore del brano importato da iReal compaiono sopra il nastro degli
+  accordi, come sulla carta. Anche le voci caricate dal repertorio mostrano il nome.
+  Scrivere a mano nella griglia toglie l'intestazione, che non sarebbe piu' vera.
+
+### Corretto
+- La finestra di importazione iReal ora si chiude da sola a brano caricato, anche
+  scegliendone uno da una playlist.
+
 ## [2.3.3] — 2026-08-01
 
 ### Corretto

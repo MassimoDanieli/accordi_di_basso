@@ -1572,6 +1572,7 @@ __mod.app = (function () {
     // per chi preferisce confermare a mano.
     let attesa = null;
     $('seq').addEventListener('input', () => {
+      setSongTitle(null);
       clearTimeout(attesa);
       attesa = setTimeout(() => { parseGrid(); render(); }, 550);
     });
@@ -1581,6 +1582,7 @@ __mod.app = (function () {
       state.bpm = voce[3];
       $('bpm').value = voce[3];
       $('bpmv').textContent = voce[3];
+      setSongTitle(voce[lang() === 'en' ? 1 : 0], '');
       loadGrid(voce[4], true);
       closeDialog($('dlgforme'));
     };
@@ -1731,11 +1733,23 @@ __mod.app = (function () {
     });
   }
 
+  function setSongTitle(title, composer) {
+    state.song = title ? { title, composer } : null;
+    const el = $('songline');
+    if (!el) return;
+    if (!state.song) { el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    el.innerHTML = `<b>${title}</b>${composer ? ` <span class="by">\u2014 ${composer}</span>` : ''}`;
+  }
+
   function loadSong(k) {
     const song = state.songs[k];
     if (!song) return;
     loadGrid(IReal.toGrid(song), true);
+    setSongTitle(song.title, song.composer);
     $('irinfo').textContent = t('ir.loaded', song.title, song.composer, song.key, song.bars.length);
+    // Brano caricato: la finestra ha fatto il suo lavoro.
+    closeDialog($('dlgireal'));
   }
 
   window.MANICO = { versione: document.documentElement.dataset.versione || '?' };

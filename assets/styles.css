@@ -91,6 +91,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--root);cursor:pointer}
 
 /* ---------------------------------------------------------------- accordi */
+.songline{margin:0;padding:9px 16px 0;font-family:var(--serif);font-size:16px;letter-spacing:-.01em}
+.songline .by{color:var(--muted);font-size:13px;font-family:var(--sans)}
 .ribbon{display:flex;align-items:center;gap:6px;padding:9px 16px;overflow-x:auto;overscroll-behavior:contain;
   border-bottom:1px solid var(--line);scrollbar-width:thin;flex:none}
 .chip{padding:6px 12px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
