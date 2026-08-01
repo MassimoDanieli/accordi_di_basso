@@ -3,6 +3,16 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [1.5.0] — 2026-08-01
+
+### Modificato
+- Ripensata la disposizione. Il manico occupa tutta la larghezza, e i voicing sono passati
+  dalla colonna stretta a destra a una fascia sotto il manico, affiancati: i rivolti si
+  vedono tutti insieme senza scorrere, e lo spazio vuoto sotto il manico e' sparito.
+- I comandi del voicing (tipo, apertura della mano, voice leading) stanno su una riga
+  sola sopra le card, insieme al conteggio e alla descrizione del tipo scelto.
+- La legenda dei colori e' passata accanto ai cursori della zona.
+
 ## [1.4.0] — 2026-08-01
 
 ### Aggiunto

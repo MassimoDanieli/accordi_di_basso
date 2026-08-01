@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" data-versione="1.4.0">
+<html lang="it" data-versione="1.5.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -37,10 +37,9 @@ body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);
   font-size:14px;-webkit-font-smoothing:antialiased;line-height:1.45}
 
 /* Il banco di lavoro occupa la prima schermata, i pannelli stanno sotto. */
-.deck{display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto;padding:0}
+.deck{display:grid;grid-template-rows:auto auto auto auto auto minmax(0,1fr) auto;padding:0}
 @media (min-width:901px){
   .deck{height:100vh;height:100dvh;overflow:hidden}
-  .right{overflow:hidden}
 }
 
 /* ------------------------------------------------------------------ barra */
@@ -120,14 +119,11 @@ button.chip:hover{border-color:var(--faint)}
 .bl{color:var(--faint);font-family:var(--mono);user-select:none;flex:none;padding:0 2px}
 
 /* ------------------------------------------------------------- manico e zona */
-.stage{display:grid;grid-template-columns:minmax(0,1fr) var(--aside);gap:0;min-height:0;
-  border-top:1px solid var(--line)}
-.left{display:grid;grid-template-rows:auto auto minmax(0,1fr);min-width:0;min-height:0;align-content:start}
-.board{display:flex;align-items:flex-start;justify-content:center;padding:6px 18px 4px;min-height:0;overflow-x:auto}
-.board svg{width:100%;height:auto;max-height:60vh;min-width:560px}
+.board{display:flex;align-items:flex-start;justify-content:center;padding:8px 18px 2px;overflow-x:auto}
+.board svg{width:100%;height:auto;max-height:42vh;min-width:560px}
 .board .note{cursor:pointer}
 
-.zonebar{padding:12px 18px 14px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel);
+.zonebar{padding:10px 18px 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel);
   display:flex;flex-direction:column;gap:10px}
 .zline{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .mini{display:flex;align-items:center;gap:8px;flex:none}
@@ -138,20 +134,10 @@ button.chip:hover{border-color:var(--faint)}
   font-size:10px;font-family:var(--mono);color:rgba(0,0,0,.6);min-width:0}
 .cell:hover{border-color:var(--faint)}
 .cell.sel{border-color:var(--paper)}
-.key{display:flex;gap:16px;font-size:11px;color:var(--faint);flex-wrap:wrap}
+.key{display:flex;gap:14px;font-size:11px;color:var(--faint);flex-wrap:wrap;align-items:center}
 .key i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
 
 /* ---------------------------------------------------------------- voicing */
-.right{border-left:1px solid var(--line);background:var(--panel);padding:14px 14px 0;
-  display:grid;grid-template-rows:auto auto auto auto auto minmax(0,1fr);min-height:0}
-.right h2{margin:0 0 10px;font-size:13px;font-weight:600;letter-spacing:.02em}
-.right h2 small{color:var(--faint);font-weight:400;margin-left:6px}
-.right .field{margin-bottom:6px}
-.right .field>span:first-child{width:38px}
-.vrow{display:flex;align-items:center;gap:10px;margin:8px 0 0;flex-wrap:wrap}
-.vrow .mini input[type=range]{width:88px}
-.voices{overflow-y:auto;overscroll-behavior:contain;margin-top:12px;padding-bottom:14px;
-  display:flex;flex-direction:column;gap:10px;min-height:0}
 .voice{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
   padding:10px 11px;cursor:pointer;transition:border-color .12s}
 .voice:hover{border-color:var(--line-2)}
@@ -190,9 +176,6 @@ pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r
 
 @media (max-width:900px){
   .deck{min-height:0}
-  .stage{grid-template-columns:1fr}
-  .right{border-left:0;border-top:1px solid var(--line);padding-bottom:14px}
-  .voices{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));overflow:visible}
   .board svg{min-width:560px}
   .field>span:first-child{width:96px}
 }
@@ -241,6 +224,16 @@ html{scroll-behavior:smooth}
 @keyframes giu{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(4px);opacity:1}}
 @media (prefers-reduced-motion:reduce){.shelf-arrow{animation:none}}
 @media (max-width:900px){.shelf{position:sticky;bottom:0;z-index:4}}
+
+/* --------------------------------------------------- fascia dei voicing */
+.voicing{display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;overflow:hidden}
+.vhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 18px 10px}
+.vhead h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.02em;white-space:nowrap}
+.vhead h2 small{color:var(--faint);font-weight:400;margin-left:6px}
+.vhead select{min-width:170px}
+.vhead .hint{margin:0;max-width:38ch}
+.voices{overflow-y:auto;overscroll-behavior:contain;padding:0 18px 16px;min-height:0;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;align-content:start}
 
 </style>
 <script>
@@ -296,51 +289,47 @@ html{scroll-behavior:smooth}
   </header>
 
   <p class="tip">Spazio fra le battute, virgola dentro la battuta: <code>D-7 G7 C^7,A7</code> &middot;
-     <a href="https://basso.massimodanieli.com/">guida completa</a> <span class="ver">v1.4.0</span></p>
+     <a href="https://basso.massimodanieli.com/">guida completa</a> <span class="ver">v1.5.0</span></p>
 
   <nav class="ribbon" id="chips" aria-label="Accordi della griglia"></nav>
 
-  <main class="stage">
-    <section class="left">
-      <div class="board" id="board"></div>
+  <main class="board" id="board"></main>
 
-      <div class="zonebar">
-        <div class="zline">
-          <label class="mini"><span class="cap">Zona, dal tasto</span>
-            <input type="range" id="zs" min="0" max="8" step="1" value="0"><span class="val" id="zsv">0</span></label>
-          <label class="mini"><span class="cap">ampiezza</span>
-            <input type="range" id="zw" min="3" max="7" step="1" value="5"><span class="val" id="zwv">5 tasti</span></label>
-          <span class="zdesc" id="zdesc"></span>
-        </div>
-        <div class="zline">
-          <span class="cap">Copertura per posizione</span>
-          <div class="strip" id="strip" title="Percentuale di note raggiungibili senza spostarsi, sul peggiore accordo della griglia"></div>
-        </div>
-        <div class="key">
-          <span><i style="background:var(--root)"></i>fondamentale</span>
-          <span><i style="background:var(--third)"></i>terza</span>
-          <span><i style="background:var(--fifth)"></i>quinta</span>
-          <span><i style="background:var(--sev)"></i>sesta e settima</span>
-          <span><i style="background:var(--ext)"></i>estensioni</span>
-        </div>
-      </div>
-    </section>
+  <div class="zonebar">
+    <div class="zline">
+      <label class="mini"><span class="cap">Zona, dal tasto</span>
+        <input type="range" id="zs" min="0" max="8" step="1" value="0"><span class="val" id="zsv">0</span></label>
+      <label class="mini"><span class="cap">ampiezza</span>
+        <input type="range" id="zw" min="3" max="7" step="1" value="5"><span class="val" id="zwv">5 tasti</span></label>
+      <span class="zdesc" id="zdesc"></span>
+      <span class="grow"></span>
+      <span class="key">
+        <span><i style="background:var(--root)"></i>fondamentale</span>
+        <span><i style="background:var(--third)"></i>terza</span>
+        <span><i style="background:var(--fifth)"></i>quinta</span>
+        <span><i style="background:var(--sev)"></i>sesta e settima</span>
+        <span><i style="background:var(--ext)"></i>estensioni</span>
+      </span>
+    </div>
+    <div class="zline">
+      <span class="cap">Copertura per posizione</span>
+      <div class="strip" id="strip" title="Percentuale di note raggiungibili senza spostarsi, sul peggiore accordo della griglia"></div>
+    </div>
+  </div>
 
-    <aside class="right">
+  <section class="voicing">
+    <div class="vhead">
       <h2>Voicing <small id="vcount"></small></h2>
-      <label class="field"><span>Tipo</span><select id="vtype"></select></label>
-      <p class="hint" id="vhint"></p>
-      <div class="vrow">
-        <label class="mini" id="spanwrap"><span class="cap">Apertura mano</span>
-          <input type="range" id="span" min="3" max="6" step="1" value="4"><span class="val" id="spanv">4</span></label>
-      </div>
-      <div class="vrow">
-        <button id="vl" title="Sceglie i voicing con meno movimento su tutta la griglia">Ottimizza voice leading</button>
-        <span class="val dim" id="vlinfo"></span>
-      </div>
-      <div class="voices" id="voices"></div>
-    </aside>
-  </main>
+      <label class="mini"><span class="cap">Tipo</span><select id="vtype"></select></label>
+      <label class="mini" id="spanwrap"><span class="cap">apertura mano</span>
+        <input type="range" id="span" min="3" max="6" step="1" value="4"><span class="val" id="spanv">4</span></label>
+      <button id="vl">Ottimizza voice leading</button>
+      <span class="val dim" id="vlinfo"></span>
+      <span class="grow"></span>
+      <span class="hint" id="vhint"></span>
+    </div>
+    <div class="voices" id="voices"></div>
+  </section>
 
   <nav class="shelf" aria-label="Altri comandi">
     <span class="shelf-cap">Altro qui sotto</span>

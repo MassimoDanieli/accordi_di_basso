@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" data-versione="1.4.0">
+<html lang="it" data-versione="1.5.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=1.4.0">
+<link rel="stylesheet" href="assets/styles.css?v=1.5.0">
 <script>
   (function () {
     var t = 'scuro';
@@ -63,51 +63,47 @@
   </header>
 
   <p class="tip">Spazio fra le battute, virgola dentro la battuta: <code>D-7 G7 C^7,A7</code> &middot;
-     <a href="index.html">guida completa</a> <span class="ver">v1.4.0</span></p>
+     <a href="index.html">guida completa</a> <span class="ver">v1.5.0</span></p>
 
   <nav class="ribbon" id="chips" aria-label="Accordi della griglia"></nav>
 
-  <main class="stage">
-    <section class="left">
-      <div class="board" id="board"></div>
+  <main class="board" id="board"></main>
 
-      <div class="zonebar">
-        <div class="zline">
-          <label class="mini"><span class="cap">Zona, dal tasto</span>
-            <input type="range" id="zs" min="0" max="8" step="1" value="0"><span class="val" id="zsv">0</span></label>
-          <label class="mini"><span class="cap">ampiezza</span>
-            <input type="range" id="zw" min="3" max="7" step="1" value="5"><span class="val" id="zwv">5 tasti</span></label>
-          <span class="zdesc" id="zdesc"></span>
-        </div>
-        <div class="zline">
-          <span class="cap">Copertura per posizione</span>
-          <div class="strip" id="strip" title="Percentuale di note raggiungibili senza spostarsi, sul peggiore accordo della griglia"></div>
-        </div>
-        <div class="key">
-          <span><i style="background:var(--root)"></i>fondamentale</span>
-          <span><i style="background:var(--third)"></i>terza</span>
-          <span><i style="background:var(--fifth)"></i>quinta</span>
-          <span><i style="background:var(--sev)"></i>sesta e settima</span>
-          <span><i style="background:var(--ext)"></i>estensioni</span>
-        </div>
-      </div>
-    </section>
+  <div class="zonebar">
+    <div class="zline">
+      <label class="mini"><span class="cap">Zona, dal tasto</span>
+        <input type="range" id="zs" min="0" max="8" step="1" value="0"><span class="val" id="zsv">0</span></label>
+      <label class="mini"><span class="cap">ampiezza</span>
+        <input type="range" id="zw" min="3" max="7" step="1" value="5"><span class="val" id="zwv">5 tasti</span></label>
+      <span class="zdesc" id="zdesc"></span>
+      <span class="grow"></span>
+      <span class="key">
+        <span><i style="background:var(--root)"></i>fondamentale</span>
+        <span><i style="background:var(--third)"></i>terza</span>
+        <span><i style="background:var(--fifth)"></i>quinta</span>
+        <span><i style="background:var(--sev)"></i>sesta e settima</span>
+        <span><i style="background:var(--ext)"></i>estensioni</span>
+      </span>
+    </div>
+    <div class="zline">
+      <span class="cap">Copertura per posizione</span>
+      <div class="strip" id="strip" title="Percentuale di note raggiungibili senza spostarsi, sul peggiore accordo della griglia"></div>
+    </div>
+  </div>
 
-    <aside class="right">
+  <section class="voicing">
+    <div class="vhead">
       <h2>Voicing <small id="vcount"></small></h2>
-      <label class="field"><span>Tipo</span><select id="vtype"></select></label>
-      <p class="hint" id="vhint"></p>
-      <div class="vrow">
-        <label class="mini" id="spanwrap"><span class="cap">Apertura mano</span>
-          <input type="range" id="span" min="3" max="6" step="1" value="4"><span class="val" id="spanv">4</span></label>
-      </div>
-      <div class="vrow">
-        <button id="vl" title="Sceglie i voicing con meno movimento su tutta la griglia">Ottimizza voice leading</button>
-        <span class="val dim" id="vlinfo"></span>
-      </div>
-      <div class="voices" id="voices"></div>
-    </aside>
-  </main>
+      <label class="mini"><span class="cap">Tipo</span><select id="vtype"></select></label>
+      <label class="mini" id="spanwrap"><span class="cap">apertura mano</span>
+        <input type="range" id="span" min="3" max="6" step="1" value="4"><span class="val" id="spanv">4</span></label>
+      <button id="vl">Ottimizza voice leading</button>
+      <span class="val dim" id="vlinfo"></span>
+      <span class="grow"></span>
+      <span class="hint" id="vhint"></span>
+    </div>
+    <div class="voices" id="voices"></div>
+  </section>
 
   <nav class="shelf" aria-label="Altri comandi">
     <span class="shelf-cap">Altro qui sotto</span>
@@ -202,6 +198,6 @@
   </footer>
 </div>
 
-<script type="module" src="src/app.js?v=1.4.0"></script>
+<script type="module" src="src/app.js?v=1.5.0"></script>
 </body>
 </html>
