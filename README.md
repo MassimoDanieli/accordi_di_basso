@@ -9,6 +9,11 @@ Nessuna dipendenza, nessun passaggio di build: HTML, CSS e moduli ES nativi.
 
 ![licenza](https://img.shields.io/badge/licenza-GPL--3.0-E9B04A) [![sito](https://img.shields.io/badge/sito-basso.massimodanieli.com-63B7A6)](https://basso.massimodanieli.com/)
 
+## Pagine
+
+`index.html` e' la guida all'uso, `app.html` e' lo strumento. Su GitHub Pages la guida fa
+quindi da pagina d'ingresso.
+
 ## Interfaccia
 
 Il banco di lavoro occupa la prima schermata: griglia di accordi e trasporto in alto,
@@ -45,6 +50,12 @@ terzo e l'ottavo tasto il costo scende da 37,5 a 28,5.
 **Zone.** La striscia sotto i controlli assegna a ogni posizione di partenza la percentuale
 di note dell'accordo raggiungibili senza muoversi, presa sul peggiore accordo della griglia:
 più è chiara, peggio è. Un clic ti ci porta.
+
+**La nota che suona si accende.** Durante la riproduzione ogni nota si illumina sul manico
+nel momento in cui la senti, una alla volta sugli arpeggi e tutte insieme sull'attacco dei
+voicing a blocco.
+
+**Tema chiaro e scuro.** Segue le preferenze di sistema alla prima visita, poi ricorda la scelta.
 
 **Trasporto.** Play in loop da 40 a 200 bpm, metri 4/4, 3/4, 2/4 e 6/8, metronomo con accento
 sul primo movimento della battuta. La zona insegue l'accordo corrente, oppure resta ferma con
@@ -128,7 +139,8 @@ sull'indirizzo di progetto <https://massimodanieli.github.io/accordi_di_basso/>.
 ## Struttura
 
 ```
-index.html            pagina e controlli
+index.html            guida all'uso
+app.html              lo strumento
 assets/styles.css     stile
 src/theory.js         note, sigle di accordo, gradi
 src/voicings.js       generazione dei voicing e voice leading
@@ -137,6 +149,7 @@ src/audio.js          corda pizzicata e metronomo, Web Audio
 src/tab.js            esportazione in tab ASCII
 src/ireal.js          lettura dei link iReal Pro
 src/library.js        forme armoniche e brani tradizionali
+src/theme.js          tema chiaro/scuro
 src/app.js            stato e collegamento fra i moduli
 tools/build.js        genera dist/manico.html, file unico autonomo
 test/smoke.test.js    test, senza dipendenze

@@ -3,6 +3,19 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [1.3.0] — 2026-08-01
+
+### Aggiunto
+- La nota che sta suonando si accende sul manico e sul diagramma del voicing scelto,
+  in sincrono con quello che si sente: una alla volta sugli arpeggi, tutte insieme
+  sull'attacco dei voicing a blocco.
+- Tema chiaro e tema scuro, con interruttore in barra. Alla prima visita segue le
+  preferenze del sistema, poi ricorda la scelta.
+- `index.html` e' ora una guida all'uso in otto sezioni: sintassi della griglia, zone,
+  tipi di voicing, voice leading, esecuzione, tab, importazione iReal, accordature.
+  Lo strumento si e' spostato in `app.html`.
+- Marchio ridisegnato: un manico stilizzato con quattro corde e un segnatasto.
+
 ## [1.2.0] — 2026-08-01
 
 ### Modificato

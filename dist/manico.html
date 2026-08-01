@@ -20,6 +20,18 @@
   --sans:"Space Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
+:root{ --string:#B9B2A6; --nut:#EDE7DD; }
+
+[data-tema="chiaro"]{
+  --ink:#F6F2EA; --panel:#FFFFFF; --panel-2:#EFE9DE;
+  --wood:#CBB08A; --fretwire:#7C766B; --inlay:#A28F72;
+  --string:#6E675C; --nut:#3A342C;
+  --paper:#241F1B; --muted:#6B6259; --faint:#8A8076;
+  --line:rgba(36,31,27,.13); --line-2:rgba(36,31,27,.22);
+  --root:#C2831A; --third:#2C8676; --fifth:#4A6DB5; --sev:#C0573A; --ext:#785EB0;
+}
+[data-tema="chiaro"] .cell{color:rgba(255,255,255,.92)}
+
 *{box-sizing:border-box}
 body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);
   font-size:14px;-webkit-font-smoothing:antialiased;line-height:1.45}
@@ -31,8 +43,19 @@ body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);
 /* ------------------------------------------------------------------ barra */
 .bar{display:flex;align-items:flex-end;gap:12px;padding:14px 18px 12px;
   border-bottom:1px solid var(--line);flex-wrap:wrap}
-.brand{font-weight:700;font-size:18px;letter-spacing:-.01em;padding-bottom:6px}
-.brand b{color:var(--root)}
+.brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;padding-bottom:5px}
+.brand .word{font-weight:700;font-size:17px;letter-spacing:-.015em}
+.brand .word b{color:var(--root)}
+.brand:hover .word{color:var(--root)}
+.mark{width:30px;height:24px;flex:none}
+.mk-board{fill:var(--wood);stroke:none}
+.mk-nut{stroke:var(--nut);stroke-width:2.4}
+.mk-fret{stroke:var(--fretwire);stroke-width:1.1;opacity:.75}
+.mk-string{stroke:var(--string);stroke-width:.9;opacity:.65}
+.mk-dot{fill:var(--root)}
+.bar-links{display:flex;align-items:center;gap:10px;padding-bottom:5px}
+.bar-links a{color:var(--muted);font-size:13px;text-decoration:none;border-bottom:1px solid var(--line-2)}
+.bar-links a:hover{color:var(--root);border-color:var(--root)}
 .cap{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);white-space:nowrap}
 .grid-in{flex:1;min-width:260px;display:flex;flex-direction:column;gap:5px}
 .tempo{display:flex;flex-direction:column;gap:5px}
@@ -146,6 +169,17 @@ pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r
 .foot{grid-column:1/-1;font-size:11px;color:var(--faint);line-height:1.8;padding-top:6px}
 .foot a{color:var(--muted)}
 
+/* La nota che sta suonando si accende. */
+@keyframes hitpulse{
+  0%{transform:scale(1.5)}
+  55%{transform:scale(1.08)}
+  100%{transform:scale(1)}
+}
+.note.hit{opacity:1!important;transform-box:fill-box;transform-origin:center;
+  animation:hitpulse .42s cubic-bezier(.2,.8,.3,1)}
+.note.hit circle{filter:drop-shadow(0 0 7px rgba(233,176,74,.75))}
+[data-tema="chiaro"] .note.hit circle{filter:drop-shadow(0 0 6px rgba(0,0,0,.35))}
+
 @media (max-width:900px){
   .deck{min-height:0}
   .stage{grid-template-columns:1fr}
@@ -156,7 +190,46 @@ pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
+
+/* ---------------------------------------------------------------- guida */
+.doc{max-width:860px;margin:0 auto;padding:34px 22px 72px}
+.doc-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:30px}
+.doc-bar .grow{flex:1}
+.lede{font-size:16px;line-height:1.7;color:var(--muted);margin:0 0 26px;max-width:64ch}
+.doc h1{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:0 0 10px}
+.doc h2{font-size:15px;font-weight:600;margin:34px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
+.doc h3{font-size:13px;font-weight:600;margin:20px 0 6px;color:var(--muted)}
+.doc p,.doc li{font-size:14px;line-height:1.75;color:var(--paper)}
+.doc p{margin:0 0 12px;max-width:70ch}
+.doc ul{margin:0 0 12px;padding-left:20px;max-width:70ch}
+.doc li{margin-bottom:6px}
+.doc code{background:var(--panel-2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12.5px}
+.doc pre{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;
+  overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.6}
+.doc table{border-collapse:collapse;width:100%;margin:0 0 14px;font-size:13px}
+.doc th,.doc td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.doc th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:500}
+.doc td:first-child{font-family:var(--mono);color:var(--root);white-space:nowrap}
+.cta{display:inline-flex;align-items:center;gap:8px;background:var(--root);color:#221803;
+  border-radius:var(--r);padding:11px 18px;text-decoration:none;font-weight:500;font-size:14px}
+.cta:hover{background:#F0BC61}
+[data-tema="chiaro"] .cta{color:#FFF7E8}
+.doc .note-box{background:var(--panel);border:1px solid var(--line);border-left:2px solid var(--root);
+  border-radius:var(--r);padding:12px 14px;margin:0 0 14px}
+.doc .note-box p:last-child{margin:0}
+.doc-foot{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);font-size:11px;color:var(--faint);line-height:1.8}
+.doc-foot a{color:var(--muted)}
+
 </style>
+<script>
+  (function () {
+    var t = 'scuro';
+    try { var v = localStorage.getItem('manico-tema'); if (v === 'chiaro' || v === 'scuro') t = v; else
+      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'chiaro' : 'scuro';
+    } catch (e) {}
+    document.documentElement.setAttribute('data-tema', t);
+  })();
+</script>
 </head>
 <body>
 
@@ -164,13 +237,31 @@ pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r
 <div class="deck">
 
   <header class="bar">
-    <span class="brand">Manico<b>.</b></span>
+    <a class="brand" href="https://basso.massimodanieli.com/" title="Guida all'uso">
+      <svg class="mark" viewBox="0 0 30 24" aria-hidden="true">
+        <rect x="0.5" y="2.5" width="29" height="19" rx="3" class="mk-board"/>
+        <line x1="4" y1="2.5" x2="4" y2="21.5" class="mk-nut"/>
+        <line x1="12" y1="2.5" x2="12" y2="21.5" class="mk-fret"/>
+        <line x1="20" y1="2.5" x2="20" y2="21.5" class="mk-fret"/>
+        <line x1="0.5" y1="6.5" x2="29.5" y2="6.5" class="mk-string"/>
+        <line x1="0.5" y1="11" x2="29.5" y2="11" class="mk-string"/>
+        <line x1="0.5" y1="15.5" x2="29.5" y2="15.5" class="mk-string"/>
+        <line x1="0.5" y1="20" x2="29.5" y2="20" class="mk-string"/>
+        <circle cx="16" cy="11" r="3.2" class="mk-dot"/>
+      </svg>
+      <span class="word">Manico<b>.</b></span>
+    </a>
 
     <label class="grid-in">
       <span class="cap">Griglia di accordi</span>
       <input type="text" id="seq" value="C-7 F7 Bbdim7 Ebdim7" spellcheck="false" autocomplete="off">
     </label>
     <button class="pri" id="go">Mostra</button>
+
+    <span class="bar-links">
+      <a href="https://basso.massimodanieli.com/">Guida</a>
+      <button id="tema" class="tog">Chiaro</button>
+    </span>
 
     <label class="tempo">
       <span class="cap">Tempo</span>
@@ -766,7 +857,7 @@ __mod.render = (function () {
 
     const zx1 = zoneFrom === 0 ? NUT - 34 : fx(zoneFrom - 1);
     s += `<rect x="${zx1}" y="${PT - 16}" width="${fx(zoneTo) - zx1}" height="${ROW * (open.length - 1) + 32}" rx="5" fill="var(--root)" opacity=".10" stroke="var(--root)" stroke-opacity=".35"/>`;
-    s += `<rect x="${NUT - 4}" y="${PT - 13}" width="4" height="${ROW * (open.length - 1) + 26}" fill="var(--paper)" opacity=".72"/>`;
+    s += `<rect x="${NUT - 4}" y="${PT - 13}" width="4" height="${ROW * (open.length - 1) + 26}" fill="var(--nut)" opacity=".8"/>`;
 
     for (let f = 1; f <= frets; f++)
       s += `<line x1="${fx(f)}" y1="${PT - 13}" x2="${fx(f)}" y2="${PT + ROW * (open.length - 1) + 13}" stroke="var(--fretwire)" stroke-width="${f < 6 ? 2 : 1.4}" opacity=".55"/>`;
@@ -780,7 +871,7 @@ __mod.render = (function () {
 
     ord.forEach((si, row) => {
       const y = sy(row);
-      s += `<line x1="${NUT - 38}" y1="${y}" x2="${fx(frets)}" y2="${y}" stroke="#B9B2A6" stroke-width="${1 + (open.length - 1 - si) * 0.55}" opacity=".5"/>`;
+      s += `<line x1="${NUT - 38}" y1="${y}" x2="${fx(frets)}" y2="${y}" stroke="var(--string)" stroke-width="${1 + (open.length - 1 - si) * 0.55}" opacity=".5"/>`;
       s += `<text x="14" y="${y + 4}" fill="var(--faint)" font-size="12" font-family="${MONO}">${SHARP[open[si] % 12]}</text>`;
     });
 
@@ -803,7 +894,7 @@ __mod.render = (function () {
           const text = labels === 'degrees' ? degreeName(iv, chord) : noteName(midi % 12, chord.flats);
           const col = degreeColor(iv);
           const op = picked ? 1 : (inZone ? 0.4 : 0.13);
-          s += `<g opacity="${op}" style="cursor:pointer" data-midi="${midi}" class="note">`
+          s += `<g opacity="${op}" style="cursor:pointer" data-midi="${midi}" data-pos="${si}:${f}" class="note">`
             + `<circle cx="${x}" cy="${y}" r="12.5" fill="${col}"/>`
             + (picked ? `<circle cx="${x}" cy="${y}" r="16" fill="none" stroke="${col}" stroke-width="1.5"/>` : '')
             + `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="${text.length > 2 ? 9.5 : 11}" font-weight="600" font-family="${MONO}" fill="#1A1512">${text}</text></g>`;
@@ -830,7 +921,7 @@ __mod.render = (function () {
     }
     ord.forEach((si, row) => {
       const y = sy(row);
-      s += `<line x1="${PL - 6}" y1="${y}" x2="${PL + CW * n}" y2="${y}" stroke="#B9B2A6" stroke-width="1" opacity=".35"/>`;
+      s += `<line x1="${PL - 6}" y1="${y}" x2="${PL + CW * n}" y2="${y}" stroke="var(--string)" stroke-width="1" opacity=".35"/>`;
     });
     for (let f = zoneFrom; f <= zoneTo; f++)
       s += `<text x="${cx(f)}" y="${H - 5}" text-anchor="middle" font-size="9" font-family="${MONO}" fill="var(--faint)">${f}</text>`;
@@ -839,8 +930,9 @@ __mod.render = (function () {
       const row = ord.indexOf(note.si);
       if (row < 0) return;
       const x = cx(note.f), y = sy(row), text = degreeName(note.iv, chord);
-      s += `<circle cx="${x}" cy="${y}" r="9.5" fill="${degreeColor(note.iv)}"/>`
-        + `<text x="${x}" y="${y + 3.5}" text-anchor="middle" font-size="${text.length > 2 ? 7.5 : 9}" font-weight="600" font-family="${MONO}" fill="#1A1512">${text}</text>`;
+      s += `<g class="note" data-pos="${note.si}:${note.f}">`
+        + `<circle cx="${x}" cy="${y}" r="9.5" fill="${degreeColor(note.iv)}"/>`
+        + `<text x="${x}" y="${y + 3.5}" text-anchor="middle" font-size="${text.length > 2 ? 7.5 : 9}" font-weight="600" font-family="${MONO}" fill="#1A1512">${text}</text></g>`;
       if (!voicing.block)
         s += `<text x="${x}" y="${y - 13}" text-anchor="middle" font-size="8" font-family="${MONO}" fill="var(--faint)">${i + 1}</text>`;
     });
@@ -1035,6 +1127,43 @@ __mod.library = (function () {
   return { LIBRARY };
 })();
 
+__mod.theme = (function () {
+
+  // Tema chiaro/scuro. La preferenza sopravvive alla chiusura della pagina quando il
+  // browser lo consente; in navigazione privata si ripiega sulle impostazioni di sistema.
+
+  const KEY = 'manico-tema';
+
+  function readTheme() {
+    try {
+      const saved = localStorage.getItem(KEY);
+      if (saved === 'chiaro' || saved === 'scuro') return saved;
+    } catch (e) { /* archiviazione non disponibile */ }
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'chiaro' : 'scuro';
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-tema', theme);
+    try { localStorage.setItem(KEY, theme); } catch (e) { /* niente da fare */ }
+    const btn = document.getElementById('tema');
+    if (btn) {
+      const chiaro = theme === 'chiaro';
+      btn.textContent = chiaro ? 'Scuro' : 'Chiaro';
+      btn.title = chiaro ? 'Passa al tema scuro' : 'Passa al tema chiaro';
+      btn.setAttribute('aria-label', btn.title);
+    }
+  }
+
+  function initTheme() {
+    applyTheme(readTheme());
+    const btn = document.getElementById('tema');
+    if (btn) btn.onclick = () => applyTheme(
+      document.documentElement.getAttribute('data-tema') === 'chiaro' ? 'scuro' : 'chiaro');
+  }
+
+  return { readTheme, applyTheme, initTheme };
+})();
+
 __mod.app = (function () {
   const V = __mod.voicings;
   const A = __mod.audio;
@@ -1043,7 +1172,9 @@ __mod.app = (function () {
   const IReal = __mod.ireal;
   const { TUNINGS, parseChord, degreeName, noteName } = __mod.theory;
   const { LIBRARY } = __mod.library;
+  const { initTheme } = __mod.theme;
   // Stato dell'applicazione e collegamento fra i moduli.
+
 
 
 
@@ -1243,11 +1374,46 @@ __mod.app = (function () {
 
   // ---------------------------------------------------------------- suono
 
+  let flashes = [];
+
+  function clearFlashes() {
+    flashes.forEach(clearTimeout);
+    flashes = [];
+    document.querySelectorAll('.note.hit').forEach(el => el.classList.remove('hit'));
+  }
+
+  /** Accende la nota sul manico e sul diagramma del voicing scelto. */
+  function flash(note) {
+    const sel = `[data-pos="${note.si}:${note.f}"]`;
+    document.querySelectorAll('#board ' + sel + ', .voice.sel ' + sel).forEach(el => {
+      el.classList.remove('hit');
+      void el.getBoundingClientRect();   // forza il riavvio dell'animazione
+      el.classList.add('hit');
+    });
+  }
+
+  /** Programma l'accensione delle note in sincrono con quello che si sente. */
+  function lightUp(v, step) {
+    clearFlashes();
+    if (!v) return;
+    if (v.block) { v.shape.forEach(n => flash(n)); return; }
+    v.shape.forEach((n, i) => {
+      if (i === 0) { flash(n); return; }
+      flashes.push(setTimeout(() => flash(n), i * step * 1000));
+    });
+  }
+
   function hear(v, seconds) {
     if (!v) return;
     const midis = v.shape.map(n => n.midi);
-    if (v.block) A.strum(midis, Math.min(seconds || 1.6, 2.2));
-    else A.arpeggio(midis, Math.min((seconds || 1.6) / midis.length, 0.42));
+    if (v.block) {
+      A.strum(midis, Math.min(seconds || 1.6, 2.2));
+      lightUp(v, 0);
+    } else {
+      const step = Math.min((seconds || 1.6) / midis.length, 0.42);
+      A.arpeggio(midis, step);
+      lightUp(v, step);
+    }
   }
 
   function select(i) {
@@ -1277,8 +1443,10 @@ __mod.app = (function () {
     if (item.ok && state.playMode !== 'mute') {
       const v = chosen(state.index);
       if (v) {
-        if (state.playMode === 'root') A.pluck(v.shape[0].midi, 0, Math.min(seconds * 0.9, 1.6), 0.3);
-        else hear(v, seconds * 0.92);
+        if (state.playMode === 'root') {
+          A.pluck(v.shape[0].midi, 0, Math.min(seconds * 0.9, 1.6), 0.3);
+          clearFlashes(); flash(v.shape[0]);
+        } else hear(v, seconds * 0.92);
       }
     }
     state.timer = setTimeout(() => {
@@ -1289,12 +1457,13 @@ __mod.app = (function () {
   function stop() {
     state.playing = false;
     clearTimeout(state.timer);
+    clearFlashes();
     $('pp').innerHTML = '&#9654; Play';
   }
   function toggleTransport() {
     state.playing = !state.playing;
     $('pp').innerHTML = state.playing ? '&#9632; Stop' : '&#9654; Play';
-    if (state.playing) { A.audio(); tick(); } else clearTimeout(state.timer);
+    if (state.playing) { A.audio(); tick(); } else { clearTimeout(state.timer); clearFlashes(); }
   }
 
   // ---------------------------------------------------------------- voice leading
@@ -1467,6 +1636,7 @@ __mod.app = (function () {
       if (e.key === 'ArrowLeft' && state.index > 0) select(state.index - 1);
     });
 
+    initTheme();
     $('spanwrap').style.display = 'none';
     parseGrid();
     render();

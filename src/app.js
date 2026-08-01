@@ -7,6 +7,7 @@ import * as R from './render.js';
 import * as Tab from './tab.js';
 import * as IReal from './ireal.js';
 import { LIBRARY } from './library.js';
+import { initTheme } from './theme.js';
 
 const $ = id => document.getElementById(id);
 
@@ -204,11 +205,46 @@ function render() {
 
 // ---------------------------------------------------------------- suono
 
+let flashes = [];
+
+function clearFlashes() {
+  flashes.forEach(clearTimeout);
+  flashes = [];
+  document.querySelectorAll('.note.hit').forEach(el => el.classList.remove('hit'));
+}
+
+/** Accende la nota sul manico e sul diagramma del voicing scelto. */
+function flash(note) {
+  const sel = `[data-pos="${note.si}:${note.f}"]`;
+  document.querySelectorAll('#board ' + sel + ', .voice.sel ' + sel).forEach(el => {
+    el.classList.remove('hit');
+    void el.getBoundingClientRect();   // forza il riavvio dell'animazione
+    el.classList.add('hit');
+  });
+}
+
+/** Programma l'accensione delle note in sincrono con quello che si sente. */
+function lightUp(v, step) {
+  clearFlashes();
+  if (!v) return;
+  if (v.block) { v.shape.forEach(n => flash(n)); return; }
+  v.shape.forEach((n, i) => {
+    if (i === 0) { flash(n); return; }
+    flashes.push(setTimeout(() => flash(n), i * step * 1000));
+  });
+}
+
 function hear(v, seconds) {
   if (!v) return;
   const midis = v.shape.map(n => n.midi);
-  if (v.block) A.strum(midis, Math.min(seconds || 1.6, 2.2));
-  else A.arpeggio(midis, Math.min((seconds || 1.6) / midis.length, 0.42));
+  if (v.block) {
+    A.strum(midis, Math.min(seconds || 1.6, 2.2));
+    lightUp(v, 0);
+  } else {
+    const step = Math.min((seconds || 1.6) / midis.length, 0.42);
+    A.arpeggio(midis, step);
+    lightUp(v, step);
+  }
 }
 
 function select(i) {
@@ -238,8 +274,10 @@ function tick() {
   if (item.ok && state.playMode !== 'mute') {
     const v = chosen(state.index);
     if (v) {
-      if (state.playMode === 'root') A.pluck(v.shape[0].midi, 0, Math.min(seconds * 0.9, 1.6), 0.3);
-      else hear(v, seconds * 0.92);
+      if (state.playMode === 'root') {
+        A.pluck(v.shape[0].midi, 0, Math.min(seconds * 0.9, 1.6), 0.3);
+        clearFlashes(); flash(v.shape[0]);
+      } else hear(v, seconds * 0.92);
     }
   }
   state.timer = setTimeout(() => {
@@ -250,12 +288,13 @@ function tick() {
 function stop() {
   state.playing = false;
   clearTimeout(state.timer);
+  clearFlashes();
   $('pp').innerHTML = '&#9654; Play';
 }
 function toggleTransport() {
   state.playing = !state.playing;
   $('pp').innerHTML = state.playing ? '&#9632; Stop' : '&#9654; Play';
-  if (state.playing) { A.audio(); tick(); } else clearTimeout(state.timer);
+  if (state.playing) { A.audio(); tick(); } else { clearTimeout(state.timer); clearFlashes(); }
 }
 
 // ---------------------------------------------------------------- voice leading
@@ -428,6 +467,7 @@ function init() {
     if (e.key === 'ArrowLeft' && state.index > 0) select(state.index - 1);
   });
 
+  initTheme();
   $('spanwrap').style.display = 'none';
   parseGrid();
   render();

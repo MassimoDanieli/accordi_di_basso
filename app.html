@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Manico — voicing e posizioni per basso elettrico</title>
+<meta name="description" content="Visualizzatore di accordi, voicing e voice leading sul manico del basso elettrico. Esporta in tab ASCII e importa le griglie da iReal Pro.">
+<meta name="theme-color" content="#131110">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<script>
+  (function () {
+    var t = 'scuro';
+    try { var v = localStorage.getItem('manico-tema'); if (v === 'chiaro' || v === 'scuro') t = v; else
+      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'chiaro' : 'scuro';
+    } catch (e) {}
+    document.documentElement.setAttribute('data-tema', t);
+  })();
+</script>
+</head>
+<body>
+
+<!-- ============================================================ banco di lavoro -->
+<div class="deck">
+
+  <header class="bar">
+    <a class="brand" href="index.html" title="Guida all'uso">
+      <svg class="mark" viewBox="0 0 30 24" aria-hidden="true">
+        <rect x="0.5" y="2.5" width="29" height="19" rx="3" class="mk-board"/>
+        <line x1="4" y1="2.5" x2="4" y2="21.5" class="mk-nut"/>
+        <line x1="12" y1="2.5" x2="12" y2="21.5" class="mk-fret"/>
+        <line x1="20" y1="2.5" x2="20" y2="21.5" class="mk-fret"/>
+        <line x1="0.5" y1="6.5" x2="29.5" y2="6.5" class="mk-string"/>
+        <line x1="0.5" y1="11" x2="29.5" y2="11" class="mk-string"/>
+        <line x1="0.5" y1="15.5" x2="29.5" y2="15.5" class="mk-string"/>
+        <line x1="0.5" y1="20" x2="29.5" y2="20" class="mk-string"/>
+        <circle cx="16" cy="11" r="3.2" class="mk-dot"/>
+      </svg>
+      <span class="word">Manico<b>.</b></span>
+    </a>
+
+    <label class="grid-in">
+      <span class="cap">Griglia di accordi</span>
+      <input type="text" id="seq" value="C-7 F7 Bbdim7 Ebdim7" spellcheck="false" autocomplete="off">
+    </label>
+    <button class="pri" id="go">Mostra</button>
+
+    <span class="bar-links">
+      <a href="index.html">Guida</a>
+      <button id="tema" class="tog">Chiaro</button>
+    </span>
+
+    <label class="tempo">
+      <span class="cap">Tempo</span>
+      <span class="tempo-row">
+        <button class="play" id="pp">&#9654; Play</button>
+        <input type="range" id="bpm" min="40" max="200" step="1" value="92">
+        <span class="val" id="bpmv">92</span>
+      </span>
+    </label>
+  </header>
+
+  <p class="tip">Uno <b>spazio</b> separa le battute, una <b>virgola</b> separa gli accordi dentro la stessa battuta —
+     <code>D-7 G7 C^7,A7</code>. Vanno bene sia <code>C-7</code> sia <code>Cm7</code>, sia <code>C^7</code> sia <code>Cmaj7</code>.
+     Barra spaziatrice per avviare, frecce per cambiare accordo.</p>
+
+  <nav class="ribbon" id="chips" aria-label="Accordi della griglia"></nav>
+
+  <main class="stage">
+    <section class="left">
+      <div class="board" id="board"></div>
+
+      <div class="zonebar">
+        <div class="zline">
+          <label class="mini"><span class="cap">Zona, dal tasto</span>
+            <input type="range" id="zs" min="0" max="11" step="1" value="0"><span class="val" id="zsv">0</span></label>
+          <label class="mini"><span class="cap">ampiezza</span>
+            <input type="range" id="zw" min="3" max="7" step="1" value="5"><span class="val" id="zwv">5 tasti</span></label>
+          <span class="zdesc" id="zdesc"></span>
+        </div>
+        <div class="zline">
+          <span class="cap">Copertura per posizione</span>
+          <div class="strip" id="strip" title="Percentuale di note raggiungibili senza spostarsi, sul peggiore accordo della griglia"></div>
+        </div>
+        <div class="key">
+          <span><i style="background:var(--root)"></i>fondamentale</span>
+          <span><i style="background:var(--third)"></i>terza</span>
+          <span><i style="background:var(--fifth)"></i>quinta</span>
+          <span><i style="background:var(--sev)"></i>sesta e settima</span>
+          <span><i style="background:var(--ext)"></i>estensioni</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="right">
+      <h2>Voicing <small id="vcount"></small></h2>
+      <label class="field"><span>Tipo</span><select id="vtype"></select></label>
+      <p class="hint" id="vhint"></p>
+      <div class="vrow">
+        <label class="mini" id="spanwrap"><span class="cap">Apertura mano</span>
+          <input type="range" id="span" min="3" max="6" step="1" value="4"><span class="val" id="spanv">4</span></label>
+      </div>
+      <div class="vrow">
+        <button id="vl" title="Sceglie i voicing con meno movimento su tutta la griglia">Ottimizza voice leading</button>
+        <span class="val dim" id="vlinfo"></span>
+      </div>
+      <div class="voices" id="voices"></div>
+    </aside>
+  </main>
+</div>
+
+<!-- ================================================================ pannelli -->
+<div class="panels">
+
+  <section class="panel">
+    <h2>Strumento e vista</h2>
+    <label class="field"><span>Basso</span><select id="tun"></select></label>
+    <div class="field"><span>Note sul manico</span>
+      <div class="togs">
+        <button class="tog on" id="tlab">Gradi</button>
+        <button class="tog" id="tflip">Inverti corde</button>
+        <button class="tog on" id="tdim">Sfuma fuori zona</button>
+      </div>
+    </div>
+    <p class="hint"><b>Gradi</b> mostra R, 3, 5, ♭7 invece dei nomi delle note. <b>Inverti corde</b> mette la corda
+      piu grave in alto, al posto della disposizione da tab. <b>Sfuma fuori zona</b> lascia visibili in trasparenza
+      le note che stanno fuori dalla zona scelta.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Esecuzione</h2>
+    <label class="field"><span>Metro</span>
+      <select id="beats"><option value="4">4/4</option><option value="3">3/4</option><option value="2">2/4</option><option value="6">6/8</option></select>
+    </label>
+    <label class="field"><span>Cosa suona</span>
+      <select id="mode">
+        <option value="voicing">il voicing scelto</option>
+        <option value="root">solo la fondamentale</option>
+        <option value="mute">niente, solo il click</option>
+      </select>
+    </label>
+    <div class="field"><span>Opzioni</span>
+      <div class="togs">
+        <button class="tog on" id="clk">Click</button>
+        <button class="tog" id="lock">Zona fissa</button>
+      </div>
+    </div>
+    <p class="hint"><b>Zona fissa</b> impedisce alla zona di inseguire l'accordo corrente: resti in posizione e vedi
+      cosa hai davvero sotto le dita.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Forme armoniche</h2>
+    <p class="hint">Forme generiche e brani tradizionali di pubblico dominio. Per gli standard usa l'importazione
+      dalle tue carte iReal.</p>
+    <div class="row"><select id="lib" style="flex:1"></select><button class="pri" id="libgo">Carica</button></div>
+  </section>
+
+  <section class="panel">
+    <h2>Importa da iReal Pro</h2>
+    <p class="hint">Incolla un link <code>irealb://</code> o <code>irealbook://</code> preso dal tasto Condividi
+      dell'app. Viene letto qui nel browser: non esce niente dalla pagina.</p>
+    <textarea id="ireal" spellcheck="false" placeholder="irealb://..."></textarea>
+    <div class="row"><select id="irlist" style="flex:1;display:none"></select><button class="pri" id="irgo">Importa</button></div>
+    <p class="hint" id="irinfo"></p>
+  </section>
+
+  <section class="panel wide">
+    <h2>Tab ASCII</h2>
+    <p class="hint">Usa il voicing selezionato per ogni accordo. Clicca una card di voicing per cambiarlo, poi rigenera.</p>
+    <div class="row">
+      <button class="pri" id="mktab">Genera</button>
+      <button id="cptab">Copia</button>
+      <button id="dltab">Scarica .txt</button>
+      <select id="perline" style="max-width:190px">
+        <option value="4">4 battute per riga</option>
+        <option value="2">2 battute per riga</option>
+        <option value="6">6 battute per riga</option>
+      </select>
+    </div>
+    <pre id="tab">Premi Genera.</pre>
+  </section>
+
+  <footer class="foot">
+    Manico &copy; 2026 Massimo Danieli &middot; software libero sotto
+    <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>, senza alcuna garanzia &middot;
+    <a href="https://github.com/MassimoDanieli/accordi_di_basso">sorgenti su GitHub</a>
+  </footer>
+</div>
+
+<script type="module" src="src/app.js"></script>
+</body>
+</html>

@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // L'ordine conta: un modulo deve comparire prima di chi lo importa.
-const MODULES = ['theory', 'voicings', 'audio', 'render', 'tab', 'ireal', 'library', 'app'];
+const MODULES = ['theory', 'voicings', 'audio', 'render', 'tab', 'ireal', 'library', 'theme', 'app'];
 
 const IMPORT_NAMED = /^import\s*\{([^}]+)\}\s*from\s*['"]\.\/(\w+)\.js['"];?\s*$/gm;
 const IMPORT_STAR = /^import\s*\*\s*as\s*(\w+)\s*from\s*['"]\.\/(\w+)\.js['"];?\s*$/gm;
@@ -49,9 +49,11 @@ const bundle = ['(function () {', '"use strict";', 'const __mod = {};']
 
 const css = readFileSync(join(root, 'assets', 'styles.css'), 'utf8');
 
-let html = readFileSync(join(root, 'index.html'), 'utf8')
+let html = readFileSync(join(root, 'app.html'), 'utf8')
   .replace(/<link rel="stylesheet" href="assets\/styles\.css">/, `<style>\n${css}\n</style>`)
-  .replace(/<script type="module" src="src\/app\.js"><\/script>/, `<script>\n${bundle}\n</script>`);
+  .replace(/<script type="module" src="src\/app\.js"><\/script>/, `<script>\n${bundle}\n</script>`)
+  // Nel file unico la guida non e' accanto: si punta al sito.
+  .replace(/href="index\.html"/g, 'href="https://basso.massimodanieli.com/"');
 
 mkdirSync(join(root, 'dist'), { recursive: true });
 writeFileSync(join(root, 'dist', 'manico.html'), html);
