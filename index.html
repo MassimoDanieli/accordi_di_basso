@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manico — guida all'uso</title>
+<meta name="description" content="Come usare Manico: griglia di accordi, zone del manico, tipi di voicing, voice leading, tab ASCII e importazione da iReal Pro.">
+<meta name="theme-color" content="#131110">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<script>
+  // Applicato subito, prima del disegno, per non far lampeggiare la pagina.
+  (function () {
+    var t = 'scuro';
+    try { var v = localStorage.getItem('manico-tema'); if (v === 'chiaro' || v === 'scuro') t = v; else
+      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'chiaro' : 'scuro';
+    } catch (e) {}
+    document.documentElement.setAttribute('data-tema', t);
+  })();
+</script>
+</head>
+<body>
+<div class="doc">
+
+  <div class="doc-bar">
+    <span class="brand">
+      <svg class="mark" viewBox="0 0 30 24" aria-hidden="true">
+        <rect x="0.5" y="2.5" width="29" height="19" rx="3" class="mk-board"/>
+        <line x1="4" y1="2.5" x2="4" y2="21.5" class="mk-nut"/>
+        <line x1="12" y1="2.5" x2="12" y2="21.5" class="mk-fret"/>
+        <line x1="20" y1="2.5" x2="20" y2="21.5" class="mk-fret"/>
+        <line x1="0.5" y1="6.5" x2="29.5" y2="6.5" class="mk-string"/>
+        <line x1="0.5" y1="11" x2="29.5" y2="11" class="mk-string"/>
+        <line x1="0.5" y1="15.5" x2="29.5" y2="15.5" class="mk-string"/>
+        <line x1="0.5" y1="20" x2="29.5" y2="20" class="mk-string"/>
+        <circle cx="16" cy="11" r="3.2" class="mk-dot"/>
+      </svg>
+      <span class="word">Manico<b>.</b></span>
+    </span>
+    <span class="grow"></span>
+    <button id="tema" class="tog">Chiaro</button>
+    <a class="cta" href="app.html">Apri lo strumento &rarr;</a>
+  </div>
+
+  <h1>Voicing e posizioni sul manico del basso</h1>
+  <p class="lede">Scrivi una griglia di accordi, scegli una zona di quattro-sette tasti e Manico ti mostra
+    quali voicing stanno dentro quella zona, come collegarli con il minimo movimento della mano, li fa
+    girare a tempo e li esporta in tab ASCII.</p>
+
+  <h2>1. Scrivere la griglia</h2>
+  <p>Il campo in alto accetta gli accordi separati da spazio. Uno <b>spazio</b> apre una nuova battuta,
+    una <b>virgola</b> mette due accordi nella stessa battuta.</p>
+  <pre>D-7 G7 C^7,A7 D-7</pre>
+  <p>Sono quattro battute: la terza contiene due accordi da mezza battuta ciascuno. Nel player la durata
+    si divide di conseguenza.</p>
+
+  <h3>Sigle riconosciute</h3>
+  <table>
+    <tr><th>Scrivi</th><th>Ottieni</th></tr>
+    <tr><td>C  Cm  C-</td><td>maggiore, minore (le due notazioni sono equivalenti)</td></tr>
+    <tr><td>C7  C^7  Cmaj7  C-7  Cm7</td><td>settime di dominante, maggiore, minore</td></tr>
+    <tr><td>Ch7  Cm7b5</td><td>semidiminuito</td></tr>
+    <tr><td>Co7  Cdim7</td><td>diminuito</td></tr>
+    <tr><td>C6  C69  Cadd9  Csus4  Caug</td><td>sesta, sesta nona, aggiunte, sospesi, eccedente</td></tr>
+    <tr><td>C9  C11  C13  C7b9  C7#9  C7#5  Calt</td><td>estensioni e alterazioni</td></tr>
+    <tr><td>C/E</td><td>accordo con nota al basso indicata</td></tr>
+    <tr><td>N.C.</td><td>pausa, nessun accordo</td></tr>
+  </table>
+  <p>Funziona anche la scorciatoia <code>G-A-D</code>: un trattino seguito da una lettera di nota separa
+    le battute, mentre un trattino seguito da una cifra significa minore, come in <code>C-7</code>.</p>
+
+  <h2>2. La zona</h2>
+  <p>Due cursori sotto il manico fissano il primo tasto e l'ampiezza della zona. Tutto quello che il tool
+    propone sta dentro quei tasti: e' il modo di studiare una progressione senza spostarsi dalla posizione.</p>
+  <p>La striscia <b>copertura per posizione</b> assegna a ogni punto di partenza la percentuale di note
+    raggiungibili senza muoversi, calcolata sul peggiore accordo della griglia. Piu' la cella e' scura,
+    meno ti serve quella posizione. Un clic ti ci porta.</p>
+  <div class="note-box"><p>Quando la zona parte dal tasto 0 le corde a vuoto sono incluse, e non contano
+    nell'apertura della mano.</p></div>
+
+  <h2>3. I tipi di voicing</h2>
+  <table>
+    <tr><th>Tipo</th><th>Note</th><th>A cosa serve</th></tr>
+    <tr><td>Arpeggio</td><td>tutte, in successione</td><td>studio della posizione, walking</td></tr>
+    <tr><td>Shell</td><td>R + 7 + 3</td><td>l'accordo ridotto all'osso, si sente tutto</td></tr>
+    <tr><td>Note guida</td><td>3 + 7</td><td>comping, duo con un solista</td></tr>
+    <tr><td>Decime</td><td>R + 3</td><td>il suono classico basso e pianoforte</td></tr>
+    <tr><td>Triade</td><td>R + 3 + 5</td><td>bicordi e accordi in posizione stretta</td></tr>
+    <tr><td>Quartale</td><td>quarte sovrapposte</td><td>suono modale, sui minori settima</td></tr>
+  </table>
+  <p>Per i voicing suonati a blocco le note devono stare su corde diverse e crescenti, con l'apertura
+    della mano entro il limite che imposti tu, da tre a sei tasti. Ogni proposta indica la nota al basso
+    e quindi il rivolto, l'apertura richiesta e i gradi che contiene.</p>
+  <p>Clicca una proposta per sceglierla: e' quella che verra' suonata e che finira' nel tab.</p>
+
+  <h2>4. Voice leading</h2>
+  <p>Il pulsante <b>Ottimizza voice leading</b> percorre tutta la griglia e sceglie, per ogni accordo, il
+    voicing che minimizza il movimento complessivo: quanto si spostano le singole voci piu' quanto si
+    sposta la mano. Su ogni proposta compare il moto in semitoni rispetto all'accordo precedente, e in
+    fondo il totale.</p>
+  <p>L'ottimizzazione non esce mai dalla zona scelta: sarebbe barare rispetto allo scopo.</p>
+
+  <h2>5. Suonare</h2>
+  <p><b>Play</b>, o la barra spaziatrice, fa girare la griglia in loop. Mentre suona, <b>ogni nota si
+    accende sul manico nel momento in cui la senti</b>: sugli arpeggi una alla volta, sui voicing a blocco
+    tutte insieme sull'attacco. E' il modo piu' diretto per collegare quello che vedi a quello che senti.</p>
+  <ul>
+    <li>Il tempo va da 40 a 200 bpm, con metri 4/4, 3/4, 2/4 e 6/8.</li>
+    <li>Il click ha l'accento sul primo movimento della battuta.</li>
+    <li>Di norma la zona insegue l'accordo corrente. Con <b>Zona fissa</b> resta ferma: resti in posizione
+      e vedi cosa hai davvero sotto le dita.</li>
+    <li>Le frecce sinistra e destra cambiano accordo a mano. Un clic su una nota del manico la fa suonare.</li>
+  </ul>
+
+  <h2>6. Tab ASCII</h2>
+  <p>Genera il tab della griglia usando i voicing che hai scelto, da copiare o scaricare in <code>.txt</code>.</p>
+  <pre>   D-7               G7
+G |-----------5--7--|--------7--|
+D |--------7--------|--5--9-----|
+A |--5--8-----------|-----------|
+E |-----------------|-----------|</pre>
+
+  <h2>7. Importare da iReal Pro</h2>
+  <p>Nell'app iReal Pro usa Condividi e copia il link del brano o della playlist, poi incollalo nel
+    pannello <b>Importa da iReal Pro</b>. Vengono letti battute, ritornelli, ripetizioni e note al basso.</p>
+  <div class="note-box"><p>Il link viene decodificato qui nel browser: non viene inviato da nessuna parte,
+    e la pagina non fa richieste di rete. Le griglie degli standard protetti dal diritto d'autore non sono
+    incluse nel tool proprio per questo: usi le tue carte.</p></div>
+  <p>Il menu <b>Forme armoniche</b> contiene invece forme generiche — blues, rhythm changes, cicli di
+    II-V-I, cadenza andalusa, ciclo di terze maggiori — e brani tradizionali di pubblico dominio.</p>
+
+  <h2>8. Il basso</h2>
+  <p>Quattro accordature: quattro corde <code>E A D G</code>, cinque corde <code>B E A D G</code>, cinque
+    con Do acuto <code>E A D G C</code>, sei corde <code>B E A D G C</code>. Le corde sono disposte come
+    nelle tab, con la piu' acuta in alto; <b>Inverti corde</b> ribalta la vista.</p>
+  <p>La spaziatura dei tasti segue la formula reale <code>1 − 2^(−n/12)</code>, quindi il disegno e' un
+    manico vero e non una griglia a passo costante.</p>
+
+  <p style="margin-top:30px"><a class="cta" href="app.html">Apri lo strumento &rarr;</a></p>
+
+  <footer class="doc-foot">
+    Manico &copy; 2026 Massimo Danieli &middot; software libero sotto
+    <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>, senza alcuna garanzia &middot;
+    <a href="https://github.com/MassimoDanieli/accordi_di_basso">sorgenti su GitHub</a>
+  </footer>
+</div>
+
+<script type="module">
+  import { initTheme } from './src/theme.js';
+  initTheme();
+</script>
+</body>
+</html>

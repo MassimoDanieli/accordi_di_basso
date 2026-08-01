@@ -1,0 +1,61 @@
+# Changelog
+
+Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
+e il versionamento è [semantico](https://semver.org/lang/it/).
+
+## [1.3.0] — 2026-08-01
+
+### Aggiunto
+- La nota che sta suonando si accende sul manico e sul diagramma del voicing scelto,
+  in sincrono con quello che si sente: una alla volta sugli arpeggi, tutte insieme
+  sull'attacco dei voicing a blocco.
+- Tema chiaro e tema scuro, con interruttore in barra. Alla prima visita segue le
+  preferenze del sistema, poi ricorda la scelta.
+- `index.html` e' ora una guida all'uso in otto sezioni: sintassi della griglia, zone,
+  tipi di voicing, voice leading, esecuzione, tab, importazione iReal, accordature.
+  Lo strumento si e' spostato in `app.html`.
+- Marchio ridisegnato: un manico stilizzato con quattro corde e un segnatasto.
+
+## [1.2.0] — 2026-08-01
+
+### Modificato
+- Rifatta l'impaginazione: le finestre di dialogo della 1.1.0 nascondevano troppo. Ora il
+  banco di lavoro occupa la prima schermata (griglia, accordi, manico, zona, voicing) e
+  sotto stanno cinque pannelli titolati: strumento e vista, esecuzione, forme armoniche,
+  importazione iReal, tab ASCII.
+- Ogni comando ha un'etichetta per esteso, nessuna icona muta.
+- Il pannello dei voicing indica quanti ne ha trovati, per quale accordo e in quale zona,
+  e descrive a cosa serve il tipo selezionato.
+- La zona e' descritta a parole ("tasti 0-4, corde a vuoto incluse") accanto ai cursori.
+- Legenda dei colori per esteso sotto il manico, invece delle sole iniziali.
+
+## [1.1.0] — 2026-08-01
+
+### Modificato
+- Interfaccia ridisegnata: da pagina lunga a strumento su una sola schermata. Barra
+  di comando in alto con griglia e trasporto, nastro degli accordi, manico al centro,
+  voicing in colonna a destra, barra della zona in basso.
+- Le funzioni secondarie (forme armoniche, importazione iReal, tab, impostazioni) sono
+  passate in finestre di dialogo, richiamabili dalla barra.
+
+### Aggiunto
+- Dominio dedicato: `basso.massimodanieli.com`, file `CNAME` per GitHub Pages.
+
+## [1.0.0] — 2026-08-01
+
+### Aggiunto
+- Manico con spaziatura reale dei tasti, quattro accordature (4, 5, 5 con Do acuto, 6 corde).
+- Riconoscimento delle sigle di accordo, notazione classica e iReal, slash chord e `N.C.`.
+- Sei tipi di voicing: arpeggio, shell, note guida, decime, triade, quartale.
+- Vincolo di suonabilità: corde distinte e crescenti, apertura della mano regolabile da 3 a 6 tasti.
+- Ottimizzazione del voice leading su tutta la griglia con programmazione dinamica.
+- Striscia di copertura delle zone, con salto alla posizione scelta.
+- Trasporto in loop con metronomo, metri 4/4, 3/4, 2/4, 6/8, riproduzione del voicing o della sola fondamentale.
+- Esportazione in tab ASCII, negli appunti o in `.txt`.
+- Importazione delle griglie da link iReal Pro, elaborata interamente nel browser.
+- Libreria di forme armoniche generiche e brani tradizionali di pubblico dominio.
+- Test di base senza dipendenze, workflow per GitHub Pages, immagine Docker.
+- Build in file unico, `npm run build`, per l'uso senza server.
+
+### Licenza
+- Il progetto e' distribuito sotto GNU GPL v3.0 o successiva.
