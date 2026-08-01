@@ -3,6 +3,8 @@ import { parseChord, TUNINGS } from '../src/theory.js';
 import * as V from '../src/voicings.js';
 import * as Tab from '../src/tab.js';
 import * as IReal from '../src/ireal.js';
+import * as F from '../src/forma.js';
+import * as MusicXML from '../src/musicxml.js';
 
 const open = TUNINGS['4'].open;
 let failed = 0;
@@ -87,14 +89,79 @@ check('tab ascii con voicing a blocchi', () => {
   console.log(out.split('\n').slice(2).join('\n'));
 });
 
-check('lettore iReal in chiaro', () => {
-  const url = 'irealbook://Prova=Autore=Medium Swing=C=n=T44D-7 |G7 |C^7 |x |Z';
-  const songs = IReal.parse(url);
-  assert.equal(songs.length, 1);
+// --- la forma: un test sintetico per ogni gettone appreso dal banco di prova
+// (cinque brani reali confrontati con l'export MusicXML della stessa app)
+
+const g = body => F.espandi(F.leggiCorpo(body)).map(b => b.accordi.join(',') || 'nc').join(' ');
+
+check('forma: ritornello semplice', () => {
+  assert.equal(g('{C^7|D7 }Z'), 'C^7 D7 C^7 D7');
+});
+
+check('forma: due finali', () => {
+  assert.equal(g('{C^7|N1F7 }N2G7 Z'), 'C^7 F7 C^7 G7');
+});
+
+check('forma: Kcl e x ripetono la battuta', () => {
+  assert.equal(g('C7XyQKcl LZ x Z'), 'C7 C7 C7');
+});
+
+check('forma: r ripete due battute', () => {
+  assert.equal(g('C7|D7|r Z'), 'C7 D7 C7 D7');
+});
+
+check('forma: p ribatte, le p consecutive collassano, W cambia basso', () => {
+  assert.equal(g('C^7|pD7|ppW/E Z'), 'C^7 C^7,D7 D7,D7/E');
+});
+
+check('forma: n tiene viva la battuta senza armonia', () => {
+  assert.equal(g('C7|n|D7 Z'), 'C7 nc D7');
+});
+
+check('forma: D.C. al Fine tronca al punto giusto', () => {
+  // Il testo a battuta aperta viaggia sul prossimo accordo (regola dell'app),
+  // quindi il Fine atterra su D7: il da capo rifa' C7 e D7, e E7 non si risuona.
+  assert.equal(g('C7<Fine>|D7|E7<D.C. al Fine> Z'), 'C7 D7 E7 C7 D7');
+});
+
+check('forma: D.C. al 2nd prende il secondo finale', () => {
+  // Senza Fine, il da capo al secondo finale suona fino in fondo.
+  assert.equal(g('{C7|N1D7 }N2E7 LZ[F7<D.C. al 2nd ending>|G7 Z'),
+    'C7 D7 C7 E7 F7 G7 C7 E7 F7 G7');
+});
+
+check('forma: tre finali, il terzo oltre la sezione', () => {
+  assert.equal(g('{C7|N1D7 }N2E7]F7|G7<D.C. al 3rd end.>LZA7 ]N3B7 Z'),
+    'C7 D7 C7 E7 F7 G7 A7 C7 B7');
+});
+
+check('forma: D.S. al Coda col segno e le due code', () => {
+  // La Z finale attacca il D.S. alla battuta di F7 (regola imparata da Butterfly).
+  assert.equal(g('{SC7|D7 }QE7XyQ|F7<D.S. al Coda> Z{QG7 LZ x }Z'),
+    'C7 D7 C7 D7 E7 F7 C7 D7 E7 G7 G7 G7 G7');
+});
+
+check('forma: il vamp col conteggio 3x', () => {
+  assert.equal(g('{C7|D7<3x> }Z'), 'C7 D7 C7 D7 C7 D7');
+});
+
+check('forma: il metro viaggia battuta per battuta', () => {
+  const bars = F.espandi(F.leggiCorpo('T44C7|D7|T24E7 Z'));
+  assert.deepEqual(bars.map(b => b.metro), ['4/4', '4/4', '2/4']);
+});
+
+check('lettore MusicXML: misure, armonie e ritornello', () => {
+  const xml = `<score-partwise><work><work-title>Prova</work-title></work>
+    <part><measure number="1"><attributes><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+      <barline location="left"><repeat direction="forward"/></barline>
+      <harmony><root><root-step>D</root-step></root><kind text="m7">minor-seventh</kind></harmony></measure>
+    <measure number="2">
+      <harmony><root><root-step>G</root-step></root><kind text="7">dominant</kind></harmony>
+      <barline location="right"><repeat direction="backward"/></barline></measure></part></score-partwise>`;
+  const songs = MusicXML.parse(xml);
   assert.equal(songs[0].title, 'Prova');
-  const grid = IReal.toGrid(songs[0]);
-  console.log('        griglia: ' + grid);
-  assert.ok(grid.startsWith('D-7 G7 C^7'));
+  assert.equal(songs[0].bars.map(b => b.accordi.join(',')).join(' '), 'Dm7 G7 Dm7 G7');
+  assert.equal(songs[0].bars[0].metro, '4/4');
 });
 
 // --- link irealb reale (Autumn Leaves), regressione sul de-offuscamento
@@ -104,9 +171,13 @@ check('lettore iReal su link reale (Autumn Leaves)', () => {
   assert.equal(songs.length, 1);
   assert.equal(songs[0].title, 'Autumn Leaves');
   assert.equal(songs[0].key, 'G-');
+  assert.equal(songs[0].stile, 'Jazz-Medium Swing');
+  assert.equal(songs[0].bpm, 85);
+  assert.equal(songs[0].bars.length, 32, 'la forma AABC srotolata fa 32 battute');
   const grid = IReal.toGrid(songs[0]);
-  assert.match(grid, /^C-7 F7 Bb\^7 Eb\^7 Ah7 D7b13 G-6/);
+  assert.match(grid, /^C-7 F7 Bb\^7 Eb\^7 Ah7 D7b13 G-6 G-6 C-7/);
   for (const sym of grid.replace(/,/g, ' ').split(/\s+/)) {
+    if (sym === 'N.C.') continue;
     assert.ok(parseChord(sym), 'sigla non riconosciuta: ' + sym);
   }
 });

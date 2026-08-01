@@ -59,6 +59,8 @@ input[type=text],textarea,select{background:var(--panel-2);border:1px solid var(
   color:var(--paper);border-radius:var(--r);padding:8px 10px;font:inherit;outline:none;max-width:100%}
 input[type=text]{font-family:var(--mono);font-size:14px}
 textarea{width:100%;min-height:84px;resize:vertical;font-family:var(--mono);font-size:12px;line-height:1.5}
+.filerow{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;color:var(--muted)}
+.filerow input{font-size:12px}
 select{cursor:pointer;font-size:13px}
 input:focus,textarea:focus,select:focus{border-color:var(--root)}
 button{background:transparent;border:1px solid var(--line-2);color:var(--paper);border-radius:var(--r);

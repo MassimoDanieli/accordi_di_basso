@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" data-versione="3.0.1">
+<html lang="it" data-versione="3.2.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,600..700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=3.0.1">
+<link rel="stylesheet" href="assets/styles.css?v=3.2.0">
 <script>
   // Applicato subito, prima del disegno, per non far lampeggiare la pagina.
   (function () {
@@ -44,7 +44,7 @@
       <button data-lang="it" class="on" onclick="location.href='index.html'" title="Italiano">🇮🇹</button>
       <button data-lang="en" onclick="location.href='index.en.html'" title="English">🇬🇧</button>
     </span>
-    <span class="ver">v3.0.1</span>
+    <span class="ver">v3.2.0</span>
     <button id="tema" class="tog">Chiaro</button>
     <a class="cta" href="app.html">Apri lo strumento &rarr;</a>
   </div>
@@ -111,11 +111,13 @@
   <p>Nella barra, accanto a <b>Play</b>, scegli <b>cosa suona</b> — e lo vedi prima di partire:</p>
   <table>
     <tr><th>Modalita'</th><th>Cosa senti</th></tr>
-    <tr><td>Voicing</td><td>il voicing scelto per ogni accordo: a blocco o in arpeggio secondo il tipo</td></tr>
-    <tr><td>Fondam.</td><td>la sola fondamentale, per concentrarti sulla forma</td></tr>
+    <tr><td>Arpeggio</td><td>l'accordo nota per nota dalla fondamentale, su per i gradi dentro la zona e a
+      specchio quando i movimenti superano le note: R-3-5-7 in 4/4, R-3-5-7-5-3 in 6/8</td></tr>
     <tr><td>Walking</td><td>una linea walking dentro la zona: fondamentale, note dell'accordo nella direzione
       del prossimo cambio, cromatica di avvicinamento dal lato del moto</td></tr>
-    <tr><td>Muto</td><td>solo il click, per suonarci sopra tu</td></tr>
+    <tr><td>Voicing</td><td>il voicing scelto suonato a blocco: per sentire il colore dell'armonia, o gli
+      shell come double stop</td></tr>
+    <tr><td>Click</td><td>il tool tiene griglia, zona e tempo — suoni tu, sul basso vero</td></tr>
   </table>
   <p>Mentre suona, <b>ogni nota si accende sul manico nel momento in cui la senti</b>. In walking le note
     di passaggio compaiono come <b>pallini rossi</b> e il fraseggio varia a ogni giro: ottavi swingati
@@ -141,11 +143,21 @@ D |--------7--------|--5--9-----|
 A |--5--8-----------|-----------|
 E |-----------------|-----------|</pre>
 
-  <h2>7. Importare da iReal Pro</h2>
-  <p>Nell'app iReal Pro usa Condividi e copia il link del brano o della playlist, poi incollalo nel
-    pannello <b>Importa da iReal Pro</b>. Vengono letti battute, ritornelli, ripetizioni e note al basso.</p>
-  <div class="note-box"><p>Il link viene decodificato qui nel browser: non viene inviato da nessuna parte,
-    e la pagina non fa richieste di rete. Il pannello Forme include anche versioni essenziali semplificate di brani celebri, con il tempo consigliato; per le griglie complete degli standard usi le tue carte iReal.</p></div>
+  <h2>7. Importare un brano</h2>
+  <p>Due strade, stesso pannello <b>Importa</b>: incolla un link <code>irealb://</code> preso dal tasto
+    Condividi di iReal Pro (anche di una playlist intera), oppure carica un file <code>.musicxml</code>
+    — l'export della stessa iReal, o di MuseScore.</p>
+  <p>In entrambi i casi <b>la forma viene srotolata come si suona</b>, non semplificata: ritornelli con i
+    loro conteggi (anche i vamp segnati <code>3x</code>), primo, secondo e terzo finale, segno e coda,
+    D.S. al Coda, D.C. al Fine o al finale indicato, battute ribattute, e i cambi di metro a meta' brano.
+    Il lettore e' collaudato confrontando gli stessi brani nei due formati, misura per misura. Tempo e
+    metro del brano, quando il file li porta, vengono applicati da soli.</p>
+  <p>Se qualche sigla non viene riconosciuta, la finestra resta aperta e la elenca; nel nastro compare in
+    rosso, cosi' sai subito cosa controllare prima di suonare.</p>
+  <div class="note-box"><p>Link e file vengono letti qui nel browser: non viene inviato niente da nessuna
+    parte, e la pagina non fa richieste di rete. Il pannello Forme include anche versioni essenziali
+    semplificate di brani celebri, con il tempo consigliato; per le griglie complete degli standard usi le
+    tue carte.</p></div>
   <p>Il menu <b>Forme armoniche</b> contiene invece forme generiche — blues, rhythm changes, cicli di
     II-V-I, cadenza andalusa, ciclo di terze maggiori — e brani tradizionali di pubblico dominio.</p>
 
@@ -166,7 +178,7 @@ E |-----------------|-----------|</pre>
 </div>
 
 <script type="module">
-  import { initTheme } from './src/theme.js?v=3.0.1';
+  import { initTheme } from './src/theme.js?v=3.2.0';
   initTheme();
 </script>
 </body>

@@ -3,6 +3,40 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [3.2.0] — 2026-08-01
+
+### Aggiunto
+- Espansore della forma (src/forma.js): i brani importati arrivano srotolati come
+  si suonano. Ritornelli con i conteggi (vamp 3x compresi), fino a tre finali anche
+  oltre la sezione, segno e coda, D.S. al Coda, D.C. al Fine o al finale indicato,
+  battute ribattute (Kcl, x, r), accordi ribattuti (p) e col basso nuovo (W/X),
+  battute di pausa (n), metro portato battuta per battuta anche nei cambi a meta'
+  brano. Vocabolario verificato con un metodo a oracolo: cinque standard nei due
+  formati (link iReal ed export MusicXML della stessa app), 283 misure identiche
+  accordo per accordo, piu' una batteria di test sintetici per ogni gettone.
+- Importazione MusicXML (src/musicxml.js): la finestra Importa accetta anche file
+  .musicxml (iReal Pro, MuseScore), piu' d'uno alla volta.
+- Tempo e metro del brano applicati da soli all'import, quando il file li porta.
+- Anteprima onesta: se una sigla non viene riconosciuta la finestra resta aperta e
+  la elenca, e nel nastro compare in rosso.
+
+### Modificato
+- Il lettore iReal usa l'espansore: Autumn Leaves ora esce nella forma vera di 32
+  battute AABC (prima 21 semplificate). La regressione nei test e' stata aggiornata
+  e ampliata (stile, bpm, conteggio della forma).
+
+## [3.1.0] — 2026-08-01
+
+### Modificato
+- Le modalita' di esecuzione seguono l'ordine del mestiere sul basso: Arpeggio,
+  Walking, Voicing, Click. L'arpeggio e' la modalita' di serie ed e' diventato una
+  modalita' propria: nota per nota dalla fondamentale, su per i gradi dentro la
+  zona, a specchio quando i movimenti superano le note (R-3-5-7 in 4/4,
+  R-3-5-7-5-3 in 6/8), indipendente dal tipo di voicing scelto.
+- "Muto" si chiama Click, che dice cosa fa: il tool tiene griglia, zona e tempo,
+  e suoni tu sul basso vero. La modalita' Fondamentale e' assorbita: l'arpeggio in
+  2/4 e' fondamentale e terza, e per la sola fondamentale basta il voicing.
+
 ## [3.0.1] — 2026-08-01
 
 ### Corretto

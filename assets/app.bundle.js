@@ -635,13 +635,185 @@ __mod.tab = (function () {
   return { render };
 })();
 
-__mod.ireal = (function () {
+__mod.forma = (function () {
 
+  // La forma musicale: dal corpo iReal alle misure con i segni, e da queste alla
+  // griglia srotolata come si suona. Ogni regola qui dentro e' stata verificata
+  // contro l'export MusicXML della stessa app su un banco di cinque brani
+  // (Alice In Wonderland, Caravan, And The Angels Sing, Butterfly, Blues
+  // Connotation): 283 misure eseguite, identiche accordo per accordo.
+  //
+  // Il vocabolario appreso dal banco:
+  //   { }        ritornello; la chiusura a battuta gia' chiusa si attacca all'ultima vera
+  //   N1 N2 N3   finali; la scansione cerca in avanti il numero attivo, scavalcando tutto
+  //   S          segno (posizione del D.S.)
+  //   Q          coda: la prima e' il punto di salto, la seconda il bersaglio
+  //   <testo>    D.C./D.S./Fine/conteggi tipo 3x; si attacca alla battuta del prossimo
+  //              accordo, o alla battuta chiusa se prima arriva una chiusura
+  //   Kcl, x     ripeti la battuta precedente
+  //   p          ribatti l'accordo precedente (le p consecutive collassano)
+  //   W[/X]      l'accordo precedente, eventualmente con un basso nuovo
+  //   n          N.C.: nessuna armonia, ma la battuta esiste
+  //   T##        metro, portato battuta per battuta (anche a meta' brano)
+
+  const VOLTE_RE = /(?:^|[^0-9a-z])(\d+)x(?![a-z])/i;
+  const CHORD_RE = /^([A-G][b#]?)((?:sus|alt|add|[0-9^\-oh+#b])*)(\/[A-G][b#]?)?/;
+
+  /** Dal corpo iReal in chiaro alle misure scritte, con i segni di forma. */
+  function leggiCorpo(body) {
+    body = body.replace(/XyQ/g, ' ');
+
+    const misure = [];
+    let metro = '';
+    let pending = [], pendingSegno = false, pendingCoda = false, code = 0;
+    const nuova = () => ({ accordi: [], parole: '', metro, apre: false, chiude: false,
+      finale: 0, dacapo: false, dalsegno: false, fine: false, segno: false, nc: false });
+    let cur = nuova();
+
+    const segna = (bar, testo) => {
+      if (/D\.C\./i.test(testo)) bar.dacapo = true;
+      if (/D\.S\./i.test(testo)) bar.dalsegno = true;
+      if (/Fine/i.test(testo) && !/al Fine/i.test(testo)) bar.fine = true;
+      const v = testo.match(VOLTE_RE);
+      if (v) bar.volte = +v[1];
+      bar.parole = bar.parole ? bar.parole + ',' + testo : testo;
+    };
+    const arriva = () => {
+      pending.forEach(t => segna(cur, t)); pending = [];
+      if (pendingSegno) { cur.segno = true; pendingSegno = false; }
+      if (pendingCoda) { code++; if (code === 1) cur.tocoda = true; else cur.codastart = true; pendingCoda = false; }
+    };
+    const viva = () => cur.accordi.length > 0 || cur.nc;
+    const flush = () => {
+      if (viva() || cur.chiude || cur.finale) misure.push(cur);
+      cur = nuova();
+    };
+    const chiusa = () => {
+      const meta = viva() ? cur : misure[misure.length - 1];
+      if (meta) pending.forEach(t => segna(meta, t));
+      pending = [];
+    };
+    const ultimoAccordo = () => cur.accordi.length ? cur.accordi[cur.accordi.length - 1]
+      : (misure.length ? misure[misure.length - 1].accordi.slice(-1)[0] : null);
+
+    let i = 0;
+    while (i < body.length) {
+      const c = body[i];
+      if (c === '<') { const k = body.indexOf('>', i); pending.push(body.slice(i + 1, k < 0 ? body.length : k)); i = k < 0 ? body.length : k + 1; continue; }
+      if (c === '{') { flush(); cur.apre = true; i++; continue; }
+      if (c === '}') {
+        chiusa();
+        if (viva()) { cur.chiude = true; flush(); }
+        else if (misure.length) misure[misure.length - 1].chiude = true;
+        i++; continue;
+      }
+      if (c === 'Z') {
+        if (body[i - 1] !== 'L') chiusa();   // la Z finale attacca i segni pendenti; la LZ e' interna
+        flush(); i++; continue;
+      }
+      if (c === '|' || c === ']' || c === '[') { flush(); i++; continue; }
+      if (c === 'N' && /\d/.test(body[i + 1])) { flush(); cur.finale = +body[i + 1]; i += 2; continue; }
+      if (c === '*') { i += 2; continue; }
+      if (c === 'T' && /\d\d/.test(body.slice(i + 1, i + 3))) {
+        metro = body[i + 1] + '/' + body[i + 2];
+        cur.metro = metro; i += 3; continue;
+      }
+      if (c === 'S') { if (viva()) cur.segno = true; else pendingSegno = true; i++; continue; }
+      if (c === 'Q') {
+        if (viva()) { code++; if (code === 1) cur.tocoda = true; else cur.codastart = true; }
+        else pendingCoda = true;
+        i++; continue;
+      }
+      if (c === 'n') { arriva(); cur.nc = true; i++; continue; }
+      if (c === 'p') {
+        const prev = ultimoAccordo();
+        if (prev) { arriva(); if (cur.accordi[cur.accordi.length - 1] !== prev) cur.accordi.push(prev); }
+        i++; continue;
+      }
+      if (c === 'W') {
+        const m = body.slice(i).match(/^W(\/[A-G][b#]?)?/);
+        const prev = ultimoAccordo();
+        if (prev) { arriva(); cur.accordi.push(prev.replace(/\/[A-G][b#]?$/, '') + (m[1] || '')); }
+        i += m[0].length; continue;
+      }
+      if (body.slice(i, i + 3) === 'Kcl') {
+        const prima = viva() ? cur : misure[misure.length - 1];
+        const acc = prima ? [...prima.accordi] : [];
+        flush(); cur.accordi = acc; arriva(); flush(); i += 3; continue;
+      }
+      if (c === 'x') {
+        const prima = viva() ? cur : misure[misure.length - 1];
+        const acc = prima ? [...prima.accordi] : [];
+        if (viva()) flush();
+        cur.accordi = acc; arriva(); flush(); i++; continue;
+      }
+      if (c === 'r') {   // ripeti le due battute precedenti
+        const due = misure.slice(-2);
+        flush();
+        due.forEach(b => { cur.accordi = [...b.accordi]; cur.nc = b.nc; flush(); });
+        i++; continue;
+      }
+      if (' \t\nlsfUY,.L()'.includes(c)) { i++; continue; }
+      const m = body.slice(i).match(CHORD_RE);
+      if (m && m[0]) { arriva(); cur.accordi.push(m[0]); i += m[0].length; continue; }
+      i++;
+    }
+    chiusa(); flush();
+    return misure;
+  }
+
+  /**
+   * Srotola la forma come si suona: ritornelli con i loro conteggi, finali anche
+   * fuori posto, dal segno al segno, salto alla coda, da capo al Fine o al finale N.
+   */
+  function espandi(misure) {
+    const out = [];
+    let i = 0, anchor = 0, dopoDC = false, dopoDS = false, cacciaCoda = false, giri = 0;
+    const passes = {};
+    const dcBar = misure.find(x => x.dacapo);
+    const dcMeta = dcBar ? ((dcBar.parole || '').match(/al (\d)/) || [])[1] : null;
+    const dsBar = misure.find(x => x.dalsegno);
+    const dsCoda = dsBar && /al Coda/i.test(dsBar.parole || '');
+    const segnoI = misure.findIndex(x => x.segno);
+    const codaI = misure.findIndex(x => x.codastart);
+
+    while (i < misure.length && giri++ < 2000) {
+      const m = misure[i];
+      if (m.apre) anchor = i;
+      const pass = passes[anchor] || 1;
+      const attiva = dopoDC && dcMeta ? +dcMeta : pass;
+      if (m.finale && m.finale !== attiva) {
+        while (i < misure.length && !misure[i].chiude && !(misure[i].finale && misure[i].finale !== m.finale)) i++;
+        if (i < misure.length && misure[i].chiude) i++;
+        continue;
+      }
+      out.push(m);
+      if (dopoDC && m.fine) break;
+      if (m.tocoda && dopoDS && cacciaCoda && codaI >= 0) { cacciaCoda = false; i = codaI; continue; }
+      if (m.chiude && !dopoDC) {
+        const volte = m.volte || 2;
+        if (pass < volte) { passes[anchor] = pass + 1; i = anchor; continue; }
+      }
+      if (m.dalsegno && !dopoDS && segnoI >= 0) { dopoDS = true; cacciaCoda = !!dsCoda; i = segnoI; continue; }
+      if (m.dacapo && !dopoDC) { dopoDC = true; i = 0; anchor = 0; continue; }
+      i++;
+    }
+    return out;
+  }
+
+  return { leggiCorpo, espandi };
+})();
+
+__mod.ireal = (function () {
+  const { leggiCorpo, espandi } = __mod.forma;
   // Lettura dei link iReal Pro. Tutto avviene in locale, nel browser.
   //
-  // Formato: irealb://Titolo=Autore=Stile=Tonalita=n=CORPO===...=Nome playlist
-  // Nel formato irealb il corpo e' preceduto dal marcatore 1r34LbKcu7 ed e' offuscato
-  // a blocchi di 50 caratteri; irealbook e' in chiaro.
+  // Formato irealb: Titolo=Compositore==Stile=Tonalita==<marcatore+corpo>=Stile=bpm=...
+  // Il corpo e' preceduto dal marcatore 1r34LbKcu7 ed e' offuscato a blocchi di 50
+  // caratteri; il vecchio irealbook e' in chiaro. La forma (ritornelli, finali,
+  // segno, coda, D.C./D.S., Fine, metri) viene srotolata da src/forma.js, il cui
+  // vocabolario e' stato verificato contro l'export MusicXML della stessa app.
+
 
   const MARKER = '1r34LbKcu7';
 
@@ -659,75 +831,146 @@ __mod.ireal = (function () {
     return out + s;
   }
 
-  const CHORD_RE = /^([A-G][b#]?)((?:sus|alt|add|[0-9^\-oh+#b])*)(\/[A-G][b#]?)?/;
-
-  /** Dal corpo grezzo alle battute: [[ 'D-7' ], [ 'G7' ], ...] */
-  function readBody(body) {
-    const s = body.replace(/<[^>]*>/g, '').replace(/XyQ/g, ' ').replace(/\([^)]*\)/g, '');
-    const bars = [];
-    let cur = [];
-    const flush = () => { if (cur.length) { bars.push(cur); cur = []; } };
-
-    let i = 0;
-    while (i < s.length) {
-      const c = s[i];
-      if ('|[]{}Z'.includes(c)) { flush(); i++; continue; }
-      if (c === '*' || c === 'N') { i += 2; continue; }        // sezione, finale 1/2
-      if (c === 'T') { i += 3; continue; }                      // indicazione di tempo
-      if ('YQSUslfu,+. \n\t'.includes(c)) { i++; continue; }    // spaziature e segni
-      if (c === 'x') { if (bars.length) cur = cur.concat(bars[bars.length - 1]); i++; continue; }
-      if (c === 'r') {
-        const n = bars.length;
-        if (n >= 2) { bars.push(bars[n - 2].slice()); bars.push(bars[n - 1].slice()); }
-        i++; continue;
-      }
-      if (c === 'n' || c === 'p') { i++; continue; }             // N.C. e prolungamento
-      const m = CHORD_RE.exec(s.slice(i));
-      if (m && m[0]) { cur.push(m[1] + (m[2] || '') + (m[3] || '')); i += m[0].length; continue; }
-      i++;
-    }
-    flush();
-    return bars;
-  }
-
-  /** Restituisce l'elenco dei brani contenuti nel link. */
+  /** Restituisce l'elenco dei brani contenuti nel link, con la forma srotolata. */
   function parse(text) {
     let s = (text || '').trim();
     try { s = decodeURIComponent(s.replace(/\+/g, '%20')); } catch (e) { /* link gia' in chiaro */ }
-    const modern = /^irealb:\/\//.test(s);
     s = s.replace(/^irealb(ook)?:\/\//, '');
 
     const songs = [];
     s.split('===').forEach(part => {
       const f = part.split('=');
       if (f.length < 6) return;
-      // Formato irealb: Titolo=Compositore==Stile=Tonalita==<marcatore+corpo>=...
       // Il corpo si riconosce dal marcatore, non dalla posizione: le versioni
       // dell'app differiscono sul numero di campi vuoti.
       let body = f.find(x => x.includes(MARKER));
       let key = f[4] || f[3] || '';
+      let stile = '', bpm = 0;
       if (body) {
+        const k = f.indexOf(body);
+        stile = f[k + 1] || '';
+        bpm = +(f[k + 2] || 0) || 0;
         body = deobfuscate(body.slice(body.indexOf(MARKER) + MARKER.length));
       } else {
         // irealbook, in chiaro: Titolo=Compositore=Stile=Tonalita=n=corpo
         body = f[5];
         key = f[3] || '';
+        stile = f[2] || '';
         if (!body) return;
       }
-      const bars = readBody(body).filter(b => b.length);
+      const misure = leggiCorpo(body);
+      const bars = espandi(misure).map(m => ({ accordi: m.accordi, metro: m.metro }));
       if (bars.length > 1) {
-        songs.push({ title: f[0] || 'senza titolo', composer: f[1] || '', key, bars });
+        songs.push({ title: f[0] || 'senza titolo', composer: f[1] || '', key, stile, bpm, bars });
       }
     });
     return songs;
   }
 
-  /** Le battute nel formato accettato dal campo Griglia. */
+  /** La griglia per la barra: battute separate da spazio, accordi nella battuta da virgola. */
   function toGrid(song) {
-    return song.bars.map(b => b.join(',')).join(' ');
+    return song.bars
+      .map(b => b.accordi.join(',') || 'N.C.')
+      .join(' ');
   }
 
-  return { readBody, parse, toGrid };
+  /** Il metro d'apertura del brano, per il selettore: '4', '3', '2' o '6'. */
+  function beatsOf(song) {
+    const m = (song.bars.find(b => b.metro) || {}).metro || '';
+    if (m === '3/4') return 3;
+    if (m === '2/4') return 2;
+    if (m === '6/8') return 6;
+    return 4;
+  }
+
+  return { parse, toGrid, beatsOf };
+})();
+
+__mod.musicxml = (function () {
+  const { espandi } = __mod.forma;
+  // Lettura di file MusicXML (in chiaro, .musicxml o .xml non compressi), come
+  // quelli esportati da iReal Pro o MuseScore. Gli accordi vivono negli elementi
+  // <harmony>; i segni di forma (ritornelli, finali, segno, coda, D.C./D.S., Fine)
+  // sono espliciti e vengono srotolati dallo stesso espansore dei link iReal.
+  //
+  // Il parser e' testuale e senza dipendenze: funziona identico nel browser e in
+  // Node, ed e' collaudato contro gli export reali dell'app (vedi src/forma.js).
+
+
+  const VOLTE_RE = /(?:^|[^0-9a-z])(\d+)x(?![a-z])/i;
+
+  // Sigla dalla qualita', quando manca l'attributo text sul <kind>.
+  const KINDS = { 'major': '', 'minor': 'm', 'dominant': '7', 'major-seventh': 'maj7',
+    'minor-seventh': 'm7', 'diminished': 'o', 'diminished-seventh': 'o7',
+    'half-diminished': 'm7b5', 'augmented': '+', 'suspended-fourth': 'sus',
+    'suspended-second': 'sus2', 'major-sixth': '6', 'minor-sixth': 'm6',
+    'dominant-ninth': '9', 'minor-ninth': 'm9', 'major-ninth': 'maj9',
+    'minor-11th': 'm11', 'dominant-11th': '11', 'dominant-13th': '13',
+    'minor-13th': 'm13', 'minor-major': 'mmaj7', 'power': '5' };
+
+  const acc = a => a === '1' ? '#' : a === '-1' ? 'b' : '';
+
+  function sigla(harm) {
+    const passo = (harm.match(/<root-step>([A-G])<\/root-step>/) || [])[1];
+    if (!passo) return null;
+    const ralter = (harm.match(/<root-alter>(-?\d)<\/root-alter>/) || [])[1];
+    const kt = (harm.match(/<kind[^>]*text="([^"]*)"/) || [])[1];
+    const kn = (harm.match(/<kind[^>]*>([a-z0-9-]+)<\/kind>/) || [, ''])[1];
+    let s = passo + acc(ralter) + (kt !== undefined ? kt : (KINDS[kn] !== undefined ? KINDS[kn] : kn));
+    for (const d of harm.matchAll(/<degree>[\s\S]*?<\/degree>/g)) {
+      const v = (d[0].match(/<degree-value>(\d+)/) || [])[1];
+      const al = (d[0].match(/<degree-alter>(-?\d)/) || [])[1];
+      s += (al === '1' ? '#' : al === '-1' ? 'b' : '') + v;
+    }
+    const bp = (harm.match(/<bass-step>([A-G])<\/bass-step>/) || [])[1];
+    const ba = (harm.match(/<bass-alter>(-?\d)<\/bass-alter>/) || [])[1];
+    if (bp) s += '/' + bp + acc(ba);
+    return s;
+  }
+
+  /** Le misure scritte di uno spartito, con i segni di forma. */
+  function leggiMisure(xml) {
+    const misure = [];
+    let code = 0, metro = '';
+    for (const m of xml.matchAll(/<measure[^>]*>([\s\S]*?)<\/measure>/g)) {
+      const corpo = m[1];
+      const bt = corpo.match(/<beats>(\d+)<\/beats>[\s\S]*?<beat-type>(\d+)<\/beat-type>/);
+      if (bt) metro = bt[1] + '/' + bt[2];
+      const accordi = [];
+      for (const h of corpo.matchAll(/<harmony[\s\S]*?<\/harmony>/g)) {
+        const s = sigla(h[0]);
+        if (s) accordi.push(s);
+      }
+      const parole = [...corpo.matchAll(/<words>([^<]*)<\/words>/g)].map(x => x[1]).join(',');
+      const bar = {
+        accordi, parole, metro,
+        apre: /<repeat direction="forward"/.test(corpo),
+        chiude: /<repeat direction="backward"/.test(corpo),
+        finale: +((corpo.match(/<ending type="start" number="(\d+)"/) || [])[1] || 0),
+        dacapo: /dacapo="/.test(corpo),
+        dalsegno: /dalsegno="/.test(corpo),
+        fine: /fine="yes"/.test(corpo),
+        segno: /<segno\/>/.test(corpo)
+      };
+      if (/<coda\/>/.test(corpo)) { code++; if (code === 1) bar.tocoda = true; else bar.codastart = true; }
+      const t = corpo.match(/<repeat[^>]*times="(\d+)"/) || parole.match(VOLTE_RE);
+      if (t) bar.volte = +t[1];
+      misure.push(bar);
+    }
+    return misure;
+  }
+
+  /** Da un file MusicXML a un brano con la forma gia' srotolata. */
+  function parse(xml) {
+    const title = (xml.match(/<work-title>([^<]*)<\/work-title>/) || [, ''])[1].trim();
+    const composer = (xml.match(/<creator type="composer">([^<]*)<\/creator>/) || [, ''])[1].trim();
+    const misure = leggiMisure(xml);
+    if (!misure.length) return [];
+    const bars = espandi(misure).map(m => ({ accordi: m.accordi, metro: m.metro }));
+    return [{ title: title || 'senza titolo', composer, key: '', bars }];
+  }
+
+  return { leggiMisure, parse };
 })();
 
 __mod.library = (function () {
@@ -927,7 +1170,9 @@ __mod.i18n = (function () {
       'play.meter': 'Metro', 'play.what': 'Cosa suona',
       'play.voicing': 'il voicing scelto', 'play.root': 'solo la fondamentale',
       'play.walking': 'linea walking', 'play.mute': 'niente, solo il click',
-      'mode.voicing': 'Voicing', 'mode.root': 'Fondam.', 'mode.walking': 'Walking', 'mode.mute': 'Muto',
+      'play.arp': 'arpeggio dell\u2019accordo, nota per nota dalla fondamentale',
+      'mode.arp': 'Arpeggio', 'mode.voicing': 'Voicing', 'mode.root': 'Fondam.',
+      'mode.walking': 'Walking', 'mode.mute': 'Click',
       'play.options': 'Opzioni', 'play.click': 'Click', 'play.lock': 'Zona fissa',
       'play.hint': '<b>Zona fissa</b> impedisce alla zona di inseguire l\u2019accordo corrente: resti in posizione e vedi cosa hai davvero sotto le dita.',
 
@@ -935,12 +1180,14 @@ __mod.i18n = (function () {
       'lib.hint': 'Forme essenziali, brani tradizionali e versioni semplificate di brani celebri, con il tempo consigliato. Per le griglie complete degli standard usa l\u2019importazione dalle tue carte iReal.',
       'lib.load': 'Carica',
 
-      'ir.title': 'Importa da iReal Pro',
-      'ir.hint': 'Incolla un link <code>irealb://</code> o <code>irealbook://</code> preso dal tasto Condividi dell\u2019app. Viene letto qui nel browser: non esce niente dalla pagina.',
+      'ir.title': 'Importa un brano',
+      'ir.hint': 'Incolla un link <code>irealb://</code> preso dal tasto Condividi di iReal Pro, oppure carica un file <code>.musicxml</code> (iReal, MuseScore). La forma viene srotolata come si suona: ritornelli, finali, segno, coda, da capo. Tutto avviene nel browser: non esce niente dalla pagina.',
+      'ir.file': 'oppure un file MusicXML:',
+      'ir.unknown': n => `sigle non riconosciute (in rosso nel nastro): ${n}`,
       'ir.go': 'Importa',
       'ir.empty': 'Incolla prima un link.',
       'ir.bad': '<b>Non sono riuscito a leggere il link.</b> Deve iniziare con irealb:// oppure irealbook://. In alternativa scrivi gli accordi a mano nella barra in alto.',
-      'ir.loaded': (t, c, k, n) => `${t}${c ? ' \u2014 ' + c : ''} \u00b7 tonalit\u00e0 ${k} \u00b7 ${n} battute`,
+      'ir.loaded': (t, c, k, n) => `${t}${c ? ' \u2014 ' + c : ''}${k ? ' \u00b7 tonalit\u00e0 ' + k : ''} \u00b7 ${n} battute (forma srotolata)`,
 
       'tab.title': 'Tab ASCII',
       'tab.hint': 'Usa il voicing selezionato per ogni accordo. Clicca una card per cambiarlo, poi rigenera.',
@@ -1020,7 +1267,9 @@ __mod.i18n = (function () {
       'play.meter': 'Metre', 'play.what': 'What plays',
       'play.voicing': 'the chosen voicing', 'play.root': 'the root only',
       'play.walking': 'walking line', 'play.mute': 'nothing, click only',
-      'mode.voicing': 'Voicing', 'mode.root': 'Root', 'mode.walking': 'Walking', 'mode.mute': 'Mute',
+      'play.arp': 'the chord arpeggio, note by note from the root',
+      'mode.arp': 'Arpeggio', 'mode.voicing': 'Voicing', 'mode.root': 'Root',
+      'mode.walking': 'Walking', 'mode.mute': 'Click',
       'play.options': 'Options', 'play.click': 'Click', 'play.lock': 'Lock zone',
       'play.hint': '<b>Lock zone</b> stops the zone from following the current chord: you stay in position and see what is really under your fingers.',
 
@@ -1028,12 +1277,14 @@ __mod.i18n = (function () {
       'lib.hint': 'Essential forms, traditional tunes and simplified versions of well-known songs, each with a suggested tempo. For complete standard charts, import your own iReal files.',
       'lib.load': 'Load',
 
-      'ir.title': 'Import from iReal Pro',
-      'ir.hint': 'Paste an <code>irealb://</code> or <code>irealbook://</code> link from the app\u2019s Share button. It is decoded here in the browser: nothing leaves the page.',
+      'ir.title': 'Import a song',
+      'ir.hint': 'Paste an <code>irealb://</code> link from iReal Pro\u2019s Share button, or load a <code>.musicxml</code> file (iReal, MuseScore). The form is unrolled as played: repeats, endings, segno, coda, da capo. Everything happens in the browser: nothing leaves the page.',
+      'ir.file': 'or a MusicXML file:',
+      'ir.unknown': n => `unrecognised symbols (red in the ribbon): ${n}`,
       'ir.go': 'Import',
       'ir.empty': 'Paste a link first.',
       'ir.bad': '<b>I could not read that link.</b> It must start with irealb:// or irealbook://. Otherwise type the chords by hand in the bar above.',
-      'ir.loaded': (t, c, k, n) => `${t}${c ? ' \u2014 ' + c : ''} \u00b7 key ${k} \u00b7 ${n} bars`,
+      'ir.loaded': (t, c, k, n) => `${t}${c ? ' \u2014 ' + c : ''}${k ? ' \u00b7 key ' + k : ''} \u00b7 ${n} bars (form unrolled)`,
 
       'tab.title': 'ASCII tab',
       'tab.hint': 'Uses the voicing selected for each chord. Click a card to change it, then generate again.',
@@ -1103,6 +1354,7 @@ __mod.app = (function () {
   const R = __mod.render;
   const Tab = __mod.tab;
   const IReal = __mod.ireal;
+  const MusicXML = __mod.musicxml;
   const { TUNINGS, parseChord, degreeName, noteName } = __mod.theory;
   const { LIBRARY } = __mod.library;
   const { initTheme, refreshThemeLabel } = __mod.theme;
@@ -1131,7 +1383,7 @@ __mod.app = (function () {
     playing: false,
     bpm: 92,
     beats: 4,
-    playMode: 'voicing',
+    playMode: 'arp',
     metronome: true,
     lockZone: false,
     timer: null,
@@ -1342,6 +1594,32 @@ __mod.app = (function () {
     if (iv === chord.fifth) return 'var(--fifth)';
     if (iv >= 9 && iv <= 11) return 'var(--sev)';
     return 'var(--ext)';
+  }
+
+  /**
+   * Arpeggio dell'accordo: dalla fondamentale in su per i gradi dentro la zona,
+   * a specchio quando i movimenti superano le note disponibili. R-3-5-7 in 4/4,
+   * R-3-5-7-5-3 in 6/8: la grammatica dello studio degli arpeggi.
+   */
+  function arpLine(i, nb) {
+    const item = state.grid[i];
+    if (!item || !item.ok) return [];
+    const notes = V.zoneNotes(item.chord, open(), state.zoneFrom, zoneTo())
+      .slice().sort((a, b) => a.midi - b.midi);
+    if (!notes.length) return [];
+    const v = chosen(i);
+    const rootMidi = (v && v.shape[0].midi) || (notes.find(n => n.iv === 0) || notes[0]).midi;
+    let su = notes.filter(n => n.midi >= rootMidi);
+    if (!su.length) su = notes;
+    const linea = [];
+    let k = 0, dir = 1;
+    for (let b = 0; b < nb; b++) {
+      linea.push(su[k]);
+      if (su.length === 1) continue;
+      if (k + dir >= su.length || k + dir < 0) dir = -dir;   // specchio in cima e in fondo
+      k += dir;
+    }
+    return linea;
   }
 
   function walkGhosts() {
@@ -1616,7 +1894,16 @@ __mod.app = (function () {
       for (let b = 0; b < beats; b++) A.click(b * (60 / state.bpm), item.first && b === 0);
     }
     if (item.ok && state.playMode !== 'mute') {
-      if (state.playMode === 'walking') {
+      if (state.playMode === 'arp') {
+        const beatSec = 60 / state.bpm;
+        const nb = Math.max(1, Math.round(state.beats * (item.dur || 1)));
+        clearFlashes();
+        arpLine(state.index, nb).forEach((n, b) => {
+          if (!n) return;
+          A.pluck(n.midi, b * beatSec, Math.min(beatSec * 0.92, 0.8), b === 0 ? 0.35 : 0.3);
+          flashes.push(setTimeout(() => flash(n), b * beatSec * 1000));
+        });
+      } else if (state.playMode === 'walking') {
         const beatSec = 60 / state.bpm;
         clearFlashes();
         walkingEvents(state.index, state.giro || 0).forEach(ev => {
@@ -1731,7 +2018,7 @@ __mod.app = (function () {
     $('vtype').innerHTML = V.VOICING_TYPES.map(x => `<option value="${x.id}">${t('vt.' + x.id + '.name')}</option>`).join('');
     $('tun').innerHTML = ['4', '5', '5c', '6'].map(k => `<option value="${k}">${t('tun.' + k)}</option>`).join('');
     $('nfrets').innerHTML = [12, 15, 18, 24].map(n => `<option value="${n}">${t('set.fretsTo', n)}</option>`).join('');
-    $('modes').innerHTML = ['voicing', 'root', 'walking', 'mute'].map(m =>
+    $('modes').innerHTML = ['arp', 'walking', 'voicing', 'mute'].map(m =>
       `<button class="seg${state.playMode === m ? ' on' : ''}" data-mode="${m}" title="${t('play.' + m)}">${t('mode.' + m)}</button>`).join('');
     $('perline').innerHTML = [4, 2, 6].map(n => `<option value="${n}">${t('tab.perline', n)}</option>`).join('');
     $('tabmode').innerHTML = `<option value="blocks">${t('tab.blocks')}</option><option value="walk">${t('tab.walk')}</option>`;
@@ -1866,20 +2153,20 @@ __mod.app = (function () {
     };
 
     $('irgo').onclick = () => {
-      const info = $('irinfo'), list = $('irlist');
       const raw = $('ireal').value.trim();
-      if (!raw) { info.innerHTML = `<span class="err">${t('ir.empty')}</span>`; return; }
+      if (!raw) { $('irinfo').innerHTML = `<span class="err">${t('ir.empty')}</span>`; return; }
       let songs = [];
       try { songs = IReal.parse(raw); } catch (e) { songs = []; }
-      if (!songs.length) {
-        list.style.display = 'none';
-        info.innerHTML = `<span class="err">${t('ir.bad')}</span>`;
-        return;
-      }
-      state.songs = songs;
-      list.style.display = songs.length > 1 ? '' : 'none';
-      list.innerHTML = songs.map((s, i) => `<option value="${i}">${s.title}${s.composer ? ' \u2014 ' + s.composer : ''}</option>`).join('');
-      loadSong(0);
+      presentaBrani(songs);
+    };
+    $('irfile').onchange = e => {
+      const files = [...e.target.files];
+      if (!files.length) return;
+      Promise.all(files.map(f => f.text())).then(testi => {
+        let songs = [];
+        testi.forEach(x => { try { songs = songs.concat(MusicXML.parse(x)); } catch (err) { /* file illeggibile */ } });
+        presentaBrani(songs);
+      });
     };
     $('irlist').onchange = e => loadSong(+e.target.value);
 
@@ -1952,14 +2239,40 @@ __mod.app = (function () {
     el.innerHTML = `<b>${title}</b>${composer ? ` <span class="by">\u2014 ${composer}</span>` : ''}`;
   }
 
+  function presentaBrani(songs) {
+    const info = $('irinfo'), list = $('irlist');
+    if (!songs.length) {
+      list.style.display = 'none';
+      info.innerHTML = `<span class="err">${t('ir.bad')}</span>`;
+      return;
+    }
+    state.songs = songs;
+    list.style.display = songs.length > 1 ? '' : 'none';
+    list.innerHTML = songs.map((s, i) => `<option value="${i}">${s.title}${s.composer ? ' \u2014 ' + s.composer : ''}</option>`).join('');
+    loadSong(0);
+  }
+
   function loadSong(k) {
     const song = state.songs[k];
     if (!song) return;
+    // Tempo e metro del brano, quando il file li porta con se'.
+    if (song.bpm >= 40 && song.bpm <= 200) {
+      state.bpm = song.bpm; $('bpm').value = song.bpm; $('bpmv').textContent = song.bpm;
+    }
+    const b = IReal.beatsOf(song);
+    state.beats = b; $('beats').value = String(b);
     loadGrid(IReal.toGrid(song), true);
     setSongTitle(song.title, song.composer);
-    $('irinfo').textContent = t('ir.loaded', song.title, song.composer, song.key, song.bars.length);
-    // Brano caricato: la finestra ha fatto il suo lavoro.
-    closeDialog($('dlgireal'));
+    // Anteprima onesta: se qualche sigla non e' stata riconosciuta, la finestra
+    // resta aperta e lo dice; il nastro le mostra in rosso.
+    const brutte = [...new Set(state.grid.filter(x => !x.ok && x.raw !== 'N.C.').map(x => x.raw))];
+    let info = t('ir.loaded', song.title, song.composer, song.key, song.bars.length);
+    if (brutte.length) {
+      $('irinfo').innerHTML = info + `<br><span class="err">${t('ir.unknown', brutte.join(' '))}</span>`;
+    } else {
+      $('irinfo').textContent = info;
+      closeDialog($('dlgireal'));
+    }
   }
 
   window.MANICO = { versione: document.documentElement.dataset.versione || '?', fraseggio: walkingEvents };

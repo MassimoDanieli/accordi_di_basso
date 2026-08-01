@@ -6,6 +6,7 @@ import * as A from './audio.js';
 import * as R from './render.js';
 import * as Tab from './tab.js';
 import * as IReal from './ireal.js';
+import * as MusicXML from './musicxml.js';
 import { LIBRARY } from './library.js';
 import { initTheme, refreshThemeLabel } from './theme.js';
 import { t, initLang, applyStatic, lang } from './i18n.js';
@@ -28,7 +29,7 @@ const state = {
   playing: false,
   bpm: 92,
   beats: 4,
-  playMode: 'voicing',
+  playMode: 'arp',
   metronome: true,
   lockZone: false,
   timer: null,
@@ -239,6 +240,32 @@ function degreeVar(iv, chord) {
   if (iv === chord.fifth) return 'var(--fifth)';
   if (iv >= 9 && iv <= 11) return 'var(--sev)';
   return 'var(--ext)';
+}
+
+/**
+ * Arpeggio dell'accordo: dalla fondamentale in su per i gradi dentro la zona,
+ * a specchio quando i movimenti superano le note disponibili. R-3-5-7 in 4/4,
+ * R-3-5-7-5-3 in 6/8: la grammatica dello studio degli arpeggi.
+ */
+function arpLine(i, nb) {
+  const item = state.grid[i];
+  if (!item || !item.ok) return [];
+  const notes = V.zoneNotes(item.chord, open(), state.zoneFrom, zoneTo())
+    .slice().sort((a, b) => a.midi - b.midi);
+  if (!notes.length) return [];
+  const v = chosen(i);
+  const rootMidi = (v && v.shape[0].midi) || (notes.find(n => n.iv === 0) || notes[0]).midi;
+  let su = notes.filter(n => n.midi >= rootMidi);
+  if (!su.length) su = notes;
+  const linea = [];
+  let k = 0, dir = 1;
+  for (let b = 0; b < nb; b++) {
+    linea.push(su[k]);
+    if (su.length === 1) continue;
+    if (k + dir >= su.length || k + dir < 0) dir = -dir;   // specchio in cima e in fondo
+    k += dir;
+  }
+  return linea;
 }
 
 function walkGhosts() {
@@ -513,7 +540,16 @@ function tick() {
     for (let b = 0; b < beats; b++) A.click(b * (60 / state.bpm), item.first && b === 0);
   }
   if (item.ok && state.playMode !== 'mute') {
-    if (state.playMode === 'walking') {
+    if (state.playMode === 'arp') {
+      const beatSec = 60 / state.bpm;
+      const nb = Math.max(1, Math.round(state.beats * (item.dur || 1)));
+      clearFlashes();
+      arpLine(state.index, nb).forEach((n, b) => {
+        if (!n) return;
+        A.pluck(n.midi, b * beatSec, Math.min(beatSec * 0.92, 0.8), b === 0 ? 0.35 : 0.3);
+        flashes.push(setTimeout(() => flash(n), b * beatSec * 1000));
+      });
+    } else if (state.playMode === 'walking') {
       const beatSec = 60 / state.bpm;
       clearFlashes();
       walkingEvents(state.index, state.giro || 0).forEach(ev => {
@@ -628,7 +664,7 @@ function buildMenus() {
   $('vtype').innerHTML = V.VOICING_TYPES.map(x => `<option value="${x.id}">${t('vt.' + x.id + '.name')}</option>`).join('');
   $('tun').innerHTML = ['4', '5', '5c', '6'].map(k => `<option value="${k}">${t('tun.' + k)}</option>`).join('');
   $('nfrets').innerHTML = [12, 15, 18, 24].map(n => `<option value="${n}">${t('set.fretsTo', n)}</option>`).join('');
-  $('modes').innerHTML = ['voicing', 'root', 'walking', 'mute'].map(m =>
+  $('modes').innerHTML = ['arp', 'walking', 'voicing', 'mute'].map(m =>
     `<button class="seg${state.playMode === m ? ' on' : ''}" data-mode="${m}" title="${t('play.' + m)}">${t('mode.' + m)}</button>`).join('');
   $('perline').innerHTML = [4, 2, 6].map(n => `<option value="${n}">${t('tab.perline', n)}</option>`).join('');
   $('tabmode').innerHTML = `<option value="blocks">${t('tab.blocks')}</option><option value="walk">${t('tab.walk')}</option>`;
@@ -763,20 +799,20 @@ function init() {
   };
 
   $('irgo').onclick = () => {
-    const info = $('irinfo'), list = $('irlist');
     const raw = $('ireal').value.trim();
-    if (!raw) { info.innerHTML = `<span class="err">${t('ir.empty')}</span>`; return; }
+    if (!raw) { $('irinfo').innerHTML = `<span class="err">${t('ir.empty')}</span>`; return; }
     let songs = [];
     try { songs = IReal.parse(raw); } catch (e) { songs = []; }
-    if (!songs.length) {
-      list.style.display = 'none';
-      info.innerHTML = `<span class="err">${t('ir.bad')}</span>`;
-      return;
-    }
-    state.songs = songs;
-    list.style.display = songs.length > 1 ? '' : 'none';
-    list.innerHTML = songs.map((s, i) => `<option value="${i}">${s.title}${s.composer ? ' \u2014 ' + s.composer : ''}</option>`).join('');
-    loadSong(0);
+    presentaBrani(songs);
+  };
+  $('irfile').onchange = e => {
+    const files = [...e.target.files];
+    if (!files.length) return;
+    Promise.all(files.map(f => f.text())).then(testi => {
+      let songs = [];
+      testi.forEach(x => { try { songs = songs.concat(MusicXML.parse(x)); } catch (err) { /* file illeggibile */ } });
+      presentaBrani(songs);
+    });
   };
   $('irlist').onchange = e => loadSong(+e.target.value);
 
@@ -849,14 +885,40 @@ function setSongTitle(title, composer) {
   el.innerHTML = `<b>${title}</b>${composer ? ` <span class="by">\u2014 ${composer}</span>` : ''}`;
 }
 
+function presentaBrani(songs) {
+  const info = $('irinfo'), list = $('irlist');
+  if (!songs.length) {
+    list.style.display = 'none';
+    info.innerHTML = `<span class="err">${t('ir.bad')}</span>`;
+    return;
+  }
+  state.songs = songs;
+  list.style.display = songs.length > 1 ? '' : 'none';
+  list.innerHTML = songs.map((s, i) => `<option value="${i}">${s.title}${s.composer ? ' \u2014 ' + s.composer : ''}</option>`).join('');
+  loadSong(0);
+}
+
 function loadSong(k) {
   const song = state.songs[k];
   if (!song) return;
+  // Tempo e metro del brano, quando il file li porta con se'.
+  if (song.bpm >= 40 && song.bpm <= 200) {
+    state.bpm = song.bpm; $('bpm').value = song.bpm; $('bpmv').textContent = song.bpm;
+  }
+  const b = IReal.beatsOf(song);
+  state.beats = b; $('beats').value = String(b);
   loadGrid(IReal.toGrid(song), true);
   setSongTitle(song.title, song.composer);
-  $('irinfo').textContent = t('ir.loaded', song.title, song.composer, song.key, song.bars.length);
-  // Brano caricato: la finestra ha fatto il suo lavoro.
-  closeDialog($('dlgireal'));
+  // Anteprima onesta: se qualche sigla non e' stata riconosciuta, la finestra
+  // resta aperta e lo dice; il nastro le mostra in rosso.
+  const brutte = [...new Set(state.grid.filter(x => !x.ok && x.raw !== 'N.C.').map(x => x.raw))];
+  let info = t('ir.loaded', song.title, song.composer, song.key, song.bars.length);
+  if (brutte.length) {
+    $('irinfo').innerHTML = info + `<br><span class="err">${t('ir.unknown', brutte.join(' '))}</span>`;
+  } else {
+    $('irinfo').textContent = info;
+    closeDialog($('dlgireal'));
+  }
 }
 
 window.MANICO = { versione: document.documentElement.dataset.versione || '?', fraseggio: walkingEvents };

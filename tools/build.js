@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // L'ordine conta: un modulo deve comparire prima di chi lo importa.
-const MODULES = ['theory', 'voicings', 'audio', 'render', 'tab', 'ireal', 'library', 'theme', 'i18n', 'app'];
+const MODULES = ['theory', 'voicings', 'audio', 'render', 'tab', 'forma', 'ireal', 'musicxml', 'library', 'theme', 'i18n', 'app'];
 
 const IMPORT_NAMED = /^import\s*\{([^}]+)\}\s*from\s*['"]\.\/(\w+)\.js['"];?\s*$/gm;
 const IMPORT_STAR = /^import\s*\*\s*as\s*(\w+)\s*from\s*['"]\.\/(\w+)\.js['"];?\s*$/gm;

@@ -36,8 +36,10 @@ quartale. Vincoli di suonabilita' (corde crescenti, apertura della mano regolabi
 scomparsa con una linguetta. "Ottimizza voice leading" sceglie su tutta la griglia i
 voicing con il minimo movimento complessivo, senza mai uscire dalla zona.
 
-**Esecuzione.** La modalita' e' sempre in vista nella barra, accanto al Play:
-Voicing, Fondamentale, Walking o Muto, con il metro a fianco. Play in loop da 40 a
+**Esecuzione.** La modalita' e' sempre in vista nella barra, accanto al Play, in
+ordine di mestiere: Arpeggio (nota per nota dalla fondamentale, a specchio dentro la
+zona), Walking, Voicing a blocco, Click (il tool tiene griglia e tempo, suoni tu),
+con il metro a fianco. Play in loop da 40 a
 200 bpm; 4/4, 3/4 e 2/4 con la loro pulsazione, 6/8 su due pulsazioni puntate. La
 linea walking percorre le note dell'accordo nella direzione del prossimo cambio con
 la cromatica dal lato del moto, e il fraseggio varia a ogni giro (ottavi swingati,
@@ -50,10 +52,16 @@ prima del cambio: il voice leading si vede accadere.
 **Repertorio.** 26 voci con stile e tempo consigliato: forme essenziali (blues, rhythm
 changes, II-V-I, cicli), giri pop e reggae, versioni semplificate di brani celebri,
 tradizionali di pubblico dominio. Le griglie complete degli standard non sono incluse:
-si importano dalle proprie carte con i link `irealb://` di iReal Pro (Condividi →
-formato "iReal Pro"), decodificati nel browser senza che nulla esca dalla pagina.
-L'importazione e' collaudata su link autentici dell'app, con un link reale nei test
-come regressione permanente.
+si importano dalle proprie carte, con i link `irealb://` di iReal Pro (Condividi →
+formato "iReal Pro", anche playlist intere) oppure con file `.musicxml` (iReal,
+MuseScore). La forma viene srotolata come si suona: ritornelli con i conteggi,
+fino a tre finali anche fuori posto, segno e coda, D.S. al Coda, D.C. al Fine o al
+finale indicato, battute ribattute (`Kcl`, `x`, `r`), e i cambi di metro a meta'
+brano, portati battuta per battuta. Tempo e metro del brano vengono applicati da
+soli. Il lettore e' verificato con un metodo a oracolo: gli stessi brani nei due
+formati, confrontati misura per misura (283 misure identiche su cinque standard di
+prova), piu' una batteria di test sintetici, uno per ogni gettone del formato.
+Tutto avviene nel browser: nulla esce dalla pagina.
 
 **Tab ASCII.** Esporta la griglia da copiare o scaricare, in due contenuti: i
 voicing a blocchi scelti, oppure la linea walking nota per nota con le note di

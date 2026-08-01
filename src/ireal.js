@@ -1,8 +1,12 @@
 // Lettura dei link iReal Pro. Tutto avviene in locale, nel browser.
 //
-// Formato: irealb://Titolo=Autore=Stile=Tonalita=n=CORPO===...=Nome playlist
-// Nel formato irealb il corpo e' preceduto dal marcatore 1r34LbKcu7 ed e' offuscato
-// a blocchi di 50 caratteri; irealbook e' in chiaro.
+// Formato irealb: Titolo=Compositore==Stile=Tonalita==<marcatore+corpo>=Stile=bpm=...
+// Il corpo e' preceduto dal marcatore 1r34LbKcu7 ed e' offuscato a blocchi di 50
+// caratteri; il vecchio irealbook e' in chiaro. La forma (ritornelli, finali,
+// segno, coda, D.C./D.S., Fine, metri) viene srotolata da src/forma.js, il cui
+// vocabolario e' stato verificato contro l'export MusicXML della stessa app.
+
+import { leggiCorpo, espandi } from './forma.js';
 
 const MARKER = '1r34LbKcu7';
 
@@ -20,70 +24,54 @@ function deobfuscate(s) {
   return out + s;
 }
 
-const CHORD_RE = /^([A-G][b#]?)((?:sus|alt|add|[0-9^\-oh+#b])*)(\/[A-G][b#]?)?/;
-
-/** Dal corpo grezzo alle battute: [[ 'D-7' ], [ 'G7' ], ...] */
-export function readBody(body) {
-  const s = body.replace(/<[^>]*>/g, '').replace(/XyQ/g, ' ').replace(/\([^)]*\)/g, '');
-  const bars = [];
-  let cur = [];
-  const flush = () => { if (cur.length) { bars.push(cur); cur = []; } };
-
-  let i = 0;
-  while (i < s.length) {
-    const c = s[i];
-    if ('|[]{}Z'.includes(c)) { flush(); i++; continue; }
-    if (c === '*' || c === 'N') { i += 2; continue; }        // sezione, finale 1/2
-    if (c === 'T') { i += 3; continue; }                      // indicazione di tempo
-    if ('YQSUslfu,+. \n\t'.includes(c)) { i++; continue; }    // spaziature e segni
-    if (c === 'x') { if (bars.length) cur = cur.concat(bars[bars.length - 1]); i++; continue; }
-    if (c === 'r') {
-      const n = bars.length;
-      if (n >= 2) { bars.push(bars[n - 2].slice()); bars.push(bars[n - 1].slice()); }
-      i++; continue;
-    }
-    if (c === 'n' || c === 'p') { i++; continue; }             // N.C. e prolungamento
-    const m = CHORD_RE.exec(s.slice(i));
-    if (m && m[0]) { cur.push(m[1] + (m[2] || '') + (m[3] || '')); i += m[0].length; continue; }
-    i++;
-  }
-  flush();
-  return bars;
-}
-
-/** Restituisce l'elenco dei brani contenuti nel link. */
+/** Restituisce l'elenco dei brani contenuti nel link, con la forma srotolata. */
 export function parse(text) {
   let s = (text || '').trim();
   try { s = decodeURIComponent(s.replace(/\+/g, '%20')); } catch (e) { /* link gia' in chiaro */ }
-  const modern = /^irealb:\/\//.test(s);
   s = s.replace(/^irealb(ook)?:\/\//, '');
 
   const songs = [];
   s.split('===').forEach(part => {
     const f = part.split('=');
     if (f.length < 6) return;
-    // Formato irealb: Titolo=Compositore==Stile=Tonalita==<marcatore+corpo>=...
     // Il corpo si riconosce dal marcatore, non dalla posizione: le versioni
     // dell'app differiscono sul numero di campi vuoti.
     let body = f.find(x => x.includes(MARKER));
     let key = f[4] || f[3] || '';
+    let stile = '', bpm = 0;
     if (body) {
+      const k = f.indexOf(body);
+      stile = f[k + 1] || '';
+      bpm = +(f[k + 2] || 0) || 0;
       body = deobfuscate(body.slice(body.indexOf(MARKER) + MARKER.length));
     } else {
       // irealbook, in chiaro: Titolo=Compositore=Stile=Tonalita=n=corpo
       body = f[5];
       key = f[3] || '';
+      stile = f[2] || '';
       if (!body) return;
     }
-    const bars = readBody(body).filter(b => b.length);
+    const misure = leggiCorpo(body);
+    const bars = espandi(misure).map(m => ({ accordi: m.accordi, metro: m.metro }));
     if (bars.length > 1) {
-      songs.push({ title: f[0] || 'senza titolo', composer: f[1] || '', key, bars });
+      songs.push({ title: f[0] || 'senza titolo', composer: f[1] || '', key, stile, bpm, bars });
     }
   });
   return songs;
 }
 
-/** Le battute nel formato accettato dal campo Griglia. */
+/** La griglia per la barra: battute separate da spazio, accordi nella battuta da virgola. */
 export function toGrid(song) {
-  return song.bars.map(b => b.join(',')).join(' ');
+  return song.bars
+    .map(b => b.accordi.join(',') || 'N.C.')
+    .join(' ');
+}
+
+/** Il metro d'apertura del brano, per il selettore: '4', '3', '2' o '6'. */
+export function beatsOf(song) {
+  const m = (song.bars.find(b => b.metro) || {}).metro || '';
+  if (m === '3/4') return 3;
+  if (m === '2/4') return 2;
+  if (m === '6/8') return 6;
+  return 4;
 }
