@@ -3,6 +3,16 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [2.3.2] — 2026-08-01
+
+### Corretto
+- Le guide non scorrevano piu': il blocco dello scorrimento pensato per la pagina
+  dello strumento era finito su `body` per tutte le pagine. Ora vale solo per
+  `app.html`.
+
+### Modificato
+- README riscritto allo stato attuale del progetto.
+
 ## [2.3.1] — 2026-08-01
 
 ### Corretto

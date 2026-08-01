@@ -28,13 +28,9 @@ body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);
   font-size:14px;-webkit-font-smoothing:antialiased;line-height:1.45}
 
 /* Il banco di lavoro occupa la prima schermata, i pannelli stanno sotto. */
-.deck{display:grid;grid-template-rows:auto auto auto auto auto minmax(0,1fr) auto;padding:0}
-@media (min-width:901px){
-  .deck{height:100vh;height:100dvh;overflow:hidden}
-}
 
 /* ------------------------------------------------------------------ barra */
-body{display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100vh;height:100dvh;overflow:hidden}
+body.app{display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100vh;height:100dvh;overflow:hidden}
 .bar{display:flex;align-items:center;gap:9px;padding:0 16px;height:56px;
   border-bottom:1px solid var(--line);background:var(--panel);flex:none}
 .brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;flex:none}
@@ -183,7 +179,7 @@ pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r
 [data-tema="chiaro"] .note.hit circle{filter:drop-shadow(0 0 6px rgba(0,0,0,.35))}
 
 @media (max-width:900px){
-  body{height:auto;overflow:auto;display:block}
+  body.app{height:auto;overflow:auto;display:block}
   .bar{flex-wrap:wrap;height:auto;padding:10px 14px}
   .stage{grid-template-columns:1fr;grid-template-rows:auto auto auto}
   .vgrip{width:auto;flex-direction:row;padding:8px 14px;border-left:0;border-top:1px solid var(--line)}
