@@ -25,8 +25,11 @@ body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);
   font-size:14px;-webkit-font-smoothing:antialiased;line-height:1.45}
 
 /* Il banco di lavoro occupa la prima schermata, i pannelli stanno sotto. */
-.deck{min-height:100vh;min-height:100dvh;display:grid;
-  grid-template-rows:auto auto auto minmax(0,1fr);padding:0 0 4px}
+.deck{display:grid;grid-template-rows:auto auto auto minmax(0,1fr);padding:0 0 4px}
+@media (min-width:901px){
+  .deck{height:100vh;height:100dvh;overflow:hidden}
+  .right{overflow:hidden}
+}
 
 /* ------------------------------------------------------------------ barra */
 .bar{display:flex;align-items:flex-end;gap:12px;padding:14px 18px 12px;
@@ -106,7 +109,7 @@ button.chip:hover{border-color:var(--faint)}
 .stage{display:grid;grid-template-columns:minmax(0,1fr) var(--aside);gap:0;min-height:0;
   border-top:1px solid var(--line)}
 .left{display:grid;grid-template-rows:minmax(0,1fr) auto;min-width:0;min-height:0}
-.board{display:flex;align-items:center;justify-content:center;padding:8px 18px 4px;min-height:0;overflow-x:auto}
+.board{display:flex;align-items:flex-start;justify-content:center;padding:6px 18px 4px;min-height:0;overflow:auto}
 .board svg{width:100%;height:auto;max-height:100%;min-width:560px}
 .board .note{cursor:pointer}
 
@@ -133,7 +136,8 @@ button.chip:hover{border-color:var(--faint)}
 .right .field>span:first-child{width:38px}
 .vrow{display:flex;align-items:center;gap:10px;margin:8px 0 0;flex-wrap:wrap}
 .vrow .mini input[type=range]{width:88px}
-.voices{overflow-y:auto;margin-top:12px;padding-bottom:14px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.voices{overflow-y:auto;overscroll-behavior:contain;margin-top:12px;padding-bottom:14px;
+  display:flex;flex-direction:column;gap:10px;min-height:0}
 .voice{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
   padding:10px 11px;cursor:pointer;transition:border-color .12s}
 .voice:hover{border-color:var(--line-2)}

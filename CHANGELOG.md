@@ -3,6 +3,18 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [1.3.3] — 2026-08-01
+
+### Corretto
+- Il manico finiva a meta' pagina, con un vuoto sopra. Il banco di lavoro aveva un'altezza
+  minima invece che definita, quindi la colonna dei voicing lo allungava a piacere e il
+  manico, centrato in quell'area, scendeva. Ora il banco occupa esattamente una schermata,
+  il manico parte dall'alto e la colonna dei voicing scorre per conto suo.
+
+### Aggiunto
+- La griglia si aggiorna da sola poco dopo l'ultima battitura. Il pulsante Mostra resta
+  per chi preferisce confermare a mano, o premere Invio.
+
 ## [1.3.2] — 2026-08-01
 
 ### Corretto

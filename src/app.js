@@ -362,6 +362,14 @@ function init() {
   $('go').onclick = () => { parseGrid(); render(); };
   $('seq').addEventListener('keydown', e => { if (e.key === 'Enter') { parseGrid(); render(); } });
 
+  // La griglia si aggiorna da sola poco dopo l'ultima battitura: il pulsante resta
+  // per chi preferisce confermare a mano.
+  let attesa = null;
+  $('seq').addEventListener('input', () => {
+    clearTimeout(attesa);
+    attesa = setTimeout(() => { parseGrid(); render(); }, 550);
+  });
+
   $('libgo').onclick = () => loadGrid(LIBRARY[+$('lib').value][1], true);
 
   $('vtype').onchange = e => {
