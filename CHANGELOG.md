@@ -3,6 +3,20 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [2.4.0] — 2026-08-01
+
+### Aggiunto
+- Il tab sa scrivere la linea walking, non solo i voicing a blocchi: un selettore nella
+  finestra Tab sceglie il contenuto. Le note di passaggio escono fra parentesi, con la
+  legenda nell'intestazione.
+- Durante l'esecuzione in modalita' walking le note di passaggio compaiono sul manico
+  come pallini rossi, e si accendono nel momento in cui le senti.
+
+### Modificato
+- Linea walking piu' musicale: le note dell'accordo si percorrono nella direzione della
+  fondamentale che arriva, e la cromatica di avvicinamento entra dal lato del moto
+  (da sotto salendo, da sopra scendendo), come nella grammatica classica del walking.
+
 ## [2.3.4] — 2026-08-01
 
 ### Aggiunto

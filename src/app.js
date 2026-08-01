@@ -174,6 +174,12 @@ function fitBoard() {
   svg.style.height = 'auto';
 }
 
+function walkGhosts() {
+  if (state.playMode !== 'walking') return [];
+  const nb = Math.max(1, Math.round(state.beats * ((state.grid[state.index] || {}).dur || 1)));
+  return walkingLine(state.index, nb).filter(n => n && n.pass);
+}
+
 function renderBoard() {
   const item = state.grid[state.index];
   const v = chosen(state.index);
@@ -181,7 +187,8 @@ function renderBoard() {
     chord: item && item.ok ? item.chord : null,
     open: open(), zoneFrom: state.zoneFrom, zoneTo: zoneTo(), frets: state.frets,
     labels: state.labels, flipped: state.flipped, dimOutside: state.dimOutside,
-    highlight: v ? v.shape : []
+    highlight: v ? v.shape : [],
+    ghosts: walkGhosts()
   });
   fitBoard();
 }
@@ -309,25 +316,36 @@ function walkingLine(i, beats) {
   if (!notes.length) return [];
   const v = chosen(i);
   const root = (v && v.shape[0]) || notes.find(n => n.iv === 0) || notes[0];
-  const sopra = notes.filter(n => n.midi > root.midi);
-  const n2 = sopra.find(n => n.iv === item.chord.third) || sopra[0] || root;
-  const n3 = sopra.find(n => n.iv === item.chord.fifth && n.midi > n2.midi)
-          || sopra.find(n => n.midi > n2.midi) || n2;
-  let appr = null;
+
+  // Dove sta andando la linea: la fondamentale del prossimo accordo utile.
+  let target;
   for (let k = 1; k <= state.grid.length; k++) {
     const j = (i + k) % state.grid.length;
     if (!state.grid[j].ok) continue;
     const vNext = chosen(j);
-    const target = (vNext && vNext.shape[0].midi)
+    target = (vNext && vNext.shape[0].midi)
       || (V.zoneNotes(state.grid[j].chord, open(), state.zoneFrom, zoneTo())[0] || {}).midi;
-    if (target !== undefined) appr = findPos(target + 1) || findPos(target - 1);
     break;
   }
-  const giro = [root, n2, n3, appr || n3];
-  const linea = [];
-  for (let b = 0; b < beats; b++) {
-    linea.push(b === beats - 1 ? giro[3] : giro[b % 3]);
+
+  // Le note dell'accordo si percorrono nella direzione del bersaglio,
+  // e l'avvicinamento cromatico arriva dal lato del moto: da sotto se si
+  // sale, da sopra se si scende. E' la grammatica classica del walking.
+  const giu = target !== undefined && target < root.midi;
+  const tones = notes
+    .filter(n => (giu ? n.midi < root.midi : n.midi > root.midi) && n.pc !== root.pc)
+    .sort((a, b) => (giu ? b.midi - a.midi : a.midi - b.midi));
+  const passi = tones.length ? tones : [root];
+  let appr = null;
+  if (target !== undefined) {
+    appr = (giu ? findPos(target + 1) : findPos(target - 1))
+        || (giu ? findPos(target - 1) : findPos(target + 1));
+    if (appr) appr = { ...appr, pass: true };
   }
+
+  const linea = [root];
+  for (let b = 1; b < beats - 1; b++) linea.push(passi[(b - 1) % passi.length]);
+  if (beats > 1) linea.push(appr || passi[passi.length - 1] || root);
   return linea;
 }
 
@@ -412,20 +430,30 @@ function totalMotion() {
 // ---------------------------------------------------------------- tab
 
 function buildTab() {
+  const walking = $('tabmode') && $('tabmode').value === 'walk';
   const bars = [];
   let current = null, barIndex = -1;
   state.grid.forEach((item, i) => {
     if (item.bar !== barIndex) { current = { label: [], columns: [], block: false }; bars.push(current); barIndex = item.bar; }
     if (!item.ok) { current.label.push(item.raw); return; }
     current.label.push(item.chord.symbol);
+    if (walking) {
+      const nb = Math.max(1, Math.round(state.beats * (item.dur || 1)));
+      walkingLine(i, nb).forEach(n => {
+        if (n) current.columns.push({ si: n.si, f: n.f, pass: !!n.pass });
+      });
+      return;
+    }
     const v = chosen(i);
     if (!v) return;
     current.block = current.block || v.block;
     v.shape.forEach((n, k) => current.columns.push({ si: n.si, f: n.f, newGroup: v.block && k === 0 }));
   });
 
-  const header = t('tab.head', $('seq').value, t('tun.' + state.tuning),
-    state.zoneFrom, zoneTo(), t('vt.' + state.vtype + '.name'));
+  const modo = walking ? t('tab.walk') : t('vt.' + state.vtype + '.name');
+  let header = t('tab.head', $('seq').value, t('tun.' + state.tuning),
+    state.zoneFrom, zoneTo(), modo);
+  if (walking) header += '\n' + t('tab.legend');
   $('tab').textContent = Tab.render(bars, open(), state.flipped, +$('perline').value, header);
   $('tab').dataset.vuoto = 'no';
 }
@@ -445,7 +473,8 @@ function loadGrid(text, autozone) {
 
 function buildMenus() {
   const keep = { lib: $('lib').value, vtype: $('vtype').value, tun: $('tun').value,
-                 nfrets: $('nfrets').value, mode: $('mode').value, perline: $('perline').value };
+                 nfrets: $('nfrets').value, mode: $('mode').value, perline: $('perline').value,
+                 tabmode: $('tabmode').value };
   $('lib').innerHTML = LIBRARY.map((x, i) =>
     `<option value="${i}">${x[lang() === 'en' ? 1 : 0]} \u00b7 ${x[2]} \u00b7 ${x[3]} bpm</option>`).join('');
   $('vtype').innerHTML = V.VOICING_TYPES.map(x => `<option value="${x.id}">${t('vt.' + x.id + '.name')}</option>`).join('');
@@ -453,12 +482,14 @@ function buildMenus() {
   $('nfrets').innerHTML = [12, 15, 18, 24].map(n => `<option value="${n}">${t('set.fretsTo', n)}</option>`).join('');
   $('mode').innerHTML = ['voicing', 'root', 'walking', 'mute'].map(m => `<option value="${m}">${t('play.' + m)}</option>`).join('');
   $('perline').innerHTML = [4, 2, 6].map(n => `<option value="${n}">${t('tab.perline', n)}</option>`).join('');
+  $('tabmode').innerHTML = `<option value="blocks">${t('tab.blocks')}</option><option value="walk">${t('tab.walk')}</option>`;
   $('lib').value = keep.lib || '0';
   $('vtype').value = keep.vtype || state.vtype;
   $('tun').value = keep.tun || state.tuning;
   $('nfrets').value = keep.nfrets || String(state.frets);
   $('mode').value = keep.mode || state.playMode;
   $('perline').value = keep.perline || '4';
+  $('tabmode').value = keep.tabmode || 'blocks';
   $('tlab').textContent = state.labels === 'degrees' ? t('set.degrees') : t('set.names');
   $('pp').innerHTML = state.playing ? '&#9632;' : '&#9654;';
   $('zwv').textContent = t('zone.frets', state.zoneWidth);
@@ -554,7 +585,7 @@ function init() {
   $('pp').onclick = toggleTransport;
   $('bpm').oninput = e => { state.bpm = +e.target.value; $('bpmv').textContent = state.bpm; };
   $('beats').onchange = e => { state.beats = +e.target.value; };
-  $('mode').onchange = e => { state.playMode = e.target.value; };
+  $('mode').onchange = e => { state.playMode = e.target.value; renderBoard(); };
   $('clk').onclick = e => { state.metronome = !state.metronome; e.target.classList.toggle('on', state.metronome); };
   $('lock').onclick = () => setLock(!state.lockZone);
 

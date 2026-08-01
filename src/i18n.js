@@ -85,6 +85,8 @@ const D = {
     'tab.hint': 'Usa il voicing selezionato per ogni accordo. Clicca una card per cambiarlo, poi rigenera.',
     'tab.make': 'Genera', 'tab.copy': 'Copia', 'tab.copied': 'Copiato', 'tab.dl': 'Scarica .txt',
     'tab.perline': n => n + ' battute per riga',
+    'tab.blocks': 'voicing a blocchi', 'tab.walk': 'linea walking',
+    'tab.legend': 'le note fra parentesi sono di passaggio',
     'tab.press': 'Premi Genera.',
     'tab.head': (g, b, a, e, v) => `griglia: ${g}\nbasso: ${b}   zona: tasti ${a}-${e}   voicing: ${v}`,
 
@@ -175,6 +177,8 @@ const D = {
     'tab.hint': 'Uses the voicing selected for each chord. Click a card to change it, then generate again.',
     'tab.make': 'Generate', 'tab.copy': 'Copy', 'tab.copied': 'Copied', 'tab.dl': 'Download .txt',
     'tab.perline': n => n + ' bars per line',
+    'tab.blocks': 'block voicings', 'tab.walk': 'walking line',
+    'tab.legend': 'notes in brackets are passing notes',
     'tab.press': 'Press Generate.',
     'tab.head': (g, b, a, e, v) => `chart: ${g}\nbass: ${b}   zone: frets ${a}-${e}   voicing: ${v}`,
 

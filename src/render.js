@@ -83,6 +83,15 @@ export function fretboard(opts) {
       }
     });
   }
+  // Note di passaggio della linea walking: pallini rossi, accesi a tempo.
+  (opts.ghosts || []).forEach(g => {
+    const row = ord.indexOf(g.si);
+    if (row < 0 || g.f > frets || g.f < 0) return;
+    s += `<g class="note ghost" data-pos="${g.si}:${g.f}">`
+      + `<circle cx="${cx(g.f)}" cy="${sy(row)}" r="14" fill="var(--pass)"/>`
+      + `<text x="${cx(g.f)}" y="${sy(row) + 4}" text-anchor="middle" font-size="12" font-weight="600" font-family="${MONO}" fill="#FFF6EE">${SHARP[g.pc]}</text></g>`;
+  });
+
   return s + '</svg>';
 }
 

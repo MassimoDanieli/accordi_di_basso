@@ -8,7 +8,7 @@
   --sans:"Space Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
-:root{ --string:#B9B2A6; --nut:#EDE7DD;
+:root{ --string:#B9B2A6; --nut:#EDE7DD; --pass:#D0453A;
   --wood1:#4A3A2E; --wood2:#31261D; --fret1:#C4BCAE; --fret2:#6E675C;
   --serif:"Fraunces","Georgia",serif; }
 
@@ -20,6 +20,7 @@
   --paper:#28221C; --muted:#6B6259; --faint:#8D8377;
   --line:rgba(40,34,28,.13); --line-2:rgba(40,34,28,.22);
   --root:#C2831A; --third:#2C8676; --fifth:#4A6DB5; --sev:#C0573A; --ext:#785EB0;
+  --pass:#BE3A2F;
 }
 [data-tema="chiaro"] .cell{color:rgba(255,255,255,.92)}
 
@@ -172,6 +173,9 @@ dialog select[size]{width:100%;margin-bottom:4px}
 .dlg-foot{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
 pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin:0;
   overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.55;white-space:pre}
+
+.note.ghost{opacity:.45}
+.note.ghost.hit{opacity:1}
 
 /* La nota che sta suonando si accende. */
 @keyframes hitpulse{0%{transform:scale(1.5)}55%{transform:scale(1.08)}100%{transform:scale(1)}}

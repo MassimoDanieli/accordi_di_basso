@@ -20,7 +20,9 @@ export function render(bars, open, flipped, perLine, header) {
     chunk.forEach(bar => {
       const cells = bar.block ? groupBlocks(bar.columns) : bar.columns.map(c => [c]);
       let w = 3;
-      cells.forEach(cell => cell.forEach(c => { w = Math.max(w, String(c.f).length + 2); }));
+      cells.forEach(cell => cell.forEach(c => {
+        w = Math.max(w, String(c.f).length + (c.pass ? 4 : 2));
+      }));
 
       const label = bar.label.join(' ');
       // La battuta non e' mai piu' stretta della sua etichetta.
@@ -32,7 +34,7 @@ export function render(bars, open, flipped, perLine, header) {
         let line = '-';
         cells.forEach(cell => {
           const hit = cell.find(c => c.si === si);
-          const text = hit ? String(hit.f) : '';
+          const text = hit ? (hit.pass ? '(' + hit.f + ')' : String(hit.f)) : '';
           const pad = w - text.length, left = Math.floor(pad / 2);
           line += '-'.repeat(left) + text + '-'.repeat(pad - left);
         });
