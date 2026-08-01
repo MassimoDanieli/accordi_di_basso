@@ -23,9 +23,17 @@ export function applyTheme(theme) {
   }
 }
 
+export function toggleTheme() {
+  applyTheme(document.documentElement.getAttribute('data-tema') === 'chiaro' ? 'scuro' : 'chiaro');
+}
+
+/**
+ * Il tema si aggancia con una delega sul documento: cosi' funziona anche se il
+ * pulsante viene ridisegnato, e non dipende dal resto dell'inizializzazione.
+ */
 export function initTheme() {
   applyTheme(readTheme());
-  const btn = document.getElementById('tema');
-  if (btn) btn.onclick = () => applyTheme(
-    document.documentElement.getAttribute('data-tema') === 'chiaro' ? 'scuro' : 'chiaro');
+  document.addEventListener('click', e => {
+    if (e.target && e.target.closest && e.target.closest('#tema')) toggleTheme();
+  });
 }

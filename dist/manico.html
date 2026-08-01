@@ -61,7 +61,9 @@ body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);
 .tempo{display:flex;flex-direction:column;gap:5px}
 .tempo-row{display:flex;align-items:center;gap:9px}
 .tempo input[type=range]{width:110px}
-.tip{margin:10px 18px 0;font-size:12px;color:var(--faint);line-height:1.7;max-width:96ch}
+.tip{margin:8px 18px 0;font-size:12px;color:var(--faint);line-height:1.6}
+.tip a{color:var(--muted)}
+.tip a:hover{color:var(--root)}
 .tip b{color:var(--muted);font-weight:500}
 .tip code{background:var(--panel-2);padding:1px 5px;border-radius:4px;font-family:var(--mono);color:var(--muted)}
 
@@ -103,7 +105,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
 input[type=range]::-moz-range-thumb{width:15px;height:15px;border:0;border-radius:50%;background:var(--root);cursor:pointer}
 
 /* ---------------------------------------------------------------- accordi */
-.ribbon{display:flex;align-items:center;gap:6px;padding:12px 18px 10px;overflow-x:auto;scrollbar-width:thin}
+.ribbon{display:flex;align-items:center;gap:6px;padding:10px 18px 8px;overflow-x:auto;scrollbar-width:thin}
 .chip{padding:8px 13px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
   font-family:var(--mono);font-size:14px;font-weight:600;color:var(--paper);flex:none}
 button.chip:hover{border-color:var(--faint)}
@@ -116,8 +118,8 @@ button.chip:hover{border-color:var(--faint)}
 .stage{display:grid;grid-template-columns:minmax(0,1fr) var(--aside);gap:0;min-height:0;
   border-top:1px solid var(--line)}
 .left{display:grid;grid-template-rows:minmax(0,1fr) auto;min-width:0;min-height:0}
-.board{display:flex;align-items:center;justify-content:center;padding:14px 18px;min-height:0;overflow-x:auto}
-.board svg{width:100%;height:auto;max-height:100%;min-width:620px}
+.board{display:flex;align-items:center;justify-content:center;padding:8px 18px 4px;min-height:0;overflow-x:auto}
+.board svg{width:100%;height:auto;max-height:100%;min-width:560px}
 .board .note{cursor:pointer}
 
 .zonebar{padding:12px 18px 14px;border-top:1px solid var(--line);background:var(--panel);
@@ -273,9 +275,8 @@ pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r
     </label>
   </header>
 
-  <p class="tip">Uno <b>spazio</b> separa le battute, una <b>virgola</b> separa gli accordi dentro la stessa battuta —
-     <code>D-7 G7 C^7,A7</code>. Vanno bene sia <code>C-7</code> sia <code>Cm7</code>, sia <code>C^7</code> sia <code>Cmaj7</code>.
-     Barra spaziatrice per avviare, frecce per cambiare accordo.</p>
+  <p class="tip">Spazio fra le battute, virgola dentro la battuta: <code>D-7 G7 C^7,A7</code> &middot;
+     <a href="https://basso.massimodanieli.com/">guida completa</a></p>
 
   <nav class="ribbon" id="chips" aria-label="Accordi della griglia"></nav>
 
@@ -286,7 +287,7 @@ pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r
       <div class="zonebar">
         <div class="zline">
           <label class="mini"><span class="cap">Zona, dal tasto</span>
-            <input type="range" id="zs" min="0" max="11" step="1" value="0"><span class="val" id="zsv">0</span></label>
+            <input type="range" id="zs" min="0" max="8" step="1" value="0"><span class="val" id="zsv">0</span></label>
           <label class="mini"><span class="cap">ampiezza</span>
             <input type="range" id="zw" min="3" max="7" step="1" value="5"><span class="val" id="zwv">5 tasti</span></label>
           <span class="zdesc" id="zdesc"></span>
@@ -328,6 +329,9 @@ pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r
   <section class="panel">
     <h2>Strumento e vista</h2>
     <label class="field"><span>Basso</span><select id="tun"></select></label>
+    <label class="field"><span>Tasti mostrati</span>
+      <select id="nfrets"><option value="12">fino al 12</option><option value="15">fino al 15</option><option value="18">fino al 18</option><option value="24">fino al 24</option></select>
+    </label>
     <div class="field"><span>Note sul manico</span>
       <div class="togs">
         <button class="tog on" id="tlab">Gradi</button>
@@ -846,38 +850,38 @@ __mod.render = (function () {
   function fretboard(opts) {
     const { chord, open, zoneFrom, zoneTo, frets, labels, flipped, dimOutside } = opts;
     const ord = stringOrder(open.length, flipped);
-    const PT = 26, PB = 30, ROW = 34, W = 980, NUT = 82, BW = W - NUT - 16;
+    const PT = 30, PB = 34, ROW = 46, W = 820, NUT = 76, BW = W - NUT - 14;
     const H = PT + ROW * (open.length - 1) + PB;
     const fx = f => NUT + (fretPos(f) / fretPos(frets)) * BW;
-    const cx = f => (f === 0 ? NUT - 17 : (fx(f - 1) + fx(f)) / 2);
+    const cx = f => (f === 0 ? NUT - 21 : (fx(f - 1) + fx(f)) / 2);
     const sy = r => PT + r * ROW;
 
     let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-    s += `<rect x="${NUT}" y="${PT - 13}" width="${BW}" height="${ROW * (open.length - 1) + 26}" rx="4" fill="var(--wood)"/>`;
+    s += `<rect x="${NUT}" y="${PT - 17}" width="${BW}" height="${ROW * (open.length - 1) + 34}" rx="5" fill="var(--wood)"/>`;
 
     const zx1 = zoneFrom === 0 ? NUT - 34 : fx(zoneFrom - 1);
-    s += `<rect x="${zx1}" y="${PT - 16}" width="${fx(zoneTo) - zx1}" height="${ROW * (open.length - 1) + 32}" rx="5" fill="var(--root)" opacity=".10" stroke="var(--root)" stroke-opacity=".35"/>`;
-    s += `<rect x="${NUT - 4}" y="${PT - 13}" width="4" height="${ROW * (open.length - 1) + 26}" fill="var(--nut)" opacity=".8"/>`;
+    s += `<rect x="${zx1}" y="${PT - 21}" width="${fx(zoneTo) - zx1}" height="${ROW * (open.length - 1) + 42}" rx="6" fill="var(--root)" opacity=".10" stroke="var(--root)" stroke-opacity=".35"/>`;
+    s += `<rect x="${NUT - 5}" y="${PT - 17}" width="5" height="${ROW * (open.length - 1) + 34}" fill="var(--nut)" opacity=".85"/>`;
 
     for (let f = 1; f <= frets; f++)
-      s += `<line x1="${fx(f)}" y1="${PT - 13}" x2="${fx(f)}" y2="${PT + ROW * (open.length - 1) + 13}" stroke="var(--fretwire)" stroke-width="${f < 6 ? 2 : 1.4}" opacity=".55"/>`;
+      s += `<line x1="${fx(f)}" y1="${PT - 17}" x2="${fx(f)}" y2="${PT + ROW * (open.length - 1) + 17}" stroke="var(--fretwire)" stroke-width="${f < 6 ? 2.4 : 1.7}" opacity=".6"/>`;
 
     const my = PT + ROW * (open.length - 1) / 2;
     DOTS.filter(d => d <= frets).forEach(d => {
       s += d % 12 === 0
-        ? `<circle cx="${cx(d)}" cy="${my - 11}" r="4" fill="var(--inlay)"/><circle cx="${cx(d)}" cy="${my + 11}" r="4" fill="var(--inlay)"/>`
-        : `<circle cx="${cx(d)}" cy="${my}" r="4" fill="var(--inlay)"/>`;
+        ? `<circle cx="${cx(d)}" cy="${my - 15}" r="5" fill="var(--inlay)"/><circle cx="${cx(d)}" cy="${my + 15}" r="5" fill="var(--inlay)"/>`
+        : `<circle cx="${cx(d)}" cy="${my}" r="5" fill="var(--inlay)"/>`;
     });
 
     ord.forEach((si, row) => {
       const y = sy(row);
-      s += `<line x1="${NUT - 38}" y1="${y}" x2="${fx(frets)}" y2="${y}" stroke="var(--string)" stroke-width="${1 + (open.length - 1 - si) * 0.55}" opacity=".5"/>`;
-      s += `<text x="14" y="${y + 4}" fill="var(--faint)" font-size="12" font-family="${MONO}">${SHARP[open[si] % 12]}</text>`;
+      s += `<line x1="${NUT - 44}" y1="${y}" x2="${fx(frets)}" y2="${y}" stroke="var(--string)" stroke-width="${1.2 + (open.length - 1 - si) * 0.7}" opacity=".55"/>`;
+      s += `<text x="10" y="${y + 5}" fill="var(--faint)" font-size="14" font-family="${MONO}">${SHARP[open[si] % 12]}</text>`;
     });
 
     for (let f = 0; f <= frets; f++) {
       const inZone = f >= zoneFrom && f <= zoneTo;
-      s += `<text x="${cx(f)}" y="${H - 10}" text-anchor="middle" font-size="11" font-family="${MONO}" fill="${inZone ? 'var(--root)' : 'var(--faint)'}">${f}</text>`;
+      s += `<text x="${cx(f)}" y="${H - 11}" text-anchor="middle" font-size="13" font-family="${MONO}" fill="${inZone ? 'var(--root)' : 'var(--faint)'}">${f}</text>`;
     }
 
     if (chord) {
@@ -895,9 +899,9 @@ __mod.render = (function () {
           const col = degreeColor(iv);
           const op = picked ? 1 : (inZone ? 0.4 : 0.13);
           s += `<g opacity="${op}" style="cursor:pointer" data-midi="${midi}" data-pos="${si}:${f}" class="note">`
-            + `<circle cx="${x}" cy="${y}" r="12.5" fill="${col}"/>`
-            + (picked ? `<circle cx="${x}" cy="${y}" r="16" fill="none" stroke="${col}" stroke-width="1.5"/>` : '')
-            + `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="${text.length > 2 ? 9.5 : 11}" font-weight="600" font-family="${MONO}" fill="#1A1512">${text}</text></g>`;
+            + `<circle cx="${x}" cy="${y}" r="16" fill="${col}"/>`
+            + (picked ? `<circle cx="${x}" cy="${y}" r="20.5" fill="none" stroke="${col}" stroke-width="1.8"/>` : '')
+            + `<text x="${x}" y="${y + 5}" text-anchor="middle" font-size="${text.length > 2 ? 12 : 14}" font-weight="600" font-family="${MONO}" fill="#1A1512">${text}</text></g>`;
         }
       });
     }
@@ -909,7 +913,7 @@ __mod.render = (function () {
     const { open, zoneFrom, zoneTo, flipped } = opts;
     const ord = stringOrder(open.length, flipped);
     const n = zoneTo - zoneFrom + 1;
-    const PL = 20, PT = 16, PB = 18, ROW = 21, CW = 30;
+    const PL = 20, PT = 17, PB = 19, ROW = 23, CW = 32;
     const W = PL + CW * n + 10, H = PT + ROW * (open.length - 1) + PB;
     const cx = f => PL + CW * (f - zoneFrom) + CW / 2;
     const sy = r => PT + r * ROW;
@@ -931,7 +935,7 @@ __mod.render = (function () {
       if (row < 0) return;
       const x = cx(note.f), y = sy(row), text = degreeName(note.iv, chord);
       s += `<g class="note" data-pos="${note.si}:${note.f}">`
-        + `<circle cx="${x}" cy="${y}" r="9.5" fill="${degreeColor(note.iv)}"/>`
+        + `<circle cx="${x}" cy="${y}" r="10.5" fill="${degreeColor(note.iv)}"/>`
         + `<text x="${x}" y="${y + 3.5}" text-anchor="middle" font-size="${text.length > 2 ? 7.5 : 9}" font-weight="600" font-family="${MONO}" fill="#1A1512">${text}</text></g>`;
       if (!voicing.block)
         s += `<text x="${x}" y="${y - 13}" text-anchor="middle" font-size="8" font-family="${MONO}" fill="var(--faint)">${i + 1}</text>`;
@@ -1154,14 +1158,22 @@ __mod.theme = (function () {
     }
   }
 
-  function initTheme() {
-    applyTheme(readTheme());
-    const btn = document.getElementById('tema');
-    if (btn) btn.onclick = () => applyTheme(
-      document.documentElement.getAttribute('data-tema') === 'chiaro' ? 'scuro' : 'chiaro');
+  function toggleTheme() {
+    applyTheme(document.documentElement.getAttribute('data-tema') === 'chiaro' ? 'scuro' : 'chiaro');
   }
 
-  return { readTheme, applyTheme, initTheme };
+  /**
+   * Il tema si aggancia con una delega sul documento: cosi' funziona anche se il
+   * pulsante viene ridisegnato, e non dipende dal resto dell'inizializzazione.
+   */
+  function initTheme() {
+    applyTheme(readTheme());
+    document.addEventListener('click', e => {
+      if (e.target && e.target.closest && e.target.closest('#tema')) toggleTheme();
+    });
+  }
+
+  return { readTheme, applyTheme, toggleTheme, initTheme };
 })();
 
 __mod.app = (function () {
@@ -1186,7 +1198,7 @@ __mod.app = (function () {
     tuning: '4',
     zoneFrom: 0,
     zoneWidth: 5,
-    frets: 15,
+    frets: 12,
     labels: 'degrees',
     flipped: false,
     dimOutside: true,
@@ -1519,6 +1531,10 @@ __mod.app = (function () {
   }
 
   function init() {
+    initTheme();
+    parseGrid();
+    render();
+
     $('lib').innerHTML = LIBRARY.map((x, i) => `<option value="${i}">${x[0]}</option>`).join('');
     $('lib').value = '0';
     $('vtype').innerHTML = V.VOICING_TYPES.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
@@ -1544,6 +1560,15 @@ __mod.app = (function () {
     $('vl').onclick = optimiseVoiceLeading;
 
     $('tun').onchange = e => { state.tuning = e.target.value; state.pick = {}; cache = new Map(); render(); };
+    if ($('nfrets')) {
+    $('nfrets').value = String(state.frets);
+    $('nfrets').onchange = e => {
+      state.frets = +e.target.value;
+      $('zs').max = state.frets - state.zoneWidth + 1;
+      if (state.zoneFrom > state.frets - state.zoneWidth + 1) { setZone(state.frets - state.zoneWidth + 1); return; }
+      state.pick = {}; cache = new Map(); render();
+    };
+    }
     $('zs').oninput = e => setZone(+e.target.value);
     $('zw').oninput = e => {
       state.zoneWidth = +e.target.value;
@@ -1636,10 +1661,7 @@ __mod.app = (function () {
       if (e.key === 'ArrowLeft' && state.index > 0) select(state.index - 1);
     });
 
-    initTheme();
     $('spanwrap').style.display = 'none';
-    parseGrid();
-    render();
   }
 
   function loadSong(k) {
@@ -1649,7 +1671,12 @@ __mod.app = (function () {
     $('irinfo').textContent = `${song.title}${song.composer ? ' \u2014 ' + song.composer : ''} \u00b7 tonalit\u00e0 ${song.key} \u00b7 ${song.bars.length} battute`;
   }
 
-  init();
+  try {
+    init();
+  } catch (err) {
+    // Un elemento mancante non deve spegnere tutta la pagina.
+    console.error('Manico: inizializzazione interrotta', err);
+  }
 
   return {  };
 })();

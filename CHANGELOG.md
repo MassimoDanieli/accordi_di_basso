@@ -3,6 +3,27 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [1.3.2] — 2026-08-01
+
+### Corretto
+- L'interruttore chiaro/scuro non rispondeva nella pagina dello strumento. Il tema veniva
+  agganciato in fondo alla catena di inizializzazione: bastava un elemento mancante prima
+  di quel punto perche' non venisse mai attivato.
+- Il tema ora si applica per primo e si aggancia con una delega sul documento, quindi non
+  dipende piu' dal resto. L'inizializzazione e' inoltre protetta: un elemento mancante
+  scrive un avviso in console invece di spegnere la pagina.
+
+## [1.3.1] — 2026-08-01
+
+### Modificato
+- Manico piu' grande e piu' leggibile: corde piu' distanziate, pallini delle note e
+  numeri dei tasti ingranditi, proporzione meno schiacciata (da 6,2:1 a 4,1:1 su quattro
+  corde, cioe' circa il 50% di altezza in piu' a parita' di larghezza).
+- Di serie si vedono i primi 12 tasti invece di 15, cosi' ogni tasto e' piu' largo. Il
+  numero di tasti mostrati si sceglie nelle impostazioni: 12, 15, 18 o 24.
+- Il promemoria sulla sintassi sopra il manico si e' ridotto a una riga con rimando alla
+  guida, cosi' il manico sale e non resta schiacciato in fondo.
+
 ## [1.3.0] — 2026-08-01
 
 ### Aggiunto

@@ -49,7 +49,9 @@ body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);
 .tempo{display:flex;flex-direction:column;gap:5px}
 .tempo-row{display:flex;align-items:center;gap:9px}
 .tempo input[type=range]{width:110px}
-.tip{margin:10px 18px 0;font-size:12px;color:var(--faint);line-height:1.7;max-width:96ch}
+.tip{margin:8px 18px 0;font-size:12px;color:var(--faint);line-height:1.6}
+.tip a{color:var(--muted)}
+.tip a:hover{color:var(--root)}
 .tip b{color:var(--muted);font-weight:500}
 .tip code{background:var(--panel-2);padding:1px 5px;border-radius:4px;font-family:var(--mono);color:var(--muted)}
 
@@ -91,7 +93,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
 input[type=range]::-moz-range-thumb{width:15px;height:15px;border:0;border-radius:50%;background:var(--root);cursor:pointer}
 
 /* ---------------------------------------------------------------- accordi */
-.ribbon{display:flex;align-items:center;gap:6px;padding:12px 18px 10px;overflow-x:auto;scrollbar-width:thin}
+.ribbon{display:flex;align-items:center;gap:6px;padding:10px 18px 8px;overflow-x:auto;scrollbar-width:thin}
 .chip{padding:8px 13px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
   font-family:var(--mono);font-size:14px;font-weight:600;color:var(--paper);flex:none}
 button.chip:hover{border-color:var(--faint)}
@@ -104,8 +106,8 @@ button.chip:hover{border-color:var(--faint)}
 .stage{display:grid;grid-template-columns:minmax(0,1fr) var(--aside);gap:0;min-height:0;
   border-top:1px solid var(--line)}
 .left{display:grid;grid-template-rows:minmax(0,1fr) auto;min-width:0;min-height:0}
-.board{display:flex;align-items:center;justify-content:center;padding:14px 18px;min-height:0;overflow-x:auto}
-.board svg{width:100%;height:auto;max-height:100%;min-width:620px}
+.board{display:flex;align-items:center;justify-content:center;padding:8px 18px 4px;min-height:0;overflow-x:auto}
+.board svg{width:100%;height:auto;max-height:100%;min-width:560px}
 .board .note{cursor:pointer}
 
 .zonebar{padding:12px 18px 14px;border-top:1px solid var(--line);background:var(--panel);

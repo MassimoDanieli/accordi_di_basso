@@ -17,7 +17,7 @@ const state = {
   tuning: '4',
   zoneFrom: 0,
   zoneWidth: 5,
-  frets: 15,
+  frets: 12,
   labels: 'degrees',
   flipped: false,
   dimOutside: true,
@@ -350,6 +350,10 @@ function loadGrid(text, autozone) {
 }
 
 function init() {
+  initTheme();
+  parseGrid();
+  render();
+
   $('lib').innerHTML = LIBRARY.map((x, i) => `<option value="${i}">${x[0]}</option>`).join('');
   $('lib').value = '0';
   $('vtype').innerHTML = V.VOICING_TYPES.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
@@ -375,6 +379,15 @@ function init() {
   $('vl').onclick = optimiseVoiceLeading;
 
   $('tun').onchange = e => { state.tuning = e.target.value; state.pick = {}; cache = new Map(); render(); };
+  if ($('nfrets')) {
+  $('nfrets').value = String(state.frets);
+  $('nfrets').onchange = e => {
+    state.frets = +e.target.value;
+    $('zs').max = state.frets - state.zoneWidth + 1;
+    if (state.zoneFrom > state.frets - state.zoneWidth + 1) { setZone(state.frets - state.zoneWidth + 1); return; }
+    state.pick = {}; cache = new Map(); render();
+  };
+  }
   $('zs').oninput = e => setZone(+e.target.value);
   $('zw').oninput = e => {
     state.zoneWidth = +e.target.value;
@@ -467,10 +480,7 @@ function init() {
     if (e.key === 'ArrowLeft' && state.index > 0) select(state.index - 1);
   });
 
-  initTheme();
   $('spanwrap').style.display = 'none';
-  parseGrid();
-  render();
 }
 
 function loadSong(k) {
@@ -480,4 +490,9 @@ function loadSong(k) {
   $('irinfo').textContent = `${song.title}${song.composer ? ' \u2014 ' + song.composer : ''} \u00b7 tonalit\u00e0 ${song.key} \u00b7 ${song.bars.length} battute`;
 }
 
-init();
+try {
+  init();
+} catch (err) {
+  // Un elemento mancante non deve spegnere tutta la pagina.
+  console.error('Manico: inizializzazione interrotta', err);
+}

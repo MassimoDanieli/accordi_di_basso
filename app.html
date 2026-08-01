@@ -62,9 +62,8 @@
     </label>
   </header>
 
-  <p class="tip">Uno <b>spazio</b> separa le battute, una <b>virgola</b> separa gli accordi dentro la stessa battuta —
-     <code>D-7 G7 C^7,A7</code>. Vanno bene sia <code>C-7</code> sia <code>Cm7</code>, sia <code>C^7</code> sia <code>Cmaj7</code>.
-     Barra spaziatrice per avviare, frecce per cambiare accordo.</p>
+  <p class="tip">Spazio fra le battute, virgola dentro la battuta: <code>D-7 G7 C^7,A7</code> &middot;
+     <a href="index.html">guida completa</a></p>
 
   <nav class="ribbon" id="chips" aria-label="Accordi della griglia"></nav>
 
@@ -75,7 +74,7 @@
       <div class="zonebar">
         <div class="zline">
           <label class="mini"><span class="cap">Zona, dal tasto</span>
-            <input type="range" id="zs" min="0" max="11" step="1" value="0"><span class="val" id="zsv">0</span></label>
+            <input type="range" id="zs" min="0" max="8" step="1" value="0"><span class="val" id="zsv">0</span></label>
           <label class="mini"><span class="cap">ampiezza</span>
             <input type="range" id="zw" min="3" max="7" step="1" value="5"><span class="val" id="zwv">5 tasti</span></label>
           <span class="zdesc" id="zdesc"></span>
@@ -117,6 +116,9 @@
   <section class="panel">
     <h2>Strumento e vista</h2>
     <label class="field"><span>Basso</span><select id="tun"></select></label>
+    <label class="field"><span>Tasti mostrati</span>
+      <select id="nfrets"><option value="12">fino al 12</option><option value="15">fino al 15</option><option value="18">fino al 18</option><option value="24">fino al 24</option></select>
+    </label>
     <div class="field"><span>Note sul manico</span>
       <div class="togs">
         <button class="tog on" id="tlab">Gradi</button>
