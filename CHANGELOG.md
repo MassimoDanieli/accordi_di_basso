@@ -3,6 +3,18 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [1.1.0] — 2026-08-01
+
+### Modificato
+- Interfaccia ridisegnata: da pagina lunga a strumento su una sola schermata. Barra
+  di comando in alto con griglia e trasporto, nastro degli accordi, manico al centro,
+  voicing in colonna a destra, barra della zona in basso.
+- Le funzioni secondarie (forme armoniche, importazione iReal, tab, impostazioni) sono
+  passate in finestre di dialogo, richiamabili dalla barra.
+
+### Aggiunto
+- Dominio dedicato: `basso.massimodanieli.com`, file `CNAME` per GitHub Pages.
+
 ## [1.0.0] — 2026-08-01
 
 ### Aggiunto

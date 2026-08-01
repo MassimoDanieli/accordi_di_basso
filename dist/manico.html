@@ -2,9 +2,10 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Manico — voicing e posizioni per basso elettrico</title>
 <meta name="description" content="Visualizzatore di accordi, voicing e voice leading sul manico del basso elettrico. Esporta in tab ASCII e importa le griglie da iReal Pro.">
+<meta name="theme-color" content="#131110">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -15,242 +16,287 @@
   --paper:#EDE7DD; --muted:#9C9188; --faint:#6A625B;
   --line:rgba(237,231,221,.10); --line-2:rgba(237,231,221,.18);
   --root:#E9B04A; --third:#63B7A6; --fifth:#7C9FD8; --sev:#D97C63; --ext:#A691CE;
-  --r:9px;
+  --r:8px; --bar:52px; --aside:296px;
   --sans:"Space Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);-webkit-font-smoothing:antialiased}
-body{padding:28px 22px 72px}
-.wrap{max-width:1080px;margin:0 auto}
-h1{font-size:19px;font-weight:700;letter-spacing:-.01em;margin:0}
-h1 span{color:var(--root)}
-.sub{color:var(--muted);font-size:13px;margin:5px 0 22px;max-width:66ch;line-height:1.6}
-h3{font-size:13px;font-weight:500;margin:26px 0 0}
-h3 small{color:var(--faint);font-weight:400;margin-left:8px;font-size:12px}
+html,body{height:100%}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;font-size:14px;
+  display:grid;grid-template-rows:var(--bar) auto minmax(0,1fr);overflow:hidden}
 
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
-.lbl{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-bottom:9px}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.hint{font-size:12px;color:var(--faint);line-height:1.6;margin:9px 0 0}
-.hint code{background:var(--panel-2);padding:1px 5px;border-radius:4px;font-family:var(--mono)}
-.empty{color:var(--faint);font-size:13px;padding:16px 0;line-height:1.6}
-.err{color:#D9695A}
+/* ---------------------------------------------------------------- barra */
+.bar{display:flex;align-items:center;gap:8px;padding:0 14px;
+  border-bottom:1px solid var(--line);background:var(--panel);min-width:0}
+.brand{font-weight:700;letter-spacing:-.01em;white-space:nowrap;margin-right:4px}
+.brand b{color:var(--root)}
+.sep{width:1px;height:22px;background:var(--line-2);flex:none}
+.tempo{display:flex;align-items:center;gap:7px;flex:none}
+.tempo input[type=range]{width:88px}
+.bar input[type=text]{flex:1;min-width:120px}
 
-input[type=text],textarea{flex:1;min-width:220px;background:var(--panel-2);border:1px solid var(--line-2);
-  color:var(--paper);border-radius:var(--r);padding:11px 13px;font-size:15px;font-family:var(--mono);outline:none;resize:vertical}
-textarea{font-size:12px;line-height:1.5;min-height:70px}
-input[type=text]:focus,textarea:focus{border-color:var(--root)}
-select{background:var(--panel-2);border:1px solid var(--line-2);color:var(--paper);border-radius:var(--r);
-  padding:8px 10px;font:inherit;font-size:13px;outline:none;width:100%}
+/* ------------------------------------------------------------- controlli */
+input[type=text],textarea,select{background:var(--panel-2);border:1px solid var(--line-2);
+  color:var(--paper);border-radius:var(--r);padding:8px 10px;font:inherit;outline:none}
+input[type=text]{font-family:var(--mono);font-size:13px}
+textarea{width:100%;min-height:96px;resize:vertical;font-family:var(--mono);font-size:12px;line-height:1.5}
+select{cursor:pointer}
+input:focus,textarea:focus,select:focus{border-color:var(--root)}
 button{background:transparent;border:1px solid var(--line-2);color:var(--paper);border-radius:var(--r);
-  padding:9px 13px;font:inherit;font-size:13px;cursor:pointer;transition:.15s}
+  padding:8px 11px;font:inherit;font-size:13px;cursor:pointer;transition:background .12s,border-color .12s;white-space:nowrap}
 button:hover{background:var(--panel-2);border-color:var(--faint)}
 button:active{transform:scale(.98)}
-button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--root);outline-offset:2px}
+:focus-visible{outline:2px solid var(--root);outline-offset:2px}
 button.pri{background:var(--root);border-color:var(--root);color:#221803;font-weight:500}
 button.pri:hover{background:#F0BC61}
+.play{min-width:44px;font-size:12px}
+.tog{font-size:12px;padding:6px 10px}
+.tog.on{background:var(--panel-2);border-color:var(--root);color:var(--root)}
+.togs{display:flex;gap:6px;flex-wrap:wrap}
+.val{font-family:var(--mono);font-size:12px;color:var(--paper);min-width:2ch;text-align:right}
+.val.dim{color:var(--faint);text-align:left}
+.grow{flex:1}
 
-input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;width:100%;margin:0}
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;margin:0;height:16px}
 input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--line-2);border-radius:2px}
 input[type=range]::-moz-range-track{height:3px;background:var(--line-2);border-radius:2px}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--root);margin-top:-6px;cursor:pointer}
-input[type=range]::-moz-range-thumb{width:15px;height:15px;border:0;border-radius:50%;background:var(--root);cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--root);margin-top:-5.5px;cursor:pointer}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--root);cursor:pointer}
 
-.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px 22px;margin:18px 0}
-.ctrl{display:flex;flex-direction:column;gap:7px}
-.ctrl .top{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--muted)}
-.val{font-family:var(--mono);color:var(--paper);font-size:12px}
-.togs{display:flex;gap:7px;flex-wrap:wrap}
-.tog{font-size:12px;padding:7px 11px}
-.tog.on{background:var(--panel-2);border-color:var(--root);color:var(--root)}
-
-.chips{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0 4px;align-items:center}
-.chip{padding:8px 13px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
-  font-family:var(--mono);font-size:14px;font-weight:600;transition:.12s;color:var(--paper)}
-button.chip{cursor:pointer}
+/* --------------------------------------------------------------- accordi */
+.ribbon{display:flex;align-items:center;gap:5px;padding:9px 14px;overflow-x:auto;
+  border-bottom:1px solid var(--line);scrollbar-width:thin}
+.chip{padding:6px 11px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
+  font-family:var(--mono);font-size:13px;font-weight:600;color:var(--paper);flex:none}
 button.chip:hover{border-color:var(--faint)}
 .chip.on{background:var(--root);border-color:var(--root);color:#221803}
 .chip.bad{color:#D9695A;border-style:dashed}
 .chip.rest{color:var(--faint)}
-.bl{color:var(--faint);font-family:var(--mono);padding:0 2px;user-select:none}
+.bl{color:var(--faint);font-family:var(--mono);user-select:none;flex:none;padding:0 1px}
 
-.strip{display:flex;gap:3px}
-.cell{flex:1;height:26px;padding:0;border-radius:4px;border:1px solid transparent;
-  font-size:10px;font-family:var(--mono);color:rgba(0,0,0,.6)}
-.cell:hover{border-color:var(--faint);background:inherit}
-.cell.sel{border-color:var(--paper)}
-
-.board{margin:20px 0 4px;overflow-x:auto}
-.board svg{display:block;min-width:660px;width:100%;height:auto}
+/* ------------------------------------------------------------- palcoscenico */
+.stage{display:grid;grid-template-columns:minmax(0,1fr) var(--aside);min-height:0}
+.left{display:grid;grid-template-rows:minmax(0,1fr) auto;min-width:0;min-height:0}
+.board{display:flex;align-items:center;justify-content:center;padding:10px 14px;min-height:0;overflow:auto}
+.board svg{width:100%;height:auto;max-height:100%;min-width:600px}
 .board .note{cursor:pointer}
 
-.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:14px;margin-top:14px}
-.voice{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 13px 10px;cursor:pointer;transition:.12s}
+.zonebar{display:flex;align-items:center;gap:16px;padding:9px 14px;
+  border-top:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.mini{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);flex:none}
+.mini input[type=range]{width:96px}
+.strip{display:flex;gap:2px;flex:1;min-width:160px}
+.cell{flex:1;height:22px;padding:0;border-radius:3px;border:1px solid transparent;
+  font-size:10px;font-family:var(--mono);color:rgba(0,0,0,.6);min-width:0}
+.cell:hover{border-color:var(--faint)}
+.cell.sel{border-color:var(--paper)}
+.key{display:flex;gap:10px;font-size:11px;color:var(--faint);flex:none}
+.key i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:0}
+
+/* ---------------------------------------------------------------- voicing */
+.right{border-left:1px solid var(--line);background:var(--panel);
+  display:grid;grid-template-rows:auto auto minmax(0,1fr);min-height:0}
+.aside-head{display:flex;gap:7px;padding:10px 12px 0}
+.aside-head select{flex:1;min-width:0;font-size:12px;padding:7px 8px}
+.aside-head button{font-size:12px;padding:7px 9px}
+.aside-sub{display:flex;align-items:center;gap:10px;padding:8px 12px;flex-wrap:wrap}
+.voices{overflow-y:auto;padding:0 12px 12px;display:flex;flex-direction:column;gap:9px;min-height:0}
+.voice{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
+  padding:9px 10px;cursor:pointer;transition:border-color .12s}
 .voice:hover{border-color:var(--line-2)}
 .voice.sel{border-color:var(--root)}
-.voice h4{margin:0 0 2px;font-size:13px;font-weight:500}
-.voice .meta{font-size:11px;color:var(--faint);font-family:var(--mono);margin-bottom:9px}
+.voice .head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.voice h4{margin:0;font-size:12px;font-weight:500}
+.voice .mv{font-family:var(--mono);font-size:10px;color:var(--faint);white-space:nowrap}
+.voice .meta{font-size:10px;color:var(--faint);font-family:var(--mono);margin:2px 0 6px}
 .voice svg{display:block;width:100%;height:auto}
-.voice .foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px}
-.voice .deg{font-family:var(--mono);font-size:12px;color:var(--muted)}
-.voice .mv{font-family:var(--mono);font-size:11px;color:var(--faint);white-space:nowrap}
-.play{padding:5px 9px;font-size:11px}
+.voice .foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:5px}
+.voice .deg{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.play-s{padding:3px 8px;font-size:10px}
+.empty{color:var(--faint);font-size:12px;line-height:1.6;padding:10px 0}
 
-pre#tab{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);padding:14px;
-  overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.55;color:var(--paper);margin:0;white-space:pre}
+/* --------------------------------------------------------------- finestre */
+dialog{background:var(--panel);color:var(--paper);border:1px solid var(--line-2);border-radius:12px;
+  padding:20px;width:min(480px,92vw);max-height:88vh;overflow:auto;font-family:var(--sans)}
+dialog.wide{width:min(760px,94vw)}
+dialog::backdrop{background:rgba(10,9,8,.72)}
+dialog h2{margin:0 0 10px;font-size:15px;font-weight:600}
+dialog select[size]{width:100%}
+.note{font-size:12px;color:var(--faint);line-height:1.65;margin:0 0 12px}
+.note code{background:var(--panel-2);padding:1px 5px;border-radius:4px;font-family:var(--mono)}
+.note a{color:var(--muted)}
+.err{color:#D9695A}
+.field{display:flex;align-items:center;gap:12px;margin-bottom:11px}
+.field>span:first-child{width:104px;flex:none;font-size:12px;color:var(--muted)}
+.field select{flex:1}
+.dlg-foot{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r);padding:12px;
+  overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.55;margin:0;white-space:pre}
 
-.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:24px;font-size:12px;color:var(--muted);
-  padding-top:16px;border-top:1px solid var(--line)}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
-.songinfo{font-size:12px;color:var(--muted);margin-top:9px;font-family:var(--mono);line-height:1.6}
-
-.foot-note{margin-top:22px;padding-top:14px;border-top:1px solid var(--line);
-  font-size:11px;color:var(--faint);line-height:1.7}
-.foot-note a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line-2)}
-.foot-note a:hover{color:var(--root);border-color:var(--root)}
-
-@media (max-width:640px){
-  body{padding:20px 14px 56px}
-  .vgrid{grid-template-columns:1fr}
+/* ---------------------------------------------------------------- schermi stretti */
+@media (max-width:900px){
+  body{overflow:auto;display:block}
+  .bar{position:sticky;top:0;z-index:5;height:var(--bar);flex-wrap:nowrap;overflow-x:auto}
+  .bar input[type=text]{min-width:150px}
+  .stage{display:block}
+  .right{border-left:0;border-top:1px solid var(--line)}
+  .voices{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));overflow:visible;padding:0 12px 16px}
+  .board{overflow-x:auto;padding:10px}
+  .zonebar{gap:12px}
 }
-@media (prefers-reduced-motion:reduce){
-  *{transition:none!important}
-}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>Manico<span>.</span></h1>
-  <p class="sub">Scrivi una griglia di accordi, scegli un tipo di voicing e una zona di 4–7 tasti, e vedi dove cadono le note. Il tool propone i voicing suonabili dentro quella zona, ottimizza il voice leading fra un accordo e il successivo, fa girare la griglia a tempo e la esporta in tab ASCII.</p>
 
-  <div class="panel">
-    <div class="lbl">Griglia</div>
-    <div class="row">
-      <input type="text" id="seq" value="C-7 F7 Bbdim7 Ebdim7" spellcheck="false" autocomplete="off" aria-label="Griglia di accordi">
-      <button class="pri" id="go">Mostra</button>
-    </div>
-    <p class="hint">Uno spazio separa le battute, una virgola separa gli accordi dentro la stessa battuta: <code>D-7 G7 C^7,A7 D-7</code>. Accetta la notazione iReal (<code>^</code> maggiore, <code>-</code> minore, <code>h</code> semidiminuito, <code>o</code> diminuito) e le note al basso tipo <code>C/E</code>.</p>
-    <div class="row" style="margin-top:11px">
-      <select id="lib" style="max-width:360px" aria-label="Forme armoniche"></select>
-      <button id="libgo">Carica forma</button>
-    </div>
-  </div>
+<header class="bar">
+  <span class="brand">Manico<b>.</b></span>
 
-  <div class="panel">
-    <div class="lbl">Importa da iReal Pro</div>
-    <div class="row">
-      <textarea id="ireal" spellcheck="false" aria-label="Link iReal Pro" placeholder="Incolla qui un link irealb:// o irealbook:// preso dal tasto Condividi di iReal Pro. Viene letto in locale, nel browser: niente esce da questa pagina."></textarea>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <button id="irgo">Importa</button>
-      <select id="irlist" style="max-width:360px;display:none" aria-label="Brani nel link"></select>
-    </div>
-    <div class="songinfo" id="irinfo"></div>
-  </div>
+  <input type="text" id="seq" value="C-7 F7 Bbdim7 Ebdim7" spellcheck="false" autocomplete="off"
+         aria-label="Griglia di accordi" title="Spazio separa le battute, virgola separa gli accordi dentro la battuta">
+  <button id="go" title="Aggiorna la griglia">Vai</button>
 
-  <div class="chips" id="chips"></div>
+  <span class="sep"></span>
 
-  <div class="panel">
-    <div class="lbl">Voicing</div>
-    <div class="row">
-      <select id="vtype" style="max-width:240px" aria-label="Tipo di voicing"></select>
-      <div id="spanwrap" style="flex:1;min-width:180px">
-        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
-          <span>Apertura massima della mano</span><span class="val" id="spanv">4 tasti</span>
-        </div>
+  <button class="pri play" id="pp" title="Barra spaziatrice">&#9654;</button>
+  <label class="tempo" title="Tempo">
+    <input type="range" id="bpm" min="40" max="200" step="1" value="92">
+    <span class="val" id="bpmv">92</span>
+  </label>
+
+  <span class="sep"></span>
+
+  <button id="btnlib" title="Forme armoniche pronte">Forme</button>
+  <button id="btnir" title="Importa da iReal Pro">iReal</button>
+  <button id="btntab" title="Esporta in tab ASCII">Tab</button>
+  <button id="btnset" title="Accordatura, vista, metronomo" aria-label="Impostazioni">&#9881;</button>
+</header>
+
+<nav class="ribbon" id="chips" aria-label="Accordi della griglia"></nav>
+
+<main class="stage">
+  <section class="left">
+    <div class="board" id="board"></div>
+
+    <div class="zonebar">
+      <label class="mini" title="Primo tasto della zona">
+        <span>zona</span>
+        <input type="range" id="zs" min="0" max="11" step="1" value="0">
+        <span class="val" id="zsv">0</span>
+      </label>
+      <label class="mini" title="Quanti tasti copre la zona">
+        <span>ampiezza</span>
+        <input type="range" id="zw" min="3" max="7" step="1" value="5">
+        <span class="val" id="zwv">5</span>
+      </label>
+      <div class="strip" id="strip" title="Copertura della griglia per ogni posizione"></div>
+      <div class="key">
+        <span><i style="background:var(--root)"></i>R</span>
+        <span><i style="background:var(--third)"></i>3</span>
+        <span><i style="background:var(--fifth)"></i>5</span>
+        <span><i style="background:var(--sev)"></i>7</span>
+        <span><i style="background:var(--ext)"></i>est.</span>
+      </div>
+    </div>
+  </section>
+
+  <aside class="right">
+    <div class="aside-head">
+      <select id="vtype" aria-label="Tipo di voicing"></select>
+      <button id="vl" title="Sceglie i voicing con meno movimento su tutta la griglia">Voice leading</button>
+    </div>
+    <div class="aside-sub">
+      <label class="mini" id="spanwrap" title="Apertura massima della mano">
+        <span>apertura</span>
         <input type="range" id="span" min="3" max="6" step="1" value="4">
-      </div>
-      <button id="vl">Ottimizza voice leading</button>
-      <span class="val" id="vlinfo" style="color:var(--faint)"></span>
+        <span class="val" id="spanv">4</span>
+      </label>
+      <span class="val dim" id="vlinfo"></span>
     </div>
-    <p class="hint" id="vhint"></p>
+    <div class="voices" id="voices"></div>
+  </aside>
+</main>
+
+<dialog id="dlglib">
+  <h2>Forme armoniche</h2>
+  <p class="note">Forme generiche e brani tradizionali di pubblico dominio. Per gli standard usa l&rsquo;importazione dalle tue carte iReal.</p>
+  <select id="lib" size="12" aria-label="Elenco delle forme"></select>
+  <div class="dlg-foot"><span class="grow"></span><button data-close>Chiudi</button><button class="pri" id="libgo">Carica</button></div>
+</dialog>
+
+<dialog id="dlgir">
+  <h2>Importa da iReal Pro</h2>
+  <p class="note">Incolla un link <code>irealb://</code> o <code>irealbook://</code> preso dal tasto Condividi dell&rsquo;app. Viene letto qui nel browser: non esce niente dalla pagina.</p>
+  <textarea id="ireal" spellcheck="false" aria-label="Link iReal Pro"></textarea>
+  <select id="irlist" style="display:none;margin-top:10px" aria-label="Brani nel link"></select>
+  <p class="note" id="irinfo"></p>
+  <div class="dlg-foot"><span class="grow"></span><button data-close>Chiudi</button><button class="pri" id="irgo">Importa</button></div>
+</dialog>
+
+<dialog id="dlgtab" class="wide">
+  <h2>Tab ASCII</h2>
+  <p class="note">Usa il voicing selezionato per ogni accordo.</p>
+  <pre id="tab">Premi Genera.</pre>
+  <div class="dlg-foot">
+    <select id="perline" aria-label="Battute per riga">
+      <option value="4">4 battute per riga</option>
+      <option value="2">2 battute per riga</option>
+      <option value="6">6 battute per riga</option>
+    </select>
+    <span class="grow"></span>
+    <button data-close>Chiudi</button>
+    <button id="dltab">Scarica</button>
+    <button id="cptab">Copia</button>
+    <button class="pri" id="mktab">Genera</button>
+  </div>
+</dialog>
+
+<dialog id="dlgset">
+  <h2>Impostazioni</h2>
+
+  <label class="field"><span>Basso</span><select id="tun" aria-label="Accordatura"></select></label>
+
+  <label class="field"><span>Metro</span>
+    <select id="beats" aria-label="Metro">
+      <option value="4">4/4</option><option value="3">3/4</option><option value="2">2/4</option><option value="6">6/8</option>
+    </select>
+  </label>
+
+  <label class="field"><span>Riproduzione</span>
+    <select id="mode" aria-label="Cosa suonare">
+      <option value="voicing">suona il voicing</option>
+      <option value="root">solo fondamentale</option>
+      <option value="mute">muto</option>
+    </select>
+  </label>
+
+  <div class="field"><span>Vista</span>
+    <div class="togs">
+      <button class="tog on" id="tlab">Gradi</button>
+      <button class="tog" id="tflip">Inverti corde</button>
+      <button class="tog on" id="tdim">Sfuma fuori zona</button>
+    </div>
   </div>
 
-  <div class="panel">
-    <div class="lbl">Trasporto</div>
-    <div class="row">
-      <button class="pri" id="pp" style="min-width:96px">&#9654; Play</button>
-      <div style="flex:1;min-width:190px">
-        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
-          <span>Tempo</span><span class="val" id="bpmv">92 bpm</span>
-        </div>
-        <input type="range" id="bpm" min="40" max="200" step="1" value="92">
-      </div>
-      <select id="beats" style="max-width:100px" aria-label="Metro">
-        <option value="4">4/4</option><option value="3">3/4</option><option value="2">2/4</option><option value="6">6/8</option>
-      </select>
-      <select id="mode" style="max-width:170px" aria-label="Cosa suonare">
-        <option value="voicing">suona il voicing</option>
-        <option value="root">solo fondamentale</option>
-        <option value="mute">muto</option>
-      </select>
+  <div class="field"><span>Esecuzione</span>
+    <div class="togs">
       <button class="tog on" id="clk">Click</button>
       <button class="tog" id="lock">Zona fissa</button>
     </div>
   </div>
 
-  <div class="ctrls">
-    <div class="ctrl">
-      <div class="top"><span>Basso</span></div>
-      <select id="tun" aria-label="Accordatura"></select>
-    </div>
-    <div class="ctrl">
-      <div class="top"><span>Primo tasto della zona</span><span class="val" id="zsv">0</span></div>
-      <input type="range" id="zs" min="0" max="11" step="1" value="0">
-    </div>
-    <div class="ctrl">
-      <div class="top"><span>Ampiezza zona</span><span class="val" id="zwv">5 tasti</span></div>
-      <input type="range" id="zw" min="3" max="7" step="1" value="5">
-    </div>
-    <div class="ctrl">
-      <div class="top"><span>Vista</span></div>
-      <div class="togs">
-        <button class="tog on" id="tlab">Gradi</button>
-        <button class="tog" id="tflip">Inverti corde</button>
-        <button class="tog on" id="tdim">Sfuma fuori zona</button>
-      </div>
-    </div>
-  </div>
+  <p class="note">Barra spaziatrice per avviare e fermare, frecce per cambiare accordo, clic su una nota del manico per sentirla. Nella griglia lo spazio separa le battute e la virgola separa gli accordi dentro la stessa battuta: <code>D-7 G7 C^7,A7</code>. Vanno bene sia <code>C-7</code> sia <code>Cm7</code>, sia <code>C^7</code> sia <code>Cmaj7</code>.</p>
 
-  <div class="panel">
-    <div class="lbl">Zone che coprono tutta la griglia — clicca per spostarti</div>
-    <div class="strip" id="strip"></div>
-  </div>
-
-  <div class="board" id="board"></div>
-
-  <h3 id="vtitle">Voicing</h3>
-  <div class="vgrid" id="voices"></div>
-
-  <h3>Tab ASCII <small>usa il voicing selezionato per ogni accordo</small></h3>
-  <div class="row" style="margin:12px 0">
-    <button id="mktab">Genera tab</button>
-    <button id="cptab">Copia</button>
-    <button id="dltab">Scarica .txt</button>
-    <select id="perline" style="max-width:170px" aria-label="Battute per riga">
-      <option value="4">4 battute per riga</option>
-      <option value="2">2 battute per riga</option>
-      <option value="6">6 battute per riga</option>
-    </select>
-  </div>
-  <pre id="tab">Premi "Genera tab".</pre>
-
-  <div class="legend">
-    <span><i style="background:var(--root)"></i>fondamentale</span>
-    <span><i style="background:var(--third)"></i>terza</span>
-    <span><i style="background:var(--fifth)"></i>quinta</span>
-    <span><i style="background:var(--sev)"></i>sesta e settima</span>
-    <span><i style="background:var(--ext)"></i>estensioni e nota al basso</span>
-    <span style="color:var(--faint)">barra spaziatrice per avviare, frecce per cambiare accordo, clic su una nota per sentirla</span>
-  </div>
-  <footer class="foot-note">
-    Manico &copy; 2026 Massimo Danieli &middot; software libero sotto
+  <p class="note">Manico &copy; 2026 Massimo Danieli &middot; software libero sotto
     <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>, senza alcuna garanzia &middot;
-    <a href="https://github.com/MassimoDanieli/accordi_di_basso">sorgenti</a>
-  </footer>
-</div>
+    <a href="https://github.com/MassimoDanieli/accordi_di_basso">sorgenti</a></p>
+
+  <div class="dlg-foot"><span class="grow"></span><button class="pri" data-close>Chiudi</button></div>
+</dialog>
+
 <script>
 (function () {
 
@@ -1130,15 +1176,14 @@ __mod.app = (function () {
   function renderVoicings() {
     const item = state.grid[state.index];
     const type = V.typeById(state.vtype);
-    $('vtitle').innerHTML = `Voicing <small>${type.name.toLowerCase()} \u00b7 tasti ${state.zoneFrom}\u2013${zoneTo()}`
-      + `${state.zoneFrom === 0 ? ', corde a vuoto incluse' : ''}</small>`;
 
     if (!item || !item.ok) { $('voices').innerHTML = '<p class="empty">Nessun accordo selezionato.</p>'; return; }
 
     const list = candidates(state.index);
     if (!list.length) {
-      $('voices').innerHTML = `<p class="empty">Nessun ${type.name.toLowerCase()} disponibile per ${item.chord.symbol}`
-        + ` fra il tasto ${state.zoneFrom} e il ${zoneTo()}. Allarga la zona, aumenta l\u2019apertura della mano o cambia tipo di voicing.</p>`;
+      $('voices').innerHTML = `<p class="empty">Nessun ${type.name.toLowerCase()} per <b>${item.chord.symbol}</b>`
+        + ` fra il tasto ${state.zoneFrom} e il ${zoneTo()}. Allarga la zona, aumenta l\u2019apertura della mano`
+        + ` o cambia tipo di voicing.</p>`;
       return;
     }
 
@@ -1148,13 +1193,12 @@ __mod.app = (function () {
     $('voices').innerHTML = list.map((v, k) => {
       const mv = V.motion(prev, v);
       return `<div class="voice${cur === v ? ' sel' : ''}" data-voicing="${k}">
-        <h4>${v.label}</h4>
-        <div class="meta">${V.describe(v, item.chord)} \u00b7 apertura ${v.span} ${v.span === 1 ? 'tasto' : 'tasti'}</div>
+        <div class="head"><h4>${v.label}</h4><span class="mv">${mv === null ? '' : 'moto ' + mv}</span></div>
+        <div class="meta">${V.describe(v, item.chord)} \u00b7 apertura ${v.span}</div>
         ${R.diagram(item.chord, v, { open: open(), zoneFrom: state.zoneFrom, zoneTo: zoneTo(), flipped: state.flipped })}
         <div class="foot">
           <span class="deg">${V.degrees(v, item.chord)}</span>
-          <span class="mv">${mv === null ? '' : 'moto ' + mv}</span>
-          <button class="play" data-hear="${k}" aria-label="ascolta">&#9654;</button>
+          <button class="play-s" data-hear="${k}" aria-label="ascolta">&#9654;</button>
         </div></div>`;
     }).join('');
   }
@@ -1276,25 +1320,45 @@ __mod.app = (function () {
     render();
   }
 
+  function openDialog(id) {
+    const dlg = $(id);
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+    else dlg.setAttribute('open', '');
+  }
+
   function init() {
     $('lib').innerHTML = LIBRARY.map((x, i) => `<option value="${i}">${x[0]}</option>`).join('');
+    $('lib').value = '0';
     $('vtype').innerHTML = V.VOICING_TYPES.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
     $('tun').innerHTML = Object.entries(TUNINGS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
 
     $('go').onclick = () => { parseGrid(); render(); };
     $('seq').addEventListener('keydown', e => { if (e.key === 'Enter') { parseGrid(); render(); } });
-    $('libgo').onclick = () => loadGrid(LIBRARY[+$('lib').value][1], true);
+
+    // Finestre secondarie.
+    $('btnlib').onclick = () => openDialog('dlglib');
+    $('btnir').onclick = () => openDialog('dlgir');
+    $('btnset').onclick = () => openDialog('dlgset');
+    $('btntab').onclick = () => { buildTab(); openDialog('dlgtab'); };
+    document.querySelectorAll('dialog').forEach(dlg => {
+      dlg.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => dlg.close(); });
+      // Un clic sullo sfondo chiude la finestra.
+      dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+    });
+
+    $('libgo').onclick = () => { loadGrid(LIBRARY[+$('lib').value][1], true); $('dlglib').close(); };
+    $('lib').ondblclick = () => $('libgo').click();
 
     $('vtype').onchange = e => {
       state.vtype = e.target.value;
       state.pick = {}; cache = new Map();
-      $('vhint').textContent = V.typeById(state.vtype).hint;
       $('spanwrap').style.display = V.typeById(state.vtype).block ? '' : 'none';
+      $('vlinfo').textContent = '';
       render();
     };
     $('span').oninput = e => {
       state.maxSpan = +e.target.value;
-      $('spanv').textContent = state.maxSpan + ' tasti';
+      $('spanv').textContent = state.maxSpan;
       state.pick = {}; cache = new Map(); render();
     };
     $('vl').onclick = optimiseVoiceLeading;
@@ -1303,7 +1367,7 @@ __mod.app = (function () {
     $('zs').oninput = e => setZone(+e.target.value);
     $('zw').oninput = e => {
       state.zoneWidth = +e.target.value;
-      $('zwv').textContent = state.zoneWidth + ' tasti';
+      $('zwv').textContent = state.zoneWidth;
       $('zs').max = state.frets - state.zoneWidth + 1;
       state.pick = {}; cache = new Map();
       if (state.zoneFrom > state.frets - state.zoneWidth + 1) setZone(state.frets - state.zoneWidth + 1);
@@ -1319,7 +1383,7 @@ __mod.app = (function () {
     $('tdim').onclick = e => { state.dimOutside = !state.dimOutside; e.target.classList.toggle('on', state.dimOutside); render(); };
 
     $('pp').onclick = toggleTransport;
-    $('bpm').oninput = e => { state.bpm = +e.target.value; $('bpmv').textContent = state.bpm + ' bpm'; };
+    $('bpm').oninput = e => { state.bpm = +e.target.value; $('bpmv').textContent = state.bpm; };
     $('beats').onchange = e => { state.beats = +e.target.value; };
     $('mode').onchange = e => { state.playMode = e.target.value; };
     $('clk').onclick = e => { state.metronome = !state.metronome; e.target.classList.toggle('on', state.metronome); };
@@ -1351,13 +1415,14 @@ __mod.app = (function () {
       if (!songs.length) {
         list.style.display = 'none';
         info.innerHTML = '<span class="err">Non sono riuscito a leggere il link.</span> '
-          + 'Deve iniziare con irealb:// oppure irealbook://. In alternativa scrivi gli accordi a mano nel campo Griglia.';
+          + 'Deve iniziare con irealb:// oppure irealbook://. In alternativa scrivi gli accordi a mano nella barra in alto.';
         return;
       }
       state.songs = songs;
       list.style.display = songs.length > 1 ? '' : 'none';
       list.innerHTML = songs.map((s, i) => `<option value="${i}">${s.title}${s.composer ? ' \u2014 ' + s.composer : ''}</option>`).join('');
       loadSong(0);
+      if (songs.length === 1) $('dlgir').close();
     };
     $('irlist').onchange = e => loadSong(+e.target.value);
 
@@ -1387,12 +1452,12 @@ __mod.app = (function () {
 
     document.addEventListener('keydown', e => {
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+      if (document.querySelector('dialog[open]')) return;
       if (e.code === 'Space') { e.preventDefault(); toggleTransport(); }
       if (e.key === 'ArrowRight' && state.index < state.grid.length - 1) select(state.index + 1);
       if (e.key === 'ArrowLeft' && state.index > 0) select(state.index - 1);
     });
 
-    $('vhint').textContent = V.typeById(state.vtype).hint;
     $('spanwrap').style.display = 'none';
     parseGrid();
     render();

@@ -7,7 +7,14 @@ li fa girare a tempo e li esporta in tab ASCII.
 
 Nessuna dipendenza, nessun passaggio di build: HTML, CSS e moduli ES nativi.
 
-![licenza](https://img.shields.io/badge/licenza-GPL--3.0-E9B04A) [![Pages](https://img.shields.io/badge/demo-github.io-63B7A6)](https://massimodanieli.github.io/accordi_di_basso/)
+![licenza](https://img.shields.io/badge/licenza-GPL--3.0-E9B04A) [![sito](https://img.shields.io/badge/sito-basso.massimodanieli.com-63B7A6)](https://basso.massimodanieli.com/)
+
+## Interfaccia
+
+Una sola schermata, senza scorrimento: barra di comando in alto (griglia, trasporto,
+accesso alle finestre), nastro degli accordi, manico al centro, colonna dei voicing a
+destra, barra della zona in basso. Forme armoniche, importazione iReal, esportazione in
+tab e impostazioni stanno in finestre di dialogo.
 
 ## Cosa fa
 
@@ -105,10 +112,17 @@ docker run --rm -p 8080:8080 manico
 
 Il workflow in `.github/workflows/pages.yml` esegue i test e pubblica la radice del repository
 a ogni push su `main`. Va abilitato una volta sola da *Settings → Pages → Source: GitHub
-Actions*. L'indirizzo risultante e' <https://massimodanieli.github.io/accordi_di_basso/>.
+Actions*.
 
-I percorsi nella pagina sono relativi, quindi la pubblicazione in sottocartella di progetto
-funziona senza modifiche.
+### Dominio
+
+Il file `CNAME` in radice fissa il dominio a `basso.massimodanieli.com`. Sul DNS serve un
+record `CNAME` per l'etichetta `basso` che punta a `massimodanieli.github.io`, senza proxy
+finche' GitHub non ha emesso il certificato. Poi *Settings -> Pages -> Custom domain* e, una
+volta comparso, *Enforce HTTPS*.
+
+I percorsi nella pagina sono relativi, quindi funziona sia sul dominio dedicato sia
+sull'indirizzo di progetto <https://massimodanieli.github.io/accordi_di_basso/>.
 
 ## Struttura
 

@@ -1,9 +1,9 @@
 {
   "name": "manico",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Visualizzatore di voicing e posizioni sul manico del basso elettrico",
   "repository": { "type": "git", "url": "https://github.com/MassimoDanieli/accordi_di_basso.git" },
-  "homepage": "https://massimodanieli.github.io/accordi_di_basso/",
+  "homepage": "https://basso.massimodanieli.com/",
   "type": "module",
   "private": true,
   "scripts": {

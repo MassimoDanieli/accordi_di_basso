@@ -150,15 +150,14 @@ function renderBoard() {
 function renderVoicings() {
   const item = state.grid[state.index];
   const type = V.typeById(state.vtype);
-  $('vtitle').innerHTML = `Voicing <small>${type.name.toLowerCase()} \u00b7 tasti ${state.zoneFrom}\u2013${zoneTo()}`
-    + `${state.zoneFrom === 0 ? ', corde a vuoto incluse' : ''}</small>`;
 
   if (!item || !item.ok) { $('voices').innerHTML = '<p class="empty">Nessun accordo selezionato.</p>'; return; }
 
   const list = candidates(state.index);
   if (!list.length) {
-    $('voices').innerHTML = `<p class="empty">Nessun ${type.name.toLowerCase()} disponibile per ${item.chord.symbol}`
-      + ` fra il tasto ${state.zoneFrom} e il ${zoneTo()}. Allarga la zona, aumenta l\u2019apertura della mano o cambia tipo di voicing.</p>`;
+    $('voices').innerHTML = `<p class="empty">Nessun ${type.name.toLowerCase()} per <b>${item.chord.symbol}</b>`
+      + ` fra il tasto ${state.zoneFrom} e il ${zoneTo()}. Allarga la zona, aumenta l\u2019apertura della mano`
+      + ` o cambia tipo di voicing.</p>`;
     return;
   }
 
@@ -168,13 +167,12 @@ function renderVoicings() {
   $('voices').innerHTML = list.map((v, k) => {
     const mv = V.motion(prev, v);
     return `<div class="voice${cur === v ? ' sel' : ''}" data-voicing="${k}">
-      <h4>${v.label}</h4>
-      <div class="meta">${V.describe(v, item.chord)} \u00b7 apertura ${v.span} ${v.span === 1 ? 'tasto' : 'tasti'}</div>
+      <div class="head"><h4>${v.label}</h4><span class="mv">${mv === null ? '' : 'moto ' + mv}</span></div>
+      <div class="meta">${V.describe(v, item.chord)} \u00b7 apertura ${v.span}</div>
       ${R.diagram(item.chord, v, { open: open(), zoneFrom: state.zoneFrom, zoneTo: zoneTo(), flipped: state.flipped })}
       <div class="foot">
         <span class="deg">${V.degrees(v, item.chord)}</span>
-        <span class="mv">${mv === null ? '' : 'moto ' + mv}</span>
-        <button class="play" data-hear="${k}" aria-label="ascolta">&#9654;</button>
+        <button class="play-s" data-hear="${k}" aria-label="ascolta">&#9654;</button>
       </div></div>`;
   }).join('');
 }
@@ -296,25 +294,45 @@ function loadGrid(text, autozone) {
   render();
 }
 
+function openDialog(id) {
+  const dlg = $(id);
+  if (typeof dlg.showModal === 'function') dlg.showModal();
+  else dlg.setAttribute('open', '');
+}
+
 function init() {
   $('lib').innerHTML = LIBRARY.map((x, i) => `<option value="${i}">${x[0]}</option>`).join('');
+  $('lib').value = '0';
   $('vtype').innerHTML = V.VOICING_TYPES.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
   $('tun').innerHTML = Object.entries(TUNINGS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
 
   $('go').onclick = () => { parseGrid(); render(); };
   $('seq').addEventListener('keydown', e => { if (e.key === 'Enter') { parseGrid(); render(); } });
-  $('libgo').onclick = () => loadGrid(LIBRARY[+$('lib').value][1], true);
+
+  // Finestre secondarie.
+  $('btnlib').onclick = () => openDialog('dlglib');
+  $('btnir').onclick = () => openDialog('dlgir');
+  $('btnset').onclick = () => openDialog('dlgset');
+  $('btntab').onclick = () => { buildTab(); openDialog('dlgtab'); };
+  document.querySelectorAll('dialog').forEach(dlg => {
+    dlg.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => dlg.close(); });
+    // Un clic sullo sfondo chiude la finestra.
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  });
+
+  $('libgo').onclick = () => { loadGrid(LIBRARY[+$('lib').value][1], true); $('dlglib').close(); };
+  $('lib').ondblclick = () => $('libgo').click();
 
   $('vtype').onchange = e => {
     state.vtype = e.target.value;
     state.pick = {}; cache = new Map();
-    $('vhint').textContent = V.typeById(state.vtype).hint;
     $('spanwrap').style.display = V.typeById(state.vtype).block ? '' : 'none';
+    $('vlinfo').textContent = '';
     render();
   };
   $('span').oninput = e => {
     state.maxSpan = +e.target.value;
-    $('spanv').textContent = state.maxSpan + ' tasti';
+    $('spanv').textContent = state.maxSpan;
     state.pick = {}; cache = new Map(); render();
   };
   $('vl').onclick = optimiseVoiceLeading;
@@ -323,7 +341,7 @@ function init() {
   $('zs').oninput = e => setZone(+e.target.value);
   $('zw').oninput = e => {
     state.zoneWidth = +e.target.value;
-    $('zwv').textContent = state.zoneWidth + ' tasti';
+    $('zwv').textContent = state.zoneWidth;
     $('zs').max = state.frets - state.zoneWidth + 1;
     state.pick = {}; cache = new Map();
     if (state.zoneFrom > state.frets - state.zoneWidth + 1) setZone(state.frets - state.zoneWidth + 1);
@@ -339,7 +357,7 @@ function init() {
   $('tdim').onclick = e => { state.dimOutside = !state.dimOutside; e.target.classList.toggle('on', state.dimOutside); render(); };
 
   $('pp').onclick = toggleTransport;
-  $('bpm').oninput = e => { state.bpm = +e.target.value; $('bpmv').textContent = state.bpm + ' bpm'; };
+  $('bpm').oninput = e => { state.bpm = +e.target.value; $('bpmv').textContent = state.bpm; };
   $('beats').onchange = e => { state.beats = +e.target.value; };
   $('mode').onchange = e => { state.playMode = e.target.value; };
   $('clk').onclick = e => { state.metronome = !state.metronome; e.target.classList.toggle('on', state.metronome); };
@@ -371,13 +389,14 @@ function init() {
     if (!songs.length) {
       list.style.display = 'none';
       info.innerHTML = '<span class="err">Non sono riuscito a leggere il link.</span> '
-        + 'Deve iniziare con irealb:// oppure irealbook://. In alternativa scrivi gli accordi a mano nel campo Griglia.';
+        + 'Deve iniziare con irealb:// oppure irealbook://. In alternativa scrivi gli accordi a mano nella barra in alto.';
       return;
     }
     state.songs = songs;
     list.style.display = songs.length > 1 ? '' : 'none';
     list.innerHTML = songs.map((s, i) => `<option value="${i}">${s.title}${s.composer ? ' \u2014 ' + s.composer : ''}</option>`).join('');
     loadSong(0);
+    if (songs.length === 1) $('dlgir').close();
   };
   $('irlist').onchange = e => loadSong(+e.target.value);
 
@@ -407,12 +426,12 @@ function init() {
 
   document.addEventListener('keydown', e => {
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+    if (document.querySelector('dialog[open]')) return;
     if (e.code === 'Space') { e.preventDefault(); toggleTransport(); }
     if (e.key === 'ArrowRight' && state.index < state.grid.length - 1) select(state.index + 1);
     if (e.key === 'ArrowLeft' && state.index > 0) select(state.index - 1);
   });
 
-  $('vhint').textContent = V.typeById(state.vtype).hint;
   $('spanwrap').style.display = 'none';
   parseGrid();
   render();
