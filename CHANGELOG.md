@@ -3,6 +3,26 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [3.0.1] — 2026-08-01
+
+### Corretto
+- La 3.0.0 pubblicata era uscita a meta': mancavano lo stile degli anelli (che nel
+  browser comparivano come cerchi neri pieni), il numero di versione nelle pagine
+  (fermo a 2.6.1) e la voce di changelog. Questa release completa il rilascio;
+  nessuna novita' funzionale rispetto alla 3.0.0 come era intesa.
+
+## [3.0.0] — 2026-08-01
+
+### Aggiunto
+- Il movimento delle voci si vede: attorno a ogni nota del voicing scelto c'e' un
+  anello del colore del suo grado, e al cambio di accordo gli anelli non spariscono
+  ma planano verso le nuove posizioni lasciando una scia che svanisce. Durante
+  l'esecuzione partono poco prima del cambio, cosi' arrivano sull'attacco: il voice
+  leading non e' piu' solo un numero in semitoni, e' un gesto che si guarda.
+- Il livello del movimento e' un piano SVG sovrapposto che sopravvive al ridisegno
+  del manico: la transizione attraversa il cambio di accordo senza strappi. Con
+  "riduci movimento" attivo nel sistema resta tutto fermo.
+
 ## [2.6.1] — 2026-08-01
 
 ### Corretto
