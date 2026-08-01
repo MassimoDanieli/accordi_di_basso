@@ -3,6 +3,19 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [2.0.1] — 2026-08-01
+
+### Corretto
+- Nella 2.0.0 il manico poteva risultare alto zero pixel. Stava in una riga flessibile con
+  un limite di altezza in percentuale: un calcolo circolare che i browser risolvono in modo
+  diverso, e Chrome lo chiudeva azzerando l'altezza dell'immagine. Ora la dimensione viene
+  misurata dal codice a ogni disegno e a ogni ridimensionamento della finestra, quindi il
+  manico riempie sempre lo spazio disponibile mantenendo le proporzioni.
+
+### Modificato
+- Gli accordi della griglia sono passati da una riga in alto a una colonna accanto al
+  manico, sempre in vista mentre si suona, e la colonna scorre da sola sull'accordo corrente.
+
 ## [2.0.0] — 2026-08-01
 
 ### Aggiunto

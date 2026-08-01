@@ -124,6 +124,8 @@ function renderChips() {
     else html += `<span class="chip bad" title="non riconosciuto">${x.raw}</span>`;
   });
   $('chips').innerHTML = html;
+  const attivo = $('chips').querySelector('.chip.on');
+  if (attivo && attivo.scrollIntoView) attivo.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 
 function describeZone() {
@@ -144,6 +146,24 @@ function renderStrip() {
   $('strip').innerHTML = html;
 }
 
+/**
+ * L'altezza del manico non puo' dipendere dal CSS: con una riga flessibile e
+ * max-height in percentuale il calcolo e' circolare e i browser lo risolvono in
+ * modi diversi, fino ad azzerare l'altezza. La misura si fa qui.
+ */
+function fitBoard() {
+  const box = $('board');
+  const svg = box && box.querySelector('svg');
+  if (!svg) return;
+  const vb = (svg.getAttribute('viewBox') || '0 0 800 250').split(/\s+/).map(Number);
+  const ratio = vb[2] / vb[3];
+  const w = Math.max(0, box.clientWidth - 24);
+  const h = Math.max(0, box.clientHeight - 16);
+  const larghezza = h > 40 ? Math.min(w, h * ratio) : w;
+  svg.style.width = Math.max(larghezza, 480) + 'px';
+  svg.style.height = 'auto';
+}
+
 function renderBoard() {
   const item = state.grid[state.index];
   const v = chosen(state.index);
@@ -153,6 +173,7 @@ function renderBoard() {
     labels: state.labels, flipped: state.flipped, dimOutside: state.dimOutside,
     highlight: v ? v.shape : []
   });
+  fitBoard();
 }
 
 function invLabel(chord, bassIv) {
@@ -504,6 +525,7 @@ function init() {
     if (g) A.pluck(+g.dataset.midi);
   });
 
+  window.addEventListener('resize', fitBoard);
   document.addEventListener('keydown', e => {
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
     if (document.querySelector('dialog[open]')) return;

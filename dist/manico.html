@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" data-versione="2.0.0">
+<html lang="it" data-versione="2.0.1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -42,7 +42,7 @@ body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);
 }
 
 /* ------------------------------------------------------------------ barra */
-body{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;height:100vh;height:100dvh;overflow:hidden}
+body{display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;height:100vh;height:100dvh;overflow:hidden}
 .bar{display:flex;align-items:center;gap:9px;padding:0 16px;height:56px;
   border-bottom:1px solid var(--line);background:var(--panel);flex:none}
 .brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;flex:none}
@@ -103,20 +103,24 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--root);cursor:pointer}
 
 /* ---------------------------------------------------------------- accordi */
-.ribbon{display:flex;align-items:center;gap:6px;padding:9px 16px;overflow-x:auto;flex:none;
-  border-bottom:1px solid var(--line);scrollbar-width:thin}
+.ribbon{display:flex;flex-direction:column;gap:5px;padding:10px;overflow-y:auto;overscroll-behavior:contain;
+  border-right:1px solid var(--line);background:var(--panel);min-height:0;scrollbar-width:thin;align-items:stretch}
+.ribbon .chip{text-align:center}
 .chip{padding:7px 12px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
   font-family:var(--mono);font-size:13px;font-weight:600;color:var(--paper);flex:none}
 button.chip:hover{border-color:var(--faint)}
 .chip.on{background:var(--root);border-color:var(--root);color:#221803}
 .chip.bad{color:#D9695A;border-style:dashed}
 .chip.rest{color:var(--faint)}
-.bl{color:var(--faint);font-family:var(--mono);user-select:none;flex:none}
+.bl{display:none}
 
 /* ------------------------------------------------------- manico e zona */
-.stage{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0}
-.board{display:flex;align-items:center;justify-content:center;padding:10px 20px;min-height:0;overflow:auto}
-.board svg{width:100%;height:auto;max-height:100%;min-width:560px}
+.stage{display:grid;grid-template-columns:118px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;min-height:0}
+.ribbon{grid-row:1/3;grid-column:1}
+.board{grid-column:2}
+.zoneline{grid-column:2}
+.board{display:flex;align-items:center;justify-content:center;padding:8px 12px;min-height:180px;overflow:auto}
+.board svg{display:block;max-width:100%;height:auto}
 .board .note{cursor:pointer}
 .zoneline{display:flex;align-items:center;gap:16px;padding:9px 18px;flex-wrap:wrap;
   border-top:1px solid var(--line);background:var(--panel)}
@@ -190,7 +194,9 @@ pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r
 @media (max-width:900px){
   body{height:auto;overflow:auto;display:block}
   .bar{flex-wrap:wrap;height:auto;padding:10px 14px}
-  .board svg{min-width:520px}
+  .stage{grid-template-columns:1fr}
+  .ribbon{grid-row:auto;grid-column:1;flex-direction:row;border-right:0;border-bottom:1px solid var(--line);overflow-x:auto}
+  .board,.zoneline{grid-column:1}
   .voices{max-height:none;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
   .field>span:first-child{width:100px}
 }
@@ -296,12 +302,11 @@ html{scroll-behavior:smooth}
     <button data-lang="en" title="English" aria-label="English"><span class="fl">🇬🇧</span></button>
   </span>
   <button id="tema" class="tog">Chiaro</button>
-  <span class="ver">v2.0.0</span>
+  <span class="ver">v2.0.1</span>
 </header>
 
-<nav class="ribbon" id="chips"></nav>
-
 <main class="stage">
+  <nav class="ribbon" id="chips"></nav>
   <div class="board" id="board"></div>
 
   <div class="zoneline">
@@ -1541,6 +1546,8 @@ __mod.app = (function () {
       else html += `<span class="chip bad" title="non riconosciuto">${x.raw}</span>`;
     });
     $('chips').innerHTML = html;
+    const attivo = $('chips').querySelector('.chip.on');
+    if (attivo && attivo.scrollIntoView) attivo.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
   function describeZone() {
@@ -1561,6 +1568,24 @@ __mod.app = (function () {
     $('strip').innerHTML = html;
   }
 
+  /**
+   * L'altezza del manico non puo' dipendere dal CSS: con una riga flessibile e
+   * max-height in percentuale il calcolo e' circolare e i browser lo risolvono in
+   * modi diversi, fino ad azzerare l'altezza. La misura si fa qui.
+   */
+  function fitBoard() {
+    const box = $('board');
+    const svg = box && box.querySelector('svg');
+    if (!svg) return;
+    const vb = (svg.getAttribute('viewBox') || '0 0 800 250').split(/\s+/).map(Number);
+    const ratio = vb[2] / vb[3];
+    const w = Math.max(0, box.clientWidth - 24);
+    const h = Math.max(0, box.clientHeight - 16);
+    const larghezza = h > 40 ? Math.min(w, h * ratio) : w;
+    svg.style.width = Math.max(larghezza, 480) + 'px';
+    svg.style.height = 'auto';
+  }
+
   function renderBoard() {
     const item = state.grid[state.index];
     const v = chosen(state.index);
@@ -1570,6 +1595,7 @@ __mod.app = (function () {
       labels: state.labels, flipped: state.flipped, dimOutside: state.dimOutside,
       highlight: v ? v.shape : []
     });
+    fitBoard();
   }
 
   function invLabel(chord, bassIv) {
@@ -1921,6 +1947,7 @@ __mod.app = (function () {
       if (g) A.pluck(+g.dataset.midi);
     });
 
+    window.addEventListener('resize', fitBoard);
     document.addEventListener('keydown', e => {
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
       if (document.querySelector('dialog[open]')) return;
