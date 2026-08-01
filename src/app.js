@@ -94,13 +94,17 @@ function coverage(chord, from) {
   });
   return seen.size / chord.intervals.length;
 }
-function bestZone(items) {
+function bestZone(items, near) {
   const ok = items.filter(x => x.ok);
   if (!ok.length) return null;
+  const rif = near === undefined ? state.zoneFrom : near;
   let best = null, score = -1;
   for (let from = 0; from <= state.frets - state.zoneWidth + 1; from++) {
     const s = Math.min(...ok.map(x => coverage(x.chord, from)));
-    if (s > score + 1e-9) { score = s; best = from; }
+    // A parita' di copertura vince la zona piu' vicina a quella corrente:
+    // cosi' l'inseguimento non riporta ogni volta al tasto 0.
+    if (s > score + 1e-9 || (Math.abs(s - score) <= 1e-9 && best !== null
+        && Math.abs(from - rif) < Math.abs(best - rif))) { score = s; best = from; }
   }
   return best;
 }
@@ -431,7 +435,11 @@ function buildTab() {
 function loadGrid(text, autozone) {
   $('seq').value = text;
   parseGrid();
-  if (autozone) { const b = bestZone(state.grid); if (b !== null) setZone(b, true); }
+  if (autozone) {
+    setLock(false);
+    const b = bestZone(state.grid, 0);
+    if (b !== null) setZone(b, true);
+  }
   render();
 }
 
@@ -461,6 +469,13 @@ function buildMenus() {
 
 function closeDialog(d) {
   if (typeof d.close === 'function') d.close(); else d.removeAttribute('open');
+}
+
+/** Zona fissa: stato e pulsante sempre allineati. */
+function setLock(v) {
+  state.lockZone = v;
+  const b = $('lock');
+  if (b) b.classList.toggle('on', v);
 }
 
 function init() {
@@ -515,8 +530,9 @@ function init() {
     state.pick = {}; cache = new Map(); render();
   };
   }
-  $('zs').oninput = e => setZone(+e.target.value);
+  $('zs').oninput = e => { setLock(true); setZone(+e.target.value); };
   $('zw').oninput = e => {
+    setLock(true);
     state.zoneWidth = +e.target.value;
     $('zwv').textContent = t('zone.frets', state.zoneWidth);
     $('zs').max = state.frets - state.zoneWidth + 1;
@@ -538,7 +554,7 @@ function init() {
   $('beats').onchange = e => { state.beats = +e.target.value; };
   $('mode').onchange = e => { state.playMode = e.target.value; };
   $('clk').onclick = e => { state.metronome = !state.metronome; e.target.classList.toggle('on', state.metronome); };
-  $('lock').onclick = e => { state.lockZone = !state.lockZone; e.target.classList.toggle('on', state.lockZone); };
+  $('lock').onclick = () => setLock(!state.lockZone);
 
   $('mktab').onclick = buildTab;
   $('tab').dataset.vuoto = 'si';
@@ -583,7 +599,7 @@ function init() {
   });
   $('strip').addEventListener('click', e => {
     const b = e.target.closest('[data-zone]');
-    if (b) setZone(+b.dataset.zone);
+    if (b) { setLock(true); setZone(+b.dataset.zone); }
   });
   $('voices').addEventListener('click', e => {
     const hearBtn = e.target.closest('[data-hear]');

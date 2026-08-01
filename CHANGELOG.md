@@ -3,6 +3,16 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [2.3.1] — 2026-08-01
+
+### Corretto
+- Spostare la zona a mano non serviva a niente durante l'esecuzione: l'inseguimento
+  automatico la riportava a ogni battuta verso il tasto 0, perche' a parita' di
+  copertura vinceva sempre la zona piu' bassa. Ora toccare i cursori della zona, o
+  una cella della striscia di copertura, attiva da solo "Zona fissa": la scelta
+  manuale vale finche' non la si sblocca. E quando l'inseguimento e' attivo, a
+  parita' di copertura resta vicino alla posizione corrente invece di tornare a 0.
+
 ## [2.3.0] — 2026-08-01
 
 ### Aggiunto
