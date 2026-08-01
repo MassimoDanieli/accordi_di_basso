@@ -20,6 +20,8 @@ di serie, scuro a un clic, entrambe le scelte memorizzate.
 Notazione classica e iReal: `C-7`/`Cm7`, `C^7`/`Cmaj7`, `Ch7`, `Co7`, alterazioni,
 slash chord `C/E`, pause `N.C.`. Il nastro degli accordi mostra sotto ogni sigla le
 note del voicing scelto (il percorso fluido) e scorre da solo durante l'esecuzione.
+Quando la griglia arriva da iReal o dal repertorio, sopra gli accordi compaiono
+titolo e compositore, come sulla carta.
 
 **Zona.** Due cursori fissano primo tasto e ampiezza; tutto quello che il tool propone
 sta li' dentro. La striscia di copertura assegna a ogni posizione la percentuale di
@@ -42,8 +44,10 @@ successiva), muta. Ogni nota si accende sul manico nel momento in cui la senti.
 **Repertorio.** 26 voci con stile e tempo consigliato: forme essenziali (blues, rhythm
 changes, II-V-I, cicli), giri pop e reggae, versioni semplificate di brani celebri,
 tradizionali di pubblico dominio. Le griglie complete degli standard non sono incluse:
-si importano dalle proprie carte con i link `irealb://` di iReal Pro, decodificati nel
-browser senza che nulla esca dalla pagina.
+si importano dalle proprie carte con i link `irealb://` di iReal Pro (Condividi →
+formato "iReal Pro"), decodificati nel browser senza che nulla esca dalla pagina.
+L'importazione e' collaudata su link autentici dell'app, con un link reale nei test
+come regressione permanente.
 
 **Tab ASCII.** Esporta la griglia con i voicing scelti, da copiare o scaricare.
 
