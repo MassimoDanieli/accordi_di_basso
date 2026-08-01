@@ -50,10 +50,11 @@ const bundle = ['(function () {', '"use strict";', 'const __mod = {};']
 const css = readFileSync(join(root, 'assets', 'styles.css'), 'utf8');
 
 let html = readFileSync(join(root, 'app.html'), 'utf8')
-  .replace(/<link rel="stylesheet" href="assets\/styles\.css">/, `<style>\n${css}\n</style>`)
-  .replace(/<script type="module" src="src\/app\.js"><\/script>/, `<script>\n${bundle}\n</script>`)
+  .replace(/<link rel="stylesheet" href="assets\/styles\.css[^"]*">/, `<style>\n${css}\n</style>`)
+  .replace(/<script type="module" src="src\/app\.js[^"]*"><\/script>/, `<script>\n${bundle}\n</script>`)
   // Nel file unico la guida non e' accanto: si punta al sito.
-  .replace(/href="index\.html"/g, 'href="https://basso.massimodanieli.com/"');
+  .replace(/href="index\.html"/g, 'href="https://basso.massimodanieli.com/"')
+  .replace(/\?v=[0-9.]+/g, '');
 
 mkdirSync(join(root, 'dist'), { recursive: true });
 writeFileSync(join(root, 'dist', 'manico.html'), html);

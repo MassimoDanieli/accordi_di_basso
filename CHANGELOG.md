@@ -3,6 +3,15 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [1.3.5] — 2026-08-01
+
+### Aggiunto
+- Il numero di versione compare in pagina, accanto al promemoria della sintassi e nella
+  guida, ed e' leggibile da console con `MANICO.versione`. Serve a capire subito se il
+  browser sta mostrando l'ultima versione o una copia in cache.
+- I fogli di stile e i moduli sono richiamati con il numero di versione in coda, cosi' un
+  aggiornamento non puo' piu' essere mascherato dalla cache del browser.
+
 ## [1.3.4] — 2026-08-01
 
 ### Corretto

@@ -498,6 +498,8 @@ function loadSong(k) {
   $('irinfo').textContent = `${song.title}${song.composer ? ' \u2014 ' + song.composer : ''} \u00b7 tonalit\u00e0 ${song.key} \u00b7 ${song.bars.length} battute`;
 }
 
+window.MANICO = { versione: document.documentElement.dataset.versione || '?' };
+
 try {
   init();
 } catch (err) {

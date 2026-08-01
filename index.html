@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" data-versione="1.3.5">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/styles.css?v=1.3.5">
 <script>
   // Applicato subito, prima del disegno, per non far lampeggiare la pagina.
   (function () {
@@ -40,6 +40,7 @@
       <span class="word">Manico<b>.</b></span>
     </span>
     <span class="grow"></span>
+    <span class="ver">v1.3.5</span>
     <button id="tema" class="tog">Chiaro</button>
     <a class="cta" href="app.html">Apri lo strumento &rarr;</a>
   </div>
@@ -148,7 +149,7 @@ E |-----------------|-----------|</pre>
 </div>
 
 <script type="module">
-  import { initTheme } from './src/theme.js';
+  import { initTheme } from './src/theme.js?v=1.3.5';
   initTheme();
 </script>
 </body>
