@@ -25,7 +25,7 @@ body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);
   font-size:14px;-webkit-font-smoothing:antialiased;line-height:1.45}
 
 /* Il banco di lavoro occupa la prima schermata, i pannelli stanno sotto. */
-.deck{display:grid;grid-template-rows:auto auto auto minmax(0,1fr);padding:0 0 4px}
+.deck{display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto;padding:0}
 @media (min-width:901px){
   .deck{height:100vh;height:100dvh;overflow:hidden}
   .right{overflow:hidden}
@@ -112,7 +112,7 @@ button.chip:hover{border-color:var(--faint)}
   border-top:1px solid var(--line)}
 .left{display:grid;grid-template-rows:auto auto minmax(0,1fr);min-width:0;min-height:0;align-content:start}
 .board{display:flex;align-items:flex-start;justify-content:center;padding:6px 18px 4px;min-height:0;overflow-x:auto}
-.board svg{width:100%;height:auto;max-height:52vh;min-width:560px}
+.board svg{width:100%;height:auto;max-height:60vh;min-width:560px}
 .board .note{cursor:pointer}
 
 .zonebar{padding:12px 18px 14px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel);
@@ -215,3 +215,17 @@ pre#tab{background:var(--ink);border:1px solid var(--line);border-radius:var(--r
 .doc .note-box p:last-child{margin:0}
 .doc-foot{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);font-size:11px;color:var(--faint);line-height:1.8}
 .doc-foot a{color:var(--muted)}
+
+/* ------------------------------------------------------------ scaffale */
+html{scroll-behavior:smooth}
+.panel{scroll-margin-top:18px}
+.shelf{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:10px 18px;border-top:1px solid var(--line-2);background:var(--panel-2)}
+.shelf-cap{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-right:2px}
+.shelf a{font-size:12.5px;color:var(--muted);text-decoration:none;
+  border:1px solid var(--line-2);border-radius:var(--r);padding:6px 11px;transition:.12s}
+.shelf a:hover{color:var(--root);border-color:var(--root);background:var(--panel)}
+.shelf-arrow{margin-left:auto;color:var(--root);font-size:15px;animation:giu 2.4s ease-in-out infinite}
+@keyframes giu{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(4px);opacity:1}}
+@media (prefers-reduced-motion:reduce){.shelf-arrow{animation:none}}
+@media (max-width:900px){.shelf{position:sticky;bottom:0;z-index:4}}

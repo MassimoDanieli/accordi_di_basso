@@ -3,6 +3,18 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [1.4.0] — 2026-08-01
+
+### Aggiunto
+- Barra di rimandi in fondo al banco di lavoro: "Altro qui sotto" con i collegamenti ai
+  cinque pannelli, cosi' chi apre il sito per la prima volta si accorge che esistono.
+  Il clic porta al pannello con uno scorrimento morbido.
+
+### Modificato
+- Manico ancora piu' grande: corde a 60 unita' di distanza invece di 46, pallini delle
+  note da 16 a 20 di raggio, numeri dei tasti e nomi delle corde ingranditi. La
+  proporzione passa da 4,1:1 a 3,4:1, cioe' un altro 20% di altezza a parita' di larghezza.
+
 ## [1.3.5] — 2026-08-01
 
 ### Aggiunto
