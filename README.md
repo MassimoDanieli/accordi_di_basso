@@ -11,10 +11,11 @@ Nessuna dipendenza, nessun passaggio di build: HTML, CSS e moduli ES nativi.
 
 ## Interfaccia
 
-Una sola schermata, senza scorrimento: barra di comando in alto (griglia, trasporto,
-accesso alle finestre), nastro degli accordi, manico al centro, colonna dei voicing a
-destra, barra della zona in basso. Forme armoniche, importazione iReal, esportazione in
-tab e impostazioni stanno in finestre di dialogo.
+Il banco di lavoro occupa la prima schermata: griglia di accordi e trasporto in alto,
+nastro degli accordi, manico al centro, colonna dei voicing a destra, comandi della zona
+in basso con la legenda dei colori. Una scrollata piu' giu' stanno cinque pannelli
+titolati: strumento e vista, esecuzione, forme armoniche, importazione iReal, tab ASCII.
+Tutti i comandi hanno un'etichetta per esteso.
 
 ## Cosa fa
 

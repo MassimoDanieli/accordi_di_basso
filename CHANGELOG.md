@@ -3,6 +3,19 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [1.2.0] — 2026-08-01
+
+### Modificato
+- Rifatta l'impaginazione: le finestre di dialogo della 1.1.0 nascondevano troppo. Ora il
+  banco di lavoro occupa la prima schermata (griglia, accordi, manico, zona, voicing) e
+  sotto stanno cinque pannelli titolati: strumento e vista, esecuzione, forme armoniche,
+  importazione iReal, tab ASCII.
+- Ogni comando ha un'etichetta per esteso, nessuna icona muta.
+- Il pannello dei voicing indica quanti ne ha trovati, per quale accordo e in quale zona,
+  e descrive a cosa serve il tipo selezionato.
+- La zona e' descritta a parole ("tasti 0-4, corde a vuoto incluse") accanto ai cursori.
+- Legenda dei colori per esteso sotto il manico, invece delle sole iniziali.
+
 ## [1.1.0] — 2026-08-01
 
 ### Modificato

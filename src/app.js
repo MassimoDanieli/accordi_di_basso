@@ -124,6 +124,14 @@ function renderChips() {
   $('chips').innerHTML = html;
 }
 
+function describeZone() {
+  const el = $('zdesc');
+  if (!el) return;
+  el.textContent = state.zoneFrom === 0
+    ? `tasti 0\u2013${zoneTo()}, corde a vuoto incluse`
+    : `tasti ${state.zoneFrom}\u2013${zoneTo()}`;
+}
+
 function renderStrip() {
   const ok = state.grid.filter(x => x.ok);
   let html = '';
@@ -150,10 +158,18 @@ function renderBoard() {
 function renderVoicings() {
   const item = state.grid[state.index];
   const type = V.typeById(state.vtype);
+  $('vhint').textContent = type.hint;
 
-  if (!item || !item.ok) { $('voices').innerHTML = '<p class="empty">Nessun accordo selezionato.</p>'; return; }
+  if (!item || !item.ok) {
+    $('vcount').textContent = '';
+    $('voices').innerHTML = '<p class="empty">Nessun accordo selezionato.</p>';
+    return;
+  }
 
   const list = candidates(state.index);
+  $('vcount').textContent = list.length
+    ? `\u2014 ${list.length} per ${item.chord.symbol}, tasti ${state.zoneFrom}\u2013${zoneTo()}`
+    : `\u2014 ${item.chord.symbol}`;
   if (!list.length) {
     $('voices').innerHTML = `<p class="empty">Nessun ${type.name.toLowerCase()} per <b>${item.chord.symbol}</b>`
       + ` fra il tasto ${state.zoneFrom} e il ${zoneTo()}. Allarga la zona, aumenta l\u2019apertura della mano`
@@ -183,7 +199,7 @@ function previousVoicing(i) {
 }
 
 function render() {
-  renderChips(); renderStrip(); renderBoard(); renderVoicings();
+  describeZone(); renderChips(); renderStrip(); renderBoard(); renderVoicings();
 }
 
 // ---------------------------------------------------------------- suono
@@ -294,12 +310,6 @@ function loadGrid(text, autozone) {
   render();
 }
 
-function openDialog(id) {
-  const dlg = $(id);
-  if (typeof dlg.showModal === 'function') dlg.showModal();
-  else dlg.setAttribute('open', '');
-}
-
 function init() {
   $('lib').innerHTML = LIBRARY.map((x, i) => `<option value="${i}">${x[0]}</option>`).join('');
   $('lib').value = '0';
@@ -309,19 +319,7 @@ function init() {
   $('go').onclick = () => { parseGrid(); render(); };
   $('seq').addEventListener('keydown', e => { if (e.key === 'Enter') { parseGrid(); render(); } });
 
-  // Finestre secondarie.
-  $('btnlib').onclick = () => openDialog('dlglib');
-  $('btnir').onclick = () => openDialog('dlgir');
-  $('btnset').onclick = () => openDialog('dlgset');
-  $('btntab').onclick = () => { buildTab(); openDialog('dlgtab'); };
-  document.querySelectorAll('dialog').forEach(dlg => {
-    dlg.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => dlg.close(); });
-    // Un clic sullo sfondo chiude la finestra.
-    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
-  });
-
-  $('libgo').onclick = () => { loadGrid(LIBRARY[+$('lib').value][1], true); $('dlglib').close(); };
-  $('lib').ondblclick = () => $('libgo').click();
+  $('libgo').onclick = () => loadGrid(LIBRARY[+$('lib').value][1], true);
 
   $('vtype').onchange = e => {
     state.vtype = e.target.value;
@@ -341,7 +339,7 @@ function init() {
   $('zs').oninput = e => setZone(+e.target.value);
   $('zw').oninput = e => {
     state.zoneWidth = +e.target.value;
-    $('zwv').textContent = state.zoneWidth;
+    $('zwv').textContent = state.zoneWidth + ' tasti';
     $('zs').max = state.frets - state.zoneWidth + 1;
     state.pick = {}; cache = new Map();
     if (state.zoneFrom > state.frets - state.zoneWidth + 1) setZone(state.frets - state.zoneWidth + 1);
@@ -396,7 +394,6 @@ function init() {
     list.style.display = songs.length > 1 ? '' : 'none';
     list.innerHTML = songs.map((s, i) => `<option value="${i}">${s.title}${s.composer ? ' \u2014 ' + s.composer : ''}</option>`).join('');
     loadSong(0);
-    if (songs.length === 1) $('dlgir').close();
   };
   $('irlist').onchange = e => loadSong(+e.target.value);
 
@@ -426,7 +423,6 @@ function init() {
 
   document.addEventListener('keydown', e => {
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
-    if (document.querySelector('dialog[open]')) return;
     if (e.code === 'Space') { e.preventDefault(); toggleTransport(); }
     if (e.key === 'ArrowRight' && state.index < state.grid.length - 1) select(state.index + 1);
     if (e.key === 'ArrowLeft' && state.index > 0) select(state.index - 1);
