@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manico — voicing e posizioni per basso elettrico</title>
+<meta name="description" content="Visualizzatore di accordi, voicing e voice leading sul manico del basso elettrico. Esporta in tab ASCII e importa le griglie da iReal Pro.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>Manico<span>.</span></h1>
+  <p class="sub">Scrivi una griglia di accordi, scegli un tipo di voicing e una zona di 4–7 tasti, e vedi dove cadono le note. Il tool propone i voicing suonabili dentro quella zona, ottimizza il voice leading fra un accordo e il successivo, fa girare la griglia a tempo e la esporta in tab ASCII.</p>
+
+  <div class="panel">
+    <div class="lbl">Griglia</div>
+    <div class="row">
+      <input type="text" id="seq" value="C-7 F7 Bbdim7 Ebdim7" spellcheck="false" autocomplete="off" aria-label="Griglia di accordi">
+      <button class="pri" id="go">Mostra</button>
+    </div>
+    <p class="hint">Uno spazio separa le battute, una virgola separa gli accordi dentro la stessa battuta: <code>D-7 G7 C^7,A7 D-7</code>. Accetta la notazione iReal (<code>^</code> maggiore, <code>-</code> minore, <code>h</code> semidiminuito, <code>o</code> diminuito) e le note al basso tipo <code>C/E</code>.</p>
+    <div class="row" style="margin-top:11px">
+      <select id="lib" style="max-width:360px" aria-label="Forme armoniche"></select>
+      <button id="libgo">Carica forma</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="lbl">Importa da iReal Pro</div>
+    <div class="row">
+      <textarea id="ireal" spellcheck="false" aria-label="Link iReal Pro" placeholder="Incolla qui un link irealb:// o irealbook:// preso dal tasto Condividi di iReal Pro. Viene letto in locale, nel browser: niente esce da questa pagina."></textarea>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="irgo">Importa</button>
+      <select id="irlist" style="max-width:360px;display:none" aria-label="Brani nel link"></select>
+    </div>
+    <div class="songinfo" id="irinfo"></div>
+  </div>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="panel">
+    <div class="lbl">Voicing</div>
+    <div class="row">
+      <select id="vtype" style="max-width:240px" aria-label="Tipo di voicing"></select>
+      <div id="spanwrap" style="flex:1;min-width:180px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
+          <span>Apertura massima della mano</span><span class="val" id="spanv">4 tasti</span>
+        </div>
+        <input type="range" id="span" min="3" max="6" step="1" value="4">
+      </div>
+      <button id="vl">Ottimizza voice leading</button>
+      <span class="val" id="vlinfo" style="color:var(--faint)"></span>
+    </div>
+    <p class="hint" id="vhint"></p>
+  </div>
+
+  <div class="panel">
+    <div class="lbl">Trasporto</div>
+    <div class="row">
+      <button class="pri" id="pp" style="min-width:96px">&#9654; Play</button>
+      <div style="flex:1;min-width:190px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
+          <span>Tempo</span><span class="val" id="bpmv">92 bpm</span>
+        </div>
+        <input type="range" id="bpm" min="40" max="200" step="1" value="92">
+      </div>
+      <select id="beats" style="max-width:100px" aria-label="Metro">
+        <option value="4">4/4</option><option value="3">3/4</option><option value="2">2/4</option><option value="6">6/8</option>
+      </select>
+      <select id="mode" style="max-width:170px" aria-label="Cosa suonare">
+        <option value="voicing">suona il voicing</option>
+        <option value="root">solo fondamentale</option>
+        <option value="mute">muto</option>
+      </select>
+      <button class="tog on" id="clk">Click</button>
+      <button class="tog" id="lock">Zona fissa</button>
+    </div>
+  </div>
+
+  <div class="ctrls">
+    <div class="ctrl">
+      <div class="top"><span>Basso</span></div>
+      <select id="tun" aria-label="Accordatura"></select>
+    </div>
+    <div class="ctrl">
+      <div class="top"><span>Primo tasto della zona</span><span class="val" id="zsv">0</span></div>
+      <input type="range" id="zs" min="0" max="11" step="1" value="0">
+    </div>
+    <div class="ctrl">
+      <div class="top"><span>Ampiezza zona</span><span class="val" id="zwv">5 tasti</span></div>
+      <input type="range" id="zw" min="3" max="7" step="1" value="5">
+    </div>
+    <div class="ctrl">
+      <div class="top"><span>Vista</span></div>
+      <div class="togs">
+        <button class="tog on" id="tlab">Gradi</button>
+        <button class="tog" id="tflip">Inverti corde</button>
+        <button class="tog on" id="tdim">Sfuma fuori zona</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="lbl">Zone che coprono tutta la griglia — clicca per spostarti</div>
+    <div class="strip" id="strip"></div>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <h3 id="vtitle">Voicing</h3>
+  <div class="vgrid" id="voices"></div>
+
+  <h3>Tab ASCII <small>usa il voicing selezionato per ogni accordo</small></h3>
+  <div class="row" style="margin:12px 0">
+    <button id="mktab">Genera tab</button>
+    <button id="cptab">Copia</button>
+    <button id="dltab">Scarica .txt</button>
+    <select id="perline" style="max-width:170px" aria-label="Battute per riga">
+      <option value="4">4 battute per riga</option>
+      <option value="2">2 battute per riga</option>
+      <option value="6">6 battute per riga</option>
+    </select>
+  </div>
+  <pre id="tab">Premi "Genera tab".</pre>
+
+  <div class="legend">
+    <span><i style="background:var(--root)"></i>fondamentale</span>
+    <span><i style="background:var(--third)"></i>terza</span>
+    <span><i style="background:var(--fifth)"></i>quinta</span>
+    <span><i style="background:var(--sev)"></i>sesta e settima</span>
+    <span><i style="background:var(--ext)"></i>estensioni e nota al basso</span>
+    <span style="color:var(--faint)">barra spaziatrice per avviare, frecce per cambiare accordo, clic su una nota per sentirla</span>
+  </div>
+  <footer class="foot-note">
+    Manico &copy; 2026 Massimo Danieli &middot; software libero sotto
+    <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>, senza alcuna garanzia &middot;
+    <a href="https://github.com/MassimoDanieli/accordi_di_basso">sorgenti</a>
+  </footer>
+</div>
+<script type="module" src="src/app.js"></script>
+</body>
+</html>

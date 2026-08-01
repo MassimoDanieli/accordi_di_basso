@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manico — voicing e posizioni per basso elettrico</title>
+<meta name="description" content="Visualizzatore di accordi, voicing e voice leading sul manico del basso elettrico. Esporta in tab ASCII e importa le griglie da iReal Pro.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#131110; --panel:#1D1A18; --panel-2:#262220;
+  --wood:#3A2E27; --fretwire:#8C8579; --inlay:#6B635A;
+  --paper:#EDE7DD; --muted:#9C9188; --faint:#6A625B;
+  --line:rgba(237,231,221,.10); --line-2:rgba(237,231,221,.18);
+  --root:#E9B04A; --third:#63B7A6; --fifth:#7C9FD8; --sev:#D97C63; --ext:#A691CE;
+  --r:9px;
+  --sans:"Space Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body{padding:28px 22px 72px}
+.wrap{max-width:1080px;margin:0 auto}
+h1{font-size:19px;font-weight:700;letter-spacing:-.01em;margin:0}
+h1 span{color:var(--root)}
+.sub{color:var(--muted);font-size:13px;margin:5px 0 22px;max-width:66ch;line-height:1.6}
+h3{font-size:13px;font-weight:500;margin:26px 0 0}
+h3 small{color:var(--faint);font-weight:400;margin-left:8px;font-size:12px}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.lbl{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-bottom:9px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hint{font-size:12px;color:var(--faint);line-height:1.6;margin:9px 0 0}
+.hint code{background:var(--panel-2);padding:1px 5px;border-radius:4px;font-family:var(--mono)}
+.empty{color:var(--faint);font-size:13px;padding:16px 0;line-height:1.6}
+.err{color:#D9695A}
+
+input[type=text],textarea{flex:1;min-width:220px;background:var(--panel-2);border:1px solid var(--line-2);
+  color:var(--paper);border-radius:var(--r);padding:11px 13px;font-size:15px;font-family:var(--mono);outline:none;resize:vertical}
+textarea{font-size:12px;line-height:1.5;min-height:70px}
+input[type=text]:focus,textarea:focus{border-color:var(--root)}
+select{background:var(--panel-2);border:1px solid var(--line-2);color:var(--paper);border-radius:var(--r);
+  padding:8px 10px;font:inherit;font-size:13px;outline:none;width:100%}
+button{background:transparent;border:1px solid var(--line-2);color:var(--paper);border-radius:var(--r);
+  padding:9px 13px;font:inherit;font-size:13px;cursor:pointer;transition:.15s}
+button:hover{background:var(--panel-2);border-color:var(--faint)}
+button:active{transform:scale(.98)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--root);outline-offset:2px}
+button.pri{background:var(--root);border-color:var(--root);color:#221803;font-weight:500}
+button.pri:hover{background:#F0BC61}
+
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;width:100%;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--line-2);border-radius:2px}
+input[type=range]::-moz-range-track{height:3px;background:var(--line-2);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--root);margin-top:-6px;cursor:pointer}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border:0;border-radius:50%;background:var(--root);cursor:pointer}
+
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px 22px;margin:18px 0}
+.ctrl{display:flex;flex-direction:column;gap:7px}
+.ctrl .top{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--muted)}
+.val{font-family:var(--mono);color:var(--paper);font-size:12px}
+.togs{display:flex;gap:7px;flex-wrap:wrap}
+.tog{font-size:12px;padding:7px 11px}
+.tog.on{background:var(--panel-2);border-color:var(--root);color:var(--root)}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0 4px;align-items:center}
+.chip{padding:8px 13px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--panel);
+  font-family:var(--mono);font-size:14px;font-weight:600;transition:.12s;color:var(--paper)}
+button.chip{cursor:pointer}
+button.chip:hover{border-color:var(--faint)}
+.chip.on{background:var(--root);border-color:var(--root);color:#221803}
+.chip.bad{color:#D9695A;border-style:dashed}
+.chip.rest{color:var(--faint)}
+.bl{color:var(--faint);font-family:var(--mono);padding:0 2px;user-select:none}
+
+.strip{display:flex;gap:3px}
+.cell{flex:1;height:26px;padding:0;border-radius:4px;border:1px solid transparent;
+  font-size:10px;font-family:var(--mono);color:rgba(0,0,0,.6)}
+.cell:hover{border-color:var(--faint);background:inherit}
+.cell.sel{border-color:var(--paper)}
+
+.board{margin:20px 0 4px;overflow-x:auto}
+.board svg{display:block;min-width:660px;width:100%;height:auto}
+.board .note{cursor:pointer}
+
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:14px;margin-top:14px}
+.voice{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 13px 10px;cursor:pointer;transition:.12s}
+.voice:hover{border-color:var(--line-2)}
+.voice.sel{border-color:var(--root)}
+.voice h4{margin:0 0 2px;font-size:13px;font-weight:500}
+.voice .meta{font-size:11px;color:var(--faint);font-family:var(--mono);margin-bottom:9px}
+.voice svg{display:block;width:100%;height:auto}
+.voice .foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px}
+.voice .deg{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.voice .mv{font-family:var(--mono);font-size:11px;color:var(--faint);white-space:nowrap}
+.play{padding:5px 9px;font-size:11px}
+
+pre#tab{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);padding:14px;
+  overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.55;color:var(--paper);margin:0;white-space:pre}
+
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:24px;font-size:12px;color:var(--muted);
+  padding-top:16px;border-top:1px solid var(--line)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.songinfo{font-size:12px;color:var(--muted);margin-top:9px;font-family:var(--mono);line-height:1.6}
+
+.foot-note{margin-top:22px;padding-top:14px;border-top:1px solid var(--line);
+  font-size:11px;color:var(--faint);line-height:1.7}
+.foot-note a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line-2)}
+.foot-note a:hover{color:var(--root);border-color:var(--root)}
+
+@media (max-width:640px){
+  body{padding:20px 14px 56px}
+  .vgrid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important}
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Manico<span>.</span></h1>
+  <p class="sub">Scrivi una griglia di accordi, scegli un tipo di voicing e una zona di 4–7 tasti, e vedi dove cadono le note. Il tool propone i voicing suonabili dentro quella zona, ottimizza il voice leading fra un accordo e il successivo, fa girare la griglia a tempo e la esporta in tab ASCII.</p>
+
+  <div class="panel">
+    <div class="lbl">Griglia</div>
+    <div class="row">
+      <input type="text" id="seq" value="C-7 F7 Bbdim7 Ebdim7" spellcheck="false" autocomplete="off" aria-label="Griglia di accordi">
+      <button class="pri" id="go">Mostra</button>
+    </div>
+    <p class="hint">Uno spazio separa le battute, una virgola separa gli accordi dentro la stessa battuta: <code>D-7 G7 C^7,A7 D-7</code>. Accetta la notazione iReal (<code>^</code> maggiore, <code>-</code> minore, <code>h</code> semidiminuito, <code>o</code> diminuito) e le note al basso tipo <code>C/E</code>.</p>
+    <div class="row" style="margin-top:11px">
+      <select id="lib" style="max-width:360px" aria-label="Forme armoniche"></select>
+      <button id="libgo">Carica forma</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="lbl">Importa da iReal Pro</div>
+    <div class="row">
+      <textarea id="ireal" spellcheck="false" aria-label="Link iReal Pro" placeholder="Incolla qui un link irealb:// o irealbook:// preso dal tasto Condividi di iReal Pro. Viene letto in locale, nel browser: niente esce da questa pagina."></textarea>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="irgo">Importa</button>
+      <select id="irlist" style="max-width:360px;display:none" aria-label="Brani nel link"></select>
+    </div>
+    <div class="songinfo" id="irinfo"></div>
+  </div>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="panel">
+    <div class="lbl">Voicing</div>
+    <div class="row">
+      <select id="vtype" style="max-width:240px" aria-label="Tipo di voicing"></select>
+      <div id="spanwrap" style="flex:1;min-width:180px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
+          <span>Apertura massima della mano</span><span class="val" id="spanv">4 tasti</span>
+        </div>
+        <input type="range" id="span" min="3" max="6" step="1" value="4">
+      </div>
+      <button id="vl">Ottimizza voice leading</button>
+      <span class="val" id="vlinfo" style="color:var(--faint)"></span>
+    </div>
+    <p class="hint" id="vhint"></p>
+  </div>
+
+  <div class="panel">
+    <div class="lbl">Trasporto</div>
+    <div class="row">
+      <button class="pri" id="pp" style="min-width:96px">&#9654; Play</button>
+      <div style="flex:1;min-width:190px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
+          <span>Tempo</span><span class="val" id="bpmv">92 bpm</span>
+        </div>
+        <input type="range" id="bpm" min="40" max="200" step="1" value="92">
+      </div>
+      <select id="beats" style="max-width:100px" aria-label="Metro">
+        <option value="4">4/4</option><option value="3">3/4</option><option value="2">2/4</option><option value="6">6/8</option>
+      </select>
+      <select id="mode" style="max-width:170px" aria-label="Cosa suonare">
+        <option value="voicing">suona il voicing</option>
+        <option value="root">solo fondamentale</option>
+        <option value="mute">muto</option>
+      </select>
+      <button class="tog on" id="clk">Click</button>
+      <button class="tog" id="lock">Zona fissa</button>
+    </div>
+  </div>
+
+  <div class="ctrls">
+    <div class="ctrl">
+      <div class="top"><span>Basso</span></div>
+      <select id="tun" aria-label="Accordatura"></select>
+    </div>
+    <div class="ctrl">
+      <div class="top"><span>Primo tasto della zona</span><span class="val" id="zsv">0</span></div>
+      <input type="range" id="zs" min="0" max="11" step="1" value="0">
+    </div>
+    <div class="ctrl">
+      <div class="top"><span>Ampiezza zona</span><span class="val" id="zwv">5 tasti</span></div>
+      <input type="range" id="zw" min="3" max="7" step="1" value="5">
+    </div>
+    <div class="ctrl">
+      <div class="top"><span>Vista</span></div>
+      <div class="togs">
+        <button class="tog on" id="tlab">Gradi</button>
+        <button class="tog" id="tflip">Inverti corde</button>
+        <button class="tog on" id="tdim">Sfuma fuori zona</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="lbl">Zone che coprono tutta la griglia — clicca per spostarti</div>
+    <div class="strip" id="strip"></div>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <h3 id="vtitle">Voicing</h3>
+  <div class="vgrid" id="voices"></div>
+
+  <h3>Tab ASCII <small>usa il voicing selezionato per ogni accordo</small></h3>
+  <div class="row" style="margin:12px 0">
+    <button id="mktab">Genera tab</button>
+    <button id="cptab">Copia</button>
+    <button id="dltab">Scarica .txt</button>
+    <select id="perline" style="max-width:170px" aria-label="Battute per riga">
+      <option value="4">4 battute per riga</option>
+      <option value="2">2 battute per riga</option>
+      <option value="6">6 battute per riga</option>
+    </select>
+  </div>
+  <pre id="tab">Premi "Genera tab".</pre>
+
+  <div class="legend">
+    <span><i style="background:var(--root)"></i>fondamentale</span>
+    <span><i style="background:var(--third)"></i>terza</span>
+    <span><i style="background:var(--fifth)"></i>quinta</span>
+    <span><i style="background:var(--sev)"></i>sesta e settima</span>
+    <span><i style="background:var(--ext)"></i>estensioni e nota al basso</span>
+    <span style="color:var(--faint)">barra spaziatrice per avviare, frecce per cambiare accordo, clic su una nota per sentirla</span>
+  </div>
+  <footer class="foot-note">
+    Manico &copy; 2026 Massimo Danieli &middot; software libero sotto
+    <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>, senza alcuna garanzia &middot;
+    <a href="https://github.com/MassimoDanieli/accordi_di_basso">sorgenti</a>
+  </footer>
+</div>
+<script>
+(function () {
+
+"use strict";
+
+const __mod = {};
+
+__mod.theory = (function () {
+
+  // Teoria: nomi delle note, riconoscimento dei simboli di accordo, gradi.
+
+  const PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  const SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+  // Accordature: MIDI delle corde a vuoto, dalla piu' grave alla piu' acuta.
+  const TUNINGS = {
+    '4':  { label: '4 corde — E A D G',   open: [28, 33, 38, 43] },
+    '5':  { label: '5 corde — B E A D G', open: [23, 28, 33, 38, 43] },
+    '5c': { label: '5 corde — E A D G C', open: [28, 33, 38, 43, 48] },
+    '6':  { label: '6 corde — B E A D G C', open: [23, 28, 33, 38, 43, 48] }
+  };
+
+  // Le sigle piu' lunghe vanno confrontate per prime.
+  const QUALITIES = [
+    ['maj13', [0, 4, 7, 11, 14, 21]], ['maj9', [0, 4, 7, 11, 14]], ['maj7', [0, 4, 7, 11]],
+    ['maj6', [0, 4, 7, 9]], ['m7b5', [0, 3, 6, 10]], ['mmaj7', [0, 3, 7, 11]],
+    ['dim7', [0, 3, 6, 9]], ['dim', [0, 3, 6]],
+    ['m11', [0, 3, 7, 10, 14, 17]], ['m9', [0, 3, 7, 10, 14]], ['m7', [0, 3, 7, 10]],
+    ['m69', [0, 3, 7, 9, 14]], ['m6', [0, 3, 7, 9]],
+    ['7sus4', [0, 5, 7, 10]], ['sus4', [0, 5, 7]], ['sus2', [0, 2, 7]],
+    ['alt', [0, 4, 8, 10, 15]], ['7b9', [0, 4, 7, 10, 13]], ['7#9', [0, 4, 7, 10, 15]],
+    ['7#5', [0, 4, 8, 10]], ['7b5', [0, 4, 6, 10]], ['7b13', [0, 4, 8, 10]],
+    ['13', [0, 4, 7, 10, 14, 21]], ['11', [0, 4, 7, 10, 14, 17]], ['9', [0, 4, 7, 10, 14]],
+    ['7', [0, 4, 7, 10]], ['69', [0, 4, 7, 9, 14]], ['6/9', [0, 4, 7, 9, 14]],
+    ['add9', [0, 4, 7, 14]], ['6', [0, 4, 7, 9]], ['aug', [0, 4, 8]], ['5', [0, 7]],
+    ['m', [0, 3, 7]], ['maj', [0, 4, 7]], ['', [0, 4, 7]]
+  ].sort((a, b) => b[0].length - a[0].length);
+
+  // Porta la sigla in forma canonica, accettando anche la notazione iReal Pro.
+  function normaliseQuality(q) {
+    return q
+      .replace(/\u03947?/g, 'maj7')       // delta
+      .replace(/\u00f87?/g, 'm7b5')       // cerchio barrato
+      .replace(/\u00b07/g, 'dim7').replace(/\u00b0/g, 'dim')
+      .replace(/^[-\u2212\u2013]/, 'm')
+      .replace(/\^/g, 'maj')
+      .replace(/^h7?/, 'm7b5').replace(/^o7/, 'dim7').replace(/^o/, 'dim')
+      .replace(/^Maj|^MAJ/, 'maj').replace(/^M(?=7|9|11|13|$)/, 'maj').replace(/^min/, 'm')
+      .replace(/^\+7/, '7#5').replace(/^\+$/, 'aug')
+      .replace(/[()]/g, '')
+      .replace(/^sus$/, 'sus4').replace(/^7sus$/, '7sus4');
+  }
+
+  const SIXTHS = ['6', 'm6', '69', '6/9', 'm69', 'maj6'];
+
+  /**
+   * Riconosce un simbolo di accordo. Restituisce null se non lo capisce.
+   * pcMap mappa pitch class -> grado in semitoni; -1 indica la nota al basso di uno slash chord.
+   */
+  function parseChord(symbol) {
+    let s = (symbol || '').trim();
+    if (!s) return null;
+
+    let slash = null;
+    const sl = /^(.*?)\/([A-Ga-g][#b]?)$/.exec(s);
+    if (sl) {
+      s = sl[1];
+      const acc = sl[2][1];
+      slash = (PITCH[sl[2][0].toUpperCase()] + (acc === '#' ? 1 : acc === 'b' ? -1 : 0) + 12) % 12;
+    }
+
+    const m = /^([A-Ga-g])([#b\u266f\u266d]?)(.*)$/.exec(s);
+    if (!m) return null;
+    const letter = m[1].toUpperCase();
+    const acc = (m[2] || '').replace('\u266f', '#').replace('\u266d', 'b');
+    const q = normaliseQuality((m[3] || '').trim()).toLowerCase();
+
+    let intervals = null, key = '';
+    for (const [k, v] of QUALITIES) {
+      if (q === k || (k && q.startsWith(k))) { intervals = v; key = k; break; }
+    }
+    if (!intervals) return null;
+
+    const root = (PITCH[letter] + (acc === '#' ? 1 : acc === 'b' ? -1 : 0) + 12) % 12;
+    const flats = acc === 'b' || ['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb'].includes(letter + acc);
+
+    const pcMap = {};
+    for (const iv of intervals) {
+      const pc = (root + iv) % 12;
+      if (pcMap[pc] === undefined) pcMap[pc] = iv;
+    }
+    if (slash !== null && pcMap[slash] === undefined) pcMap[slash] = -1;
+
+    return {
+      symbol, root, slash, intervals, pcMap, flats, key,
+      isDim: key.startsWith('dim'),
+      isSixth: SIXTHS.includes(key),
+      third: intervals.find(i => i === 3 || i === 4),
+      fifth: intervals.find(i => i === 6 || i === 7 || i === 8),
+      seventh: intervals.find(i => i === 9 || i === 10 || i === 11)
+    };
+  }
+
+  const DEGREE = {
+    0: 'R', 1: '\u266d9', 2: '9', 3: '\u266d3', 4: '3', 5: '11', 6: '\u266d5', 7: '5',
+    8: '\u266f5', 10: '\u266d7', 11: '7', 13: '\u266d9', 14: '9', 15: '\u266f9', 17: '11', 21: '13'
+  };
+
+  function degreeName(iv, chord) {
+    if (iv === -1) return 'bs';
+    if (iv === 9) return chord.isDim ? '\u00b07' : (chord.isSixth ? '6' : '13');
+    return DEGREE[iv] !== undefined ? DEGREE[iv] : (DEGREE[iv % 12] || '?');
+  }
+
+  function degreeColor(iv) {
+    if (iv === -1) return 'var(--ext)';
+    const i = iv % 12;
+    if (i === 0) return 'var(--root)';
+    if (i === 3 || i === 4) return 'var(--third)';
+    if (i === 6 || i === 7 || i === 8) return 'var(--fifth)';
+    if (i === 9 || i === 10 || i === 11) return 'var(--sev)';
+    return 'var(--ext)';
+  }
+
+  function noteName(pc, flats) { return (flats ? FLAT : SHARP)[pc]; }
+
+  /** Posizione del tasto sul manico, spaziatura reale: 1 - 2^(-n/12). */
+  function fretPos(n) { return 1 - Math.pow(2, -n / 12); }
+
+  return { PITCH, SHARP, FLAT, TUNINGS, parseChord, degreeName, degreeColor, noteName, fretPos };
+})();
+
+__mod.voicings = (function () {
+  const { degreeName, noteName } = __mod.theory;
+  // Generazione dei voicing dentro una zona del manico, piu' ottimizzazione del voice leading.
+
+
+  const VOICING_TYPES = [
+    { id: 'arp',     name: 'Arpeggio',            block: false, size: 0, hint: 'tutte le note dell\u2019accordo in successione' },
+    { id: 'shell',   name: 'Shell — R + 7 + 3',   block: true,  size: 3, hint: 'fondamentale e le due note guida' },
+    { id: 'guide',   name: 'Note guida — 3 + 7',  block: true,  size: 2, hint: 'solo terza e settima, per il comping' },
+    { id: 'tenth',   name: 'Decime — R + 3',      block: true,  size: 2, hint: 'fondamentale e terza a un\u2019ottava e mezza' },
+    { id: 'triad',   name: 'Triade — R + 3 + 5',  block: true,  size: 3, hint: 'triade in posizione stretta' },
+    { id: 'quartal', name: 'Quartale',            block: true,  size: 3, hint: 'quarte sovrapposte, dove l\u2019accordo lo consente' }
+  ];
+
+  function typeById(id) { return VOICING_TYPES.find(t => t.id === id) || VOICING_TYPES[0]; }
+
+  /** Tutte le note dell'accordo suonabili nella zona indicata. */
+  function zoneNotes(chord, open, from, to) {
+    const out = [];
+    open.forEach((openMidi, si) => {
+      for (let f = from; f <= to; f++) {
+        const midi = openMidi + f;
+        const iv = chord.pcMap[midi % 12];
+        if (iv !== undefined) out.push({ si, f, midi, pc: midi % 12, iv });
+      }
+    });
+    return out.sort((a, b) => a.midi - b.midi || a.si - b.si);
+  }
+
+  /** Arpeggio ascendente che parte da una nota e resta nella zona. */
+  function ascend(start, notes, count) {
+    const seq = [start];
+    let cur = start;
+    while (seq.length < count) {
+      const cands = notes.filter(n =>
+        n.midi > cur.midi && n.midi <= cur.midi + 8 && n.si >= cur.si && n.si <= cur.si + 1);
+      if (!cands.length) break;
+      let best = cands[0];
+      for (const n of cands) {
+        if (n.midi < best.midi) best = n;
+        else if (n.midi === best.midi && Math.abs(n.si - cur.si) < Math.abs(best.si - cur.si)) best = n;
+      }
+      seq.push(best);
+      cur = best;
+    }
+    return seq;
+  }
+
+  /** Combinazioni suonabili: corde distinte e crescenti, note crescenti, apertura entro maxSpan. */
+  function playableSets(notes, size, maxSpan) {
+    const res = [];
+    const acc = [];
+    (function rec(start) {
+      if (acc.length === size) { res.push(acc.slice()); return; }
+      for (let i = start; i < notes.length; i++) {
+        const n = notes[i];
+        if (acc.length) {
+          const last = acc[acc.length - 1];
+          if (n.si <= last.si || n.midi <= last.midi) continue;
+        }
+        const fretted = acc.concat([n]).filter(x => x.f > 0).map(x => x.f);
+        if (fretted.length && Math.max(...fretted) - Math.min(...fretted) > maxSpan) continue;
+        acc.push(n);
+        rec(i + 1);
+        acc.pop();
+      }
+    })(0);
+    return res;
+  }
+
+  const sameSet = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+
+  function requiredDegrees(chord, type) {
+    const third = chord.third, seventh = chord.seventh, fifth = chord.fifth;
+    if (type === 'guide') return third !== undefined && seventh !== undefined ? [third, seventh] : null;
+    if (type === 'shell') {
+      if (third !== undefined && seventh !== undefined) return [0, third, seventh];
+      if (third !== undefined && fifth !== undefined) return [0, third, fifth];
+      return null;
+    }
+    if (type === 'tenth') return third !== undefined ? [0, third] : null;
+    if (type === 'triad') return third !== undefined && fifth !== undefined ? [0, third, fifth] : null;
+    return null;
+  }
+
+  function span(shape) {
+    const f = shape.filter(n => n.f > 0).map(n => n.f);
+    return f.length ? Math.max(...f) - Math.min(...f) : 0;
+  }
+
+  const INVERSION = ['fondamentale al basso', '1\u00b0 rivolto', '2\u00b0 rivolto', '3\u00b0 rivolto', '4\u00b0 rivolto', '5\u00b0 rivolto'];
+
+  function inversionLabel(chord, bassIv) {
+    if (bassIv === -1) return 'nota al basso indicata';
+    const k = chord.intervals.indexOf(bassIv);
+    return k >= 0 ? (INVERSION[k] || 'estensione al basso') : 'estensione al basso';
+  }
+
+  /**
+   * Genera i voicing di un accordo dentro la zona.
+   * Ritorna un array di { shape, bassIv, span, label, block }.
+   */
+  function generate(chord, open, from, to, type, maxSpan) {
+    const notes = zoneNotes(chord, open, from, to);
+    if (!notes.length) return [];
+
+    if (type === 'arp') {
+      const out = [];
+      const degrees = chord.intervals.slice();
+      if (chord.slash !== null && chord.pcMap[chord.slash] === -1) degrees.unshift(-1);
+      for (const iv of degrees) {
+        const start = notes.find(n => n.iv === iv);
+        if (!start) continue;
+        const shape = ascend(start, notes, Math.min(chord.intervals.length + 1, 6));
+        if (shape.length < Math.min(3, chord.intervals.length)) continue;
+        out.push({ shape, bassIv: iv, span: span(shape), block: false, label: inversionLabel(chord, iv) });
+      }
+      return out;
+    }
+
+    if (type === 'quartal') {
+      const out = [];
+      for (const a of notes) {
+        const b = notes.find(n => n.midi === a.midi + 5 && n.si === a.si + 1);
+        if (!b) continue;
+        const c = notes.find(n => n.midi === b.midi + 5 && n.si === b.si + 1);
+        if (!c) continue;
+        const shape = [a, b, c];
+        if (span(shape) > maxSpan) continue;
+        out.push({ shape, bassIv: a.iv, span: span(shape), block: true, label: inversionLabel(chord, a.iv) });
+      }
+      return dedupe(out);
+    }
+
+    const want = requiredDegrees(chord, type);
+    if (!want) return [];
+    const target = want.slice().sort((x, y) => x - y);
+    const sets = playableSets(notes, want.length, maxSpan);
+
+    let out = sets
+      .filter(s => sameSet(s.map(n => n.iv).sort((x, y) => x - y), target))
+      .map(s => ({ shape: s, bassIv: s[0].iv, span: span(s), block: true, label: inversionLabel(chord, s[0].iv) }));
+
+    if (type === 'tenth') {
+      out = out.filter(v => {
+        const d = v.shape[1].midi - v.shape[0].midi;
+        return v.shape[0].iv === 0 && d >= 14 && d <= 17;
+      });
+    }
+    return dedupe(out);
+  }
+
+  // Un voicing per nota al basso: il piu' compatto, poi il piu' vicino all'inizio zona.
+  function dedupe(list) {
+    const byBass = new Map();
+    for (const v of list) {
+      const k = v.shape[0].midi;
+      const prev = byBass.get(k);
+      const score = v.span * 10 + v.shape.reduce((s, n) => s + n.f, 0) / v.shape.length;
+      if (!prev || score < prev.score) byBass.set(k, { v, score });
+    }
+    return [...byBass.values()].map(x => x.v).sort((a, b) => a.shape[0].midi - b.shape[0].midi);
+  }
+
+  function describe(voicing, chord) {
+    return voicing.shape.map(n => noteName(n.pc, chord.flats)).join(' ');
+  }
+  function degrees(voicing, chord) {
+    return voicing.shape.map(n => degreeName(n.iv, chord)).join(' \u00b7 ');
+  }
+
+  /** Costo del passaggio fra due voicing: moto delle voci piu' spostamento della mano. */
+  function moveCost(a, b) {
+    const x = a.shape.map(n => n.midi), y = b.shape.map(n => n.midi);
+    const k = Math.min(x.length, y.length);
+    let motion = 0;
+    for (let i = 0; i < k; i++) motion += Math.abs(x[i] - y[i]);
+    const handA = a.shape.reduce((s, n) => s + n.f, 0) / a.shape.length;
+    const handB = b.shape.reduce((s, n) => s + n.f, 0) / b.shape.length;
+    return motion + 1.5 * Math.abs(handA - handB) + Math.abs(x.length - y.length) * 2;
+  }
+
+  /** Moto totale in semitoni fra due voicing, per mostrarlo a schermo. */
+  function motion(a, b) {
+    if (!a || !b) return null;
+    const x = a.shape.map(n => n.midi), y = b.shape.map(n => n.midi);
+    const k = Math.min(x.length, y.length);
+    let t = 0;
+    for (let i = 0; i < k; i++) t += Math.abs(x[i] - y[i]);
+    return t;
+  }
+
+  /**
+   * Programmazione dinamica: sceglie un voicing per accordo minimizzando il movimento
+   * complessivo. candidates e' un array di array (vuoto = accordo saltato).
+   * Ritorna un array di indici, -1 dove non c'e' scelta.
+   */
+  function optimise(candidates) {
+    const idx = candidates.map((c, i) => (c && c.length ? i : -1)).filter(i => i >= 0);
+    const out = candidates.map(() => -1);
+    if (!idx.length) return out;
+
+    let prevCosts = candidates[idx[0]].map(() => 0);
+    const back = [];
+
+    for (let step = 1; step < idx.length; step++) {
+      const cur = candidates[idx[step]], prev = candidates[idx[step - 1]];
+      const costs = new Array(cur.length).fill(Infinity);
+      const from = new Array(cur.length).fill(0);
+      cur.forEach((cv, j) => {
+        prev.forEach((pv, i) => {
+          const c = prevCosts[i] + moveCost(pv, cv) + cv.span * 0.5;
+          if (c < costs[j]) { costs[j] = c; from[j] = i; }
+        });
+      });
+      back.push(from);
+      prevCosts = costs;
+    }
+
+    let best = 0;
+    prevCosts.forEach((c, i) => { if (c < prevCosts[best]) best = i; });
+    const chosen = new Array(idx.length);
+    chosen[idx.length - 1] = best;
+    for (let step = idx.length - 1; step > 0; step--) chosen[step - 1] = back[step - 1][chosen[step]];
+    idx.forEach((seqIndex, k) => { out[seqIndex] = chosen[k]; });
+    return out;
+  }
+
+  return { VOICING_TYPES, typeById, zoneNotes, span, inversionLabel, generate, describe, degrees, moveCost, motion, optimise };
+})();
+
+__mod.audio = (function () {
+
+  // Sintesi essenziale: una corda pizzicata e un click di metronomo.
+
+  let ctx = null;
+  function audio() {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  function pluck(midi, at = 0, dur = 0.85, vol = 0.34) {
+    const A = audio();
+    const t0 = A.currentTime + at;
+    const freq = 440 * Math.pow(2, (midi - 69) / 12);
+    const gain = A.createGain();
+    const lp = A.createBiquadFilter();
+
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(1800, t0);
+    lp.frequency.exponentialRampToValueAtTime(360, t0 + dur);
+
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+    [['triangle', 1, 0.9], ['sine', 2, 0.22], ['sine', 0.5, 0.3]].forEach(([type, mul, amp]) => {
+      const osc = A.createOscillator(), g = A.createGain();
+      osc.type = type;
+      osc.frequency.value = freq * mul;
+      g.gain.value = amp;
+      osc.connect(g); g.connect(lp);
+      osc.start(t0); osc.stop(t0 + dur + 0.05);
+    });
+
+    lp.connect(gain);
+    gain.connect(A.destination);
+  }
+
+  function arpeggio(midis, step = 0.26, dur = 0.9) {
+    midis.forEach((m, i) => pluck(m, i * step, dur));
+  }
+
+  /** Accordo: le corde partono quasi insieme, con un filo di ritardo fra una e l'altra. */
+  function strum(midis, dur = 1.4, spread = 0.02) {
+    midis.forEach((m, i) => pluck(m, i * spread, dur, 0.26));
+  }
+
+  function click(at = 0, accent = false) {
+    const A = audio();
+    const t0 = A.currentTime + at;
+    const osc = A.createOscillator(), g = A.createGain();
+    osc.type = 'square';
+    osc.frequency.value = accent ? 1500 : 1050;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(accent ? 0.10 : 0.055, t0 + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.05);
+    osc.connect(g); g.connect(A.destination);
+    osc.start(t0); osc.stop(t0 + 0.07);
+  }
+
+  return { audio, pluck, arpeggio, strum, click };
+})();
+
+__mod.render = (function () {
+  const { SHARP, degreeName, degreeColor, noteName, fretPos } = __mod.theory;
+  // Disegno del manico e dei diagrammi di posizione.
+
+
+  const MONO = 'JetBrains Mono,monospace';
+  const DOTS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
+
+  /** Ordine di disegno delle corde: di norma la piu' acuta in alto, come nelle tab. */
+  function stringOrder(count, flipped) {
+    const idx = Array.from({ length: count }, (_, i) => i);
+    return flipped ? idx : idx.reverse();
+  }
+
+  function fretboard(opts) {
+    const { chord, open, zoneFrom, zoneTo, frets, labels, flipped, dimOutside } = opts;
+    const ord = stringOrder(open.length, flipped);
+    const PT = 26, PB = 30, ROW = 34, W = 980, NUT = 82, BW = W - NUT - 16;
+    const H = PT + ROW * (open.length - 1) + PB;
+    const fx = f => NUT + (fretPos(f) / fretPos(frets)) * BW;
+    const cx = f => (f === 0 ? NUT - 17 : (fx(f - 1) + fx(f)) / 2);
+    const sy = r => PT + r * ROW;
+
+    let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+    s += `<rect x="${NUT}" y="${PT - 13}" width="${BW}" height="${ROW * (open.length - 1) + 26}" rx="4" fill="var(--wood)"/>`;
+
+    const zx1 = zoneFrom === 0 ? NUT - 34 : fx(zoneFrom - 1);
+    s += `<rect x="${zx1}" y="${PT - 16}" width="${fx(zoneTo) - zx1}" height="${ROW * (open.length - 1) + 32}" rx="5" fill="var(--root)" opacity=".10" stroke="var(--root)" stroke-opacity=".35"/>`;
+    s += `<rect x="${NUT - 4}" y="${PT - 13}" width="4" height="${ROW * (open.length - 1) + 26}" fill="var(--paper)" opacity=".72"/>`;
+
+    for (let f = 1; f <= frets; f++)
+      s += `<line x1="${fx(f)}" y1="${PT - 13}" x2="${fx(f)}" y2="${PT + ROW * (open.length - 1) + 13}" stroke="var(--fretwire)" stroke-width="${f < 6 ? 2 : 1.4}" opacity=".55"/>`;
+
+    const my = PT + ROW * (open.length - 1) / 2;
+    DOTS.filter(d => d <= frets).forEach(d => {
+      s += d % 12 === 0
+        ? `<circle cx="${cx(d)}" cy="${my - 11}" r="4" fill="var(--inlay)"/><circle cx="${cx(d)}" cy="${my + 11}" r="4" fill="var(--inlay)"/>`
+        : `<circle cx="${cx(d)}" cy="${my}" r="4" fill="var(--inlay)"/>`;
+    });
+
+    ord.forEach((si, row) => {
+      const y = sy(row);
+      s += `<line x1="${NUT - 38}" y1="${y}" x2="${fx(frets)}" y2="${y}" stroke="#B9B2A6" stroke-width="${1 + (open.length - 1 - si) * 0.55}" opacity=".5"/>`;
+      s += `<text x="14" y="${y + 4}" fill="var(--faint)" font-size="12" font-family="${MONO}">${SHARP[open[si] % 12]}</text>`;
+    });
+
+    for (let f = 0; f <= frets; f++) {
+      const inZone = f >= zoneFrom && f <= zoneTo;
+      s += `<text x="${cx(f)}" y="${H - 10}" text-anchor="middle" font-size="11" font-family="${MONO}" fill="${inZone ? 'var(--root)' : 'var(--faint)'}">${f}</text>`;
+    }
+
+    if (chord) {
+      const inShape = new Set((opts.highlight || []).map(n => n.si + ':' + n.f));
+      ord.forEach((si, row) => {
+        for (let f = 0; f <= frets; f++) {
+          const midi = open[si] + f;
+          const iv = chord.pcMap[midi % 12];
+          if (iv === undefined) continue;
+          const inZone = f >= zoneFrom && f <= zoneTo;
+          if (!inZone && !dimOutside) continue;
+          const picked = inShape.has(si + ':' + f);
+          const x = cx(f), y = sy(row);
+          const text = labels === 'degrees' ? degreeName(iv, chord) : noteName(midi % 12, chord.flats);
+          const col = degreeColor(iv);
+          const op = picked ? 1 : (inZone ? 0.4 : 0.13);
+          s += `<g opacity="${op}" style="cursor:pointer" data-midi="${midi}" class="note">`
+            + `<circle cx="${x}" cy="${y}" r="12.5" fill="${col}"/>`
+            + (picked ? `<circle cx="${x}" cy="${y}" r="16" fill="none" stroke="${col}" stroke-width="1.5"/>` : '')
+            + `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="${text.length > 2 ? 9.5 : 11}" font-weight="600" font-family="${MONO}" fill="#1A1512">${text}</text></g>`;
+        }
+      });
+    }
+    return s + '</svg>';
+  }
+
+  /** Diagramma piccolo della sola zona, con le note del voicing. */
+  function diagram(chord, voicing, opts) {
+    const { open, zoneFrom, zoneTo, flipped } = opts;
+    const ord = stringOrder(open.length, flipped);
+    const n = zoneTo - zoneFrom + 1;
+    const PL = 20, PT = 16, PB = 18, ROW = 21, CW = 30;
+    const W = PL + CW * n + 10, H = PT + ROW * (open.length - 1) + PB;
+    const cx = f => PL + CW * (f - zoneFrom) + CW / 2;
+    const sy = r => PT + r * ROW;
+
+    let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let f = zoneFrom; f <= zoneTo + 1; f++) {
+      const x = PL + CW * (f - zoneFrom);
+      s += `<line x1="${x}" y1="${PT - 7}" x2="${x}" y2="${PT + ROW * (open.length - 1) + 7}" stroke="var(--fretwire)" stroke-width="${f === 0 ? 3 : 1}" opacity="${f === 0 ? 0.8 : 0.35}"/>`;
+    }
+    ord.forEach((si, row) => {
+      const y = sy(row);
+      s += `<line x1="${PL - 6}" y1="${y}" x2="${PL + CW * n}" y2="${y}" stroke="#B9B2A6" stroke-width="1" opacity=".35"/>`;
+    });
+    for (let f = zoneFrom; f <= zoneTo; f++)
+      s += `<text x="${cx(f)}" y="${H - 5}" text-anchor="middle" font-size="9" font-family="${MONO}" fill="var(--faint)">${f}</text>`;
+
+    voicing.shape.forEach((note, i) => {
+      const row = ord.indexOf(note.si);
+      if (row < 0) return;
+      const x = cx(note.f), y = sy(row), text = degreeName(note.iv, chord);
+      s += `<circle cx="${x}" cy="${y}" r="9.5" fill="${degreeColor(note.iv)}"/>`
+        + `<text x="${x}" y="${y + 3.5}" text-anchor="middle" font-size="${text.length > 2 ? 7.5 : 9}" font-weight="600" font-family="${MONO}" fill="#1A1512">${text}</text>`;
+      if (!voicing.block)
+        s += `<text x="${x}" y="${y - 13}" text-anchor="middle" font-size="8" font-family="${MONO}" fill="var(--faint)">${i + 1}</text>`;
+    });
+    return s + '</svg>';
+  }
+
+  return { stringOrder, fretboard, diagram };
+})();
+
+__mod.tab = (function () {
+  const { SHARP } = __mod.theory;
+  const { stringOrder } = __mod.render;
+  // Esportazione in tab ASCII.
+
+
+
+  /**
+   * bars: [{ label: string[], columns: [{si, f}], block: boolean }]
+   * Un voicing "block" viene scritto come colonna unica, le note in verticale.
+   */
+  function render(bars, open, flipped, perLine, header) {
+    const ord = stringOrder(open.length, flipped);
+    const names = ord.map(si => (SHARP[open[si] % 12] + '  ').slice(0, 2));
+    const lines = [];
+
+    for (let start = 0; start < bars.length; start += perLine) {
+      const chunk = bars.slice(start, start + perLine);
+      let head = '   ';
+      const rows = ord.map((_, r) => names[r] + '|');
+
+      chunk.forEach(bar => {
+        const cells = bar.block ? groupBlocks(bar.columns) : bar.columns.map(c => [c]);
+        let w = 3;
+        cells.forEach(cell => cell.forEach(c => { w = Math.max(w, String(c.f).length + 2); }));
+
+        const label = bar.label.join(' ');
+        // La battuta non e' mai piu' stretta della sua etichetta.
+        const filler = Math.max(0, label.length + 1 - (cells.length * w + 3));
+        const width = cells.length * w + 3 + filler;
+        head += label + ' '.repeat(Math.max(1, width - label.length));
+
+        ord.forEach((si, r) => {
+          let line = '-';
+          cells.forEach(cell => {
+            const hit = cell.find(c => c.si === si);
+            const text = hit ? String(hit.f) : '';
+            const pad = w - text.length, left = Math.floor(pad / 2);
+            line += '-'.repeat(left) + text + '-'.repeat(pad - left);
+          });
+          rows[r] += line + '-'.repeat(filler) + '-|';
+        });
+      });
+
+      lines.push(head.replace(/\s+$/, ''));
+      rows.forEach(r => lines.push(r));
+      lines.push('');
+    }
+    return header + '\n\n' + lines.join('\n');
+  }
+
+  /** Le note di uno stesso voicing a blocchi vanno impilate nella stessa colonna. */
+  function groupBlocks(columns) {
+    const out = [];
+    let cur = [];
+    columns.forEach(c => {
+      if (c.newGroup && cur.length) { out.push(cur); cur = []; }
+      cur.push(c);
+    });
+    if (cur.length) out.push(cur);
+    return out;
+  }
+
+  return { render };
+})();
+
+__mod.ireal = (function () {
+
+  // Lettura dei link iReal Pro. Tutto avviene in locale, nel browser.
+  //
+  // Formato: irealb://Titolo=Autore=Stile=Tonalita=n=CORPO===...=Nome playlist
+  // Nel formato irealb il corpo e' preceduto dal marcatore 1r34LbKcu7 ed e' offuscato
+  // a blocchi di 50 caratteri; irealbook e' in chiaro.
+
+  const MARKER = '1r34LbKcu7';
+
+  function unshuffle50(block) {
+    const a = block.split('');
+    let t;
+    for (let i = 0; i < 5; i++) { t = a[i]; a[i] = a[49 - i]; a[49 - i] = t; }
+    for (let i = 10; i < 24; i++) { t = a[i]; a[i] = a[49 - i]; a[49 - i] = t; }
+    return a.join('');
+  }
+
+  function deobfuscate(s) {
+    let out = '';
+    while (s.length > 50) { out += unshuffle50(s.slice(0, 50)); s = s.slice(50); }
+    return out + s;
+  }
+
+  const CHORD_RE = /^([A-G][b#]?)((?:sus|alt|add|[0-9^\-oh+#b])*)(\/[A-G][b#]?)?/;
+
+  /** Dal corpo grezzo alle battute: [[ 'D-7' ], [ 'G7' ], ...] */
+  function readBody(body) {
+    const s = body.replace(/<[^>]*>/g, '').replace(/XyQ/g, ' ').replace(/\([^)]*\)/g, '');
+    const bars = [];
+    let cur = [];
+    const flush = () => { if (cur.length) { bars.push(cur); cur = []; } };
+
+    let i = 0;
+    while (i < s.length) {
+      const c = s[i];
+      if ('|[]{}Z'.includes(c)) { flush(); i++; continue; }
+      if (c === '*' || c === 'N') { i += 2; continue; }        // sezione, finale 1/2
+      if (c === 'T') { i += 3; continue; }                      // indicazione di tempo
+      if ('YQSUslfu,+. \n\t'.includes(c)) { i++; continue; }    // spaziature e segni
+      if (c === 'x') { if (bars.length) cur = cur.concat(bars[bars.length - 1]); i++; continue; }
+      if (c === 'r') {
+        const n = bars.length;
+        if (n >= 2) { bars.push(bars[n - 2].slice()); bars.push(bars[n - 1].slice()); }
+        i++; continue;
+      }
+      if (c === 'n' || c === 'p') { i++; continue; }             // N.C. e prolungamento
+      const m = CHORD_RE.exec(s.slice(i));
+      if (m && m[0]) { cur.push(m[1] + (m[2] || '') + (m[3] || '')); i += m[0].length; continue; }
+      i++;
+    }
+    flush();
+    return bars;
+  }
+
+  /** Restituisce l'elenco dei brani contenuti nel link. */
+  function parse(text) {
+    let s = (text || '').trim();
+    try { s = decodeURIComponent(s.replace(/\+/g, '%20')); } catch (e) { /* link gia' in chiaro */ }
+    const modern = /^irealb:\/\//.test(s);
+    s = s.replace(/^irealb(ook)?:\/\//, '');
+
+    const songs = [];
+    s.split('===').forEach(part => {
+      const f = part.split('=');
+      if (f.length < 6) return;
+      let body = f[5];
+      if (!body) return;
+      if (modern || body.includes(MARKER)) {
+        const k = body.indexOf(MARKER);
+        if (k >= 0) body = body.slice(k + MARKER.length);
+        body = deobfuscate(body);
+      }
+      const bars = readBody(body).filter(b => b.length);
+      if (bars.length > 1) {
+        songs.push({ title: f[0] || 'senza titolo', composer: f[1] || '', key: f[3] || '', bars });
+      }
+    });
+    return songs;
+  }
+
+  /** Le battute nel formato accettato dal campo Griglia. */
+  function toGrid(song) {
+    return song.bars.map(b => b.join(',')).join(' ');
+  }
+
+  return { readBody, parse, toGrid };
+})();
+
+__mod.library = (function () {
+
+  // Forme armoniche generiche e brani tradizionali di pubblico dominio.
+  // Gli standard protetti da diritto d'autore non sono inclusi: per quelli
+  // si usa l'importazione dai propri file iReal Pro.
+
+  const LIBRARY = [
+    ['Blues maggiore, 12 battute (Fa)', 'F7 Bb7 F7 F7 Bb7 Bb7 F7 F7 C7 Bb7 F7 C7'],
+    ['Blues jazz, 12 battute (Sib)', 'Bb7 Eb7 Bb7 F-7,Bb7 Eb7 Edim7 Bb7 D-7,G7 C-7 F7 Bb7,G7 C-7,F7'],
+    ['Blues minore (Do)', 'C-7 C-7 C-7 C-7 F-7 F-7 C-7 C-7 Ab7 G7 C-7 G7'],
+    ['Rhythm changes, sezione A (Sib)', 'Bb^7,G-7 C-7,F7 Bb^7,G-7 C-7,F7 Bb7 Eb7,Edim7 Bb^7,F7 Bb6'],
+    ['II-V-I che scende per quarte', 'D-7 G7 C^7 C^7 G-7 C7 F^7 F^7 C-7 F7 Bb^7 Bb^7 F-7 Bb7 Eb^7 Eb^7'],
+    ['II-V-I minore', 'D-7b5 G7b9 C-6 C-6 G-7b5 C7b9 F-6 F-6'],
+    ['Turnaround I-VI-II-V (Do)', 'C^7 A7 D-7 G7'],
+    ['Giro anni Cinquanta I-vi-IV-V (Do)', 'C A-7 F G7'],
+    ['Cadenza andalusa (La minore)', 'A- G F E7'],
+    ['Ciclo di terze maggiori', 'C^7 Eb7 Ab^7 B7 E^7 G7 C^7 C^7'],
+    ['Vamp dorico a due accordi', 'D-7 D-7 D-7 D-7 E-7 E-7 E-7 E-7'],
+    ['Canone di Pachelbel (Re)', 'D A B- F# G D G A'],
+    ['House of the Rising Sun (trad.)', 'A- C D F A- C E7 E7'],
+    ['Greensleeves (trad.)', 'A- C G E7 A- C E7 A-'],
+    ['St. James Infirmary (trad.)', 'D- A7 D- D7 G- D- A7 D-'],
+    ['Amazing Grace (trad.)', 'G G C G G G D7 D7 G G C G G D7 G G'],
+    ['Scarborough Fair (trad.)', 'A- A- C A- A- G A- A-'],
+    ['Sinner Man, vamp minore (trad.)', 'A- A- A- A- D- D- A- A- E7 D- A- A-']
+  ];
+
+  return { LIBRARY };
+})();
+
+__mod.app = (function () {
+  const V = __mod.voicings;
+  const A = __mod.audio;
+  const R = __mod.render;
+  const Tab = __mod.tab;
+  const IReal = __mod.ireal;
+  const { TUNINGS, parseChord, degreeName, noteName } = __mod.theory;
+  const { LIBRARY } = __mod.library;
+  // Stato dell'applicazione e collegamento fra i moduli.
+
+
+
+  const $ = id => document.getElementById(id);
+
+  const state = {
+    grid: [],            // [{ ok, chord, raw, bar, dur, first }]
+    index: 0,
+    tuning: '4',
+    zoneFrom: 0,
+    zoneWidth: 5,
+    frets: 15,
+    labels: 'degrees',
+    flipped: false,
+    dimOutside: true,
+    vtype: 'arp',
+    maxSpan: 4,
+    pick: {},            // indice del voicing scelto per ogni accordo
+    playing: false,
+    bpm: 92,
+    beats: 4,
+    playMode: 'voicing',
+    metronome: true,
+    lockZone: false,
+    timer: null,
+    songs: []
+  };
+
+  const open = () => TUNINGS[state.tuning].open;
+  const zoneTo = () => Math.min(state.zoneFrom + state.zoneWidth - 1, state.frets);
+
+  let cache = new Map();
+  function candidates(i) {
+    const item = state.grid[i];
+    if (!item || !item.ok) return [];
+    const key = i + '|' + state.tuning + '|' + state.zoneFrom + '|' + state.zoneWidth + '|' + state.vtype + '|' + state.maxSpan;
+    if (!cache.has(key)) {
+      cache.set(key, V.generate(item.chord, open(), state.zoneFrom, zoneTo(), state.vtype, state.maxSpan));
+    }
+    return cache.get(key);
+  }
+  function chosen(i) {
+    const list = candidates(i);
+    if (!list.length) return null;
+    const k = state.pick[i];
+    return list[k] !== undefined ? list[k] : list[0];
+  }
+
+  // ---------------------------------------------------------------- griglia
+
+  function parseGrid() {
+    const text = $('seq').value;
+    const tokens = text.replace(/\|/g, ' ').split(/\s+/).filter(Boolean);
+    const bars = [];
+    tokens.forEach(t => {
+      // Un trattino seguito da una lettera di nota separa le battute: G-A-D.
+      t.split(/[-\u2212\u2013](?=[A-G])/).forEach(part => {
+        const chords = part.split(',').filter(Boolean);
+        if (chords.length) bars.push(chords);
+      });
+    });
+
+    state.grid = [];
+    state.pick = {};
+    cache = new Map();
+    bars.forEach((chords, bar) => chords.forEach((raw, k) => {
+      const common = { bar, dur: 1 / chords.length, first: k === 0 };
+      if (/^(n\.?c\.?)$/i.test(raw)) { state.grid.push({ ok: false, rest: true, raw: 'N.C.', ...common }); return; }
+      const chord = parseChord(raw);
+      state.grid.push(chord ? { ok: true, chord, ...common } : { ok: false, raw, ...common });
+    }));
+    const first = state.grid.findIndex(x => x.ok);
+    state.index = first < 0 ? 0 : first;
+  }
+
+  // ---------------------------------------------------------------- zone
+
+  function coverage(chord, from) {
+    const seen = new Set();
+    open().forEach(o => {
+      for (let f = from; f < from + state.zoneWidth; f++) {
+        const iv = chord.pcMap[(o + f) % 12];
+        if (iv !== undefined && iv >= 0) seen.add(iv);
+      }
+    });
+    return seen.size / chord.intervals.length;
+  }
+  function bestZone(items) {
+    const ok = items.filter(x => x.ok);
+    if (!ok.length) return null;
+    let best = null, score = -1;
+    for (let from = 0; from <= state.frets - state.zoneWidth + 1; from++) {
+      const s = Math.min(...ok.map(x => coverage(x.chord, from)));
+      if (s > score + 1e-9) { score = s; best = from; }
+    }
+    return best;
+  }
+  function setZone(from, quiet) {
+    state.zoneFrom = from;
+    $('zs').value = from;
+    $('zsv').textContent = from;
+    cache = new Map();
+    quiet ? renderStrip() : render();
+  }
+
+  // ---------------------------------------------------------------- disegno
+
+  function renderChips() {
+    let html = '', bar = -1;
+    state.grid.forEach((x, i) => {
+      if (x.bar !== bar && i > 0) html += '<span class="bl">|</span>';
+      bar = x.bar;
+      if (x.ok) html += `<button class="chip${i === state.index ? ' on' : ''}" data-pick="${i}">${x.chord.symbol}</button>`;
+      else if (x.rest) html += `<span class="chip rest">N.C.</span>`;
+      else html += `<span class="chip bad" title="non riconosciuto">${x.raw}</span>`;
+    });
+    $('chips').innerHTML = html;
+  }
+
+  function renderStrip() {
+    const ok = state.grid.filter(x => x.ok);
+    let html = '';
+    for (let from = 0; from <= state.frets - state.zoneWidth + 1; from++) {
+      const s = ok.length ? Math.min(...ok.map(x => coverage(x.chord, from))) : 1;
+      html += `<button class="cell${from === state.zoneFrom ? ' sel' : ''}" data-zone="${from}"`
+        + ` style="background:rgba(233,176,74,${(0.12 + s * 0.78).toFixed(2)})"`
+        + ` title="tasti ${from}\u2013${from + state.zoneWidth - 1}, copertura ${Math.round(s * 100)}%">${from}</button>`;
+    }
+    $('strip').innerHTML = html;
+  }
+
+  function renderBoard() {
+    const item = state.grid[state.index];
+    const v = chosen(state.index);
+    $('board').innerHTML = R.fretboard({
+      chord: item && item.ok ? item.chord : null,
+      open: open(), zoneFrom: state.zoneFrom, zoneTo: zoneTo(), frets: state.frets,
+      labels: state.labels, flipped: state.flipped, dimOutside: state.dimOutside,
+      highlight: v ? v.shape : []
+    });
+  }
+
+  function renderVoicings() {
+    const item = state.grid[state.index];
+    const type = V.typeById(state.vtype);
+    $('vtitle').innerHTML = `Voicing <small>${type.name.toLowerCase()} \u00b7 tasti ${state.zoneFrom}\u2013${zoneTo()}`
+      + `${state.zoneFrom === 0 ? ', corde a vuoto incluse' : ''}</small>`;
+
+    if (!item || !item.ok) { $('voices').innerHTML = '<p class="empty">Nessun accordo selezionato.</p>'; return; }
+
+    const list = candidates(state.index);
+    if (!list.length) {
+      $('voices').innerHTML = `<p class="empty">Nessun ${type.name.toLowerCase()} disponibile per ${item.chord.symbol}`
+        + ` fra il tasto ${state.zoneFrom} e il ${zoneTo()}. Allarga la zona, aumenta l\u2019apertura della mano o cambia tipo di voicing.</p>`;
+      return;
+    }
+
+    const cur = chosen(state.index);
+    const prev = previousVoicing(state.index);
+
+    $('voices').innerHTML = list.map((v, k) => {
+      const mv = V.motion(prev, v);
+      return `<div class="voice${cur === v ? ' sel' : ''}" data-voicing="${k}">
+        <h4>${v.label}</h4>
+        <div class="meta">${V.describe(v, item.chord)} \u00b7 apertura ${v.span} ${v.span === 1 ? 'tasto' : 'tasti'}</div>
+        ${R.diagram(item.chord, v, { open: open(), zoneFrom: state.zoneFrom, zoneTo: zoneTo(), flipped: state.flipped })}
+        <div class="foot">
+          <span class="deg">${V.degrees(v, item.chord)}</span>
+          <span class="mv">${mv === null ? '' : 'moto ' + mv}</span>
+          <button class="play" data-hear="${k}" aria-label="ascolta">&#9654;</button>
+        </div></div>`;
+    }).join('');
+  }
+
+  function previousVoicing(i) {
+    for (let k = i - 1; k >= 0; k--) if (state.grid[k].ok) return chosen(k);
+    return null;
+  }
+
+  function render() {
+    renderChips(); renderStrip(); renderBoard(); renderVoicings();
+  }
+
+  // ---------------------------------------------------------------- suono
+
+  function hear(v, seconds) {
+    if (!v) return;
+    const midis = v.shape.map(n => n.midi);
+    if (v.block) A.strum(midis, Math.min(seconds || 1.6, 2.2));
+    else A.arpeggio(midis, Math.min((seconds || 1.6) / midis.length, 0.42));
+  }
+
+  function select(i) {
+    state.index = i;
+    renderChips(); renderBoard(); renderVoicings();
+    if (!state.playing) hear(chosen(i), 1.2);
+  }
+
+  // ---------------------------------------------------------------- trasporto
+
+  function tick() {
+    if (!state.playing) return;
+    const item = state.grid[state.index];
+    if (!item) { stop(); return; }
+    const seconds = (60 / state.bpm) * state.beats * (item.dur || 1);
+
+    if (!state.lockZone && item.ok) {
+      const b = bestZone([item]);
+      if (b !== null && b !== state.zoneFrom) setZone(b, true);
+    }
+    renderChips(); renderBoard(); renderVoicings();
+
+    if (state.metronome) {
+      const beats = Math.max(1, Math.round(state.beats * (item.dur || 1)));
+      for (let b = 0; b < beats; b++) A.click(b * (60 / state.bpm), item.first && b === 0);
+    }
+    if (item.ok && state.playMode !== 'mute') {
+      const v = chosen(state.index);
+      if (v) {
+        if (state.playMode === 'root') A.pluck(v.shape[0].midi, 0, Math.min(seconds * 0.9, 1.6), 0.3);
+        else hear(v, seconds * 0.92);
+      }
+    }
+    state.timer = setTimeout(() => {
+      state.index = (state.index + 1) % state.grid.length;
+      tick();
+    }, seconds * 1000);
+  }
+  function stop() {
+    state.playing = false;
+    clearTimeout(state.timer);
+    $('pp').innerHTML = '&#9654; Play';
+  }
+  function toggleTransport() {
+    state.playing = !state.playing;
+    $('pp').innerHTML = state.playing ? '&#9632; Stop' : '&#9654; Play';
+    if (state.playing) { A.audio(); tick(); } else clearTimeout(state.timer);
+  }
+
+  // ---------------------------------------------------------------- voice leading
+
+  function optimiseVoiceLeading() {
+    const lists = state.grid.map((x, i) => (x.ok ? candidates(i) : []));
+    const picks = V.optimise(lists);
+    picks.forEach((p, i) => { if (p >= 0) state.pick[i] = p; });
+    render();
+    const total = totalMotion();
+    $('vlinfo').textContent = total === null ? '' : `moto complessivo: ${total} semitoni`;
+  }
+  function totalMotion() {
+    let sum = 0, prev = null, seen = false;
+    state.grid.forEach((x, i) => {
+      if (!x.ok) return;
+      const v = chosen(i);
+      if (!v) return;
+      if (prev) { sum += V.motion(prev, v); seen = true; }
+      prev = v;
+    });
+    return seen ? sum : null;
+  }
+
+  // ---------------------------------------------------------------- tab
+
+  function buildTab() {
+    const bars = [];
+    let current = null, barIndex = -1;
+    state.grid.forEach((item, i) => {
+      if (item.bar !== barIndex) { current = { label: [], columns: [], block: false }; bars.push(current); barIndex = item.bar; }
+      if (!item.ok) { current.label.push(item.raw); return; }
+      current.label.push(item.chord.symbol);
+      const v = chosen(i);
+      if (!v) return;
+      current.block = current.block || v.block;
+      v.shape.forEach((n, k) => current.columns.push({ si: n.si, f: n.f, newGroup: v.block && k === 0 }));
+    });
+
+    const header = `griglia: ${$('seq').value}\n`
+      + `basso: ${TUNINGS[state.tuning].label}   zona: tasti ${state.zoneFrom}-${zoneTo()}   `
+      + `voicing: ${V.typeById(state.vtype).name}`;
+    $('tab').textContent = Tab.render(bars, open(), state.flipped, +$('perline').value, header);
+  }
+
+  // ---------------------------------------------------------------- eventi
+
+  function loadGrid(text, autozone) {
+    $('seq').value = text;
+    parseGrid();
+    if (autozone) { const b = bestZone(state.grid); if (b !== null) setZone(b, true); }
+    render();
+  }
+
+  function init() {
+    $('lib').innerHTML = LIBRARY.map((x, i) => `<option value="${i}">${x[0]}</option>`).join('');
+    $('vtype').innerHTML = V.VOICING_TYPES.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    $('tun').innerHTML = Object.entries(TUNINGS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+
+    $('go').onclick = () => { parseGrid(); render(); };
+    $('seq').addEventListener('keydown', e => { if (e.key === 'Enter') { parseGrid(); render(); } });
+    $('libgo').onclick = () => loadGrid(LIBRARY[+$('lib').value][1], true);
+
+    $('vtype').onchange = e => {
+      state.vtype = e.target.value;
+      state.pick = {}; cache = new Map();
+      $('vhint').textContent = V.typeById(state.vtype).hint;
+      $('spanwrap').style.display = V.typeById(state.vtype).block ? '' : 'none';
+      render();
+    };
+    $('span').oninput = e => {
+      state.maxSpan = +e.target.value;
+      $('spanv').textContent = state.maxSpan + ' tasti';
+      state.pick = {}; cache = new Map(); render();
+    };
+    $('vl').onclick = optimiseVoiceLeading;
+
+    $('tun').onchange = e => { state.tuning = e.target.value; state.pick = {}; cache = new Map(); render(); };
+    $('zs').oninput = e => setZone(+e.target.value);
+    $('zw').oninput = e => {
+      state.zoneWidth = +e.target.value;
+      $('zwv').textContent = state.zoneWidth + ' tasti';
+      $('zs').max = state.frets - state.zoneWidth + 1;
+      state.pick = {}; cache = new Map();
+      if (state.zoneFrom > state.frets - state.zoneWidth + 1) setZone(state.frets - state.zoneWidth + 1);
+      else render();
+    };
+    $('tlab').onclick = e => {
+      state.labels = state.labels === 'degrees' ? 'notes' : 'degrees';
+      e.target.textContent = state.labels === 'degrees' ? 'Gradi' : 'Note';
+      e.target.classList.toggle('on', state.labels === 'degrees');
+      render();
+    };
+    $('tflip').onclick = e => { state.flipped = !state.flipped; e.target.classList.toggle('on', state.flipped); render(); };
+    $('tdim').onclick = e => { state.dimOutside = !state.dimOutside; e.target.classList.toggle('on', state.dimOutside); render(); };
+
+    $('pp').onclick = toggleTransport;
+    $('bpm').oninput = e => { state.bpm = +e.target.value; $('bpmv').textContent = state.bpm + ' bpm'; };
+    $('beats').onchange = e => { state.beats = +e.target.value; };
+    $('mode').onchange = e => { state.playMode = e.target.value; };
+    $('clk').onclick = e => { state.metronome = !state.metronome; e.target.classList.toggle('on', state.metronome); };
+    $('lock').onclick = e => { state.lockZone = !state.lockZone; e.target.classList.toggle('on', state.lockZone); };
+
+    $('mktab').onclick = buildTab;
+    $('perline').onchange = buildTab;
+    $('cptab').onclick = () => {
+      navigator.clipboard && navigator.clipboard.writeText($('tab').textContent).then(() => {
+        $('cptab').textContent = 'Copiato';
+        setTimeout(() => { $('cptab').textContent = 'Copia'; }, 1200);
+      });
+    };
+    $('dltab').onclick = () => {
+      const blob = new Blob([$('tab').textContent], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'manico-tab.txt';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    };
+
+    $('irgo').onclick = () => {
+      const info = $('irinfo'), list = $('irlist');
+      const raw = $('ireal').value.trim();
+      if (!raw) { info.innerHTML = '<span class="err">Incolla prima un link.</span>'; return; }
+      let songs = [];
+      try { songs = IReal.parse(raw); } catch (e) { songs = []; }
+      if (!songs.length) {
+        list.style.display = 'none';
+        info.innerHTML = '<span class="err">Non sono riuscito a leggere il link.</span> '
+          + 'Deve iniziare con irealb:// oppure irealbook://. In alternativa scrivi gli accordi a mano nel campo Griglia.';
+        return;
+      }
+      state.songs = songs;
+      list.style.display = songs.length > 1 ? '' : 'none';
+      list.innerHTML = songs.map((s, i) => `<option value="${i}">${s.title}${s.composer ? ' \u2014 ' + s.composer : ''}</option>`).join('');
+      loadSong(0);
+    };
+    $('irlist').onchange = e => loadSong(+e.target.value);
+
+    // Delega degli eventi sui contenuti ridisegnati.
+    $('chips').addEventListener('click', e => {
+      const b = e.target.closest('[data-pick]');
+      if (b) select(+b.dataset.pick);
+    });
+    $('strip').addEventListener('click', e => {
+      const b = e.target.closest('[data-zone]');
+      if (b) setZone(+b.dataset.zone);
+    });
+    $('voices').addEventListener('click', e => {
+      const hearBtn = e.target.closest('[data-hear]');
+      if (hearBtn) { e.stopPropagation(); hear(candidates(state.index)[+hearBtn.dataset.hear], 1.6); return; }
+      const card = e.target.closest('[data-voicing]');
+      if (card) {
+        state.pick[state.index] = +card.dataset.voicing;
+        renderBoard(); renderVoicings();
+        hear(chosen(state.index), 1.4);
+      }
+    });
+    $('board').addEventListener('click', e => {
+      const g = e.target.closest('[data-midi]');
+      if (g) A.pluck(+g.dataset.midi);
+    });
+
+    document.addEventListener('keydown', e => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+      if (e.code === 'Space') { e.preventDefault(); toggleTransport(); }
+      if (e.key === 'ArrowRight' && state.index < state.grid.length - 1) select(state.index + 1);
+      if (e.key === 'ArrowLeft' && state.index > 0) select(state.index - 1);
+    });
+
+    $('vhint').textContent = V.typeById(state.vtype).hint;
+    $('spanwrap').style.display = 'none';
+    parseGrid();
+    render();
+  }
+
+  function loadSong(k) {
+    const song = state.songs[k];
+    if (!song) return;
+    loadGrid(IReal.toGrid(song), true);
+    $('irinfo').textContent = `${song.title}${song.composer ? ' \u2014 ' + song.composer : ''} \u00b7 tonalit\u00e0 ${song.key} \u00b7 ${song.bars.length} battute`;
+  }
+
+  init();
+
+  return {  };
+})();
+
+})();
+</script>
+</body>
+</html>
