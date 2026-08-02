@@ -32,6 +32,13 @@ jobs:
         run: |
           set -euo pipefail
 
+          echo "Payload chunk sizes:"
+          wc -c .manico5-part-00 .manico5-part-01 .manico5-part-02 \
+                .manico5-part-03 .manico5-part-04 .manico5-part-05
+          echo "Payload chunk hashes:"
+          sha256sum .manico5-part-00 .manico5-part-01 .manico5-part-02 \
+                    .manico5-part-03 .manico5-part-04 .manico5-part-05
+
           test "$(wc -c < .manico5-part-00)" -eq 12000
           test "$(wc -c < .manico5-part-01)" -eq 12000
           test "$(wc -c < .manico5-part-02)" -eq 12000
