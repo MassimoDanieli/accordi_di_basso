@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" data-versione="3.3.0">
+<html lang="it" data-versione="3.3.1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -149,7 +149,9 @@ button.chip:hover{border-color:var(--faint)}
 .vgrip-txt{writing-mode:vertical-rl;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 body[data-pannello="no"] .vpanel{display:none}
 body[data-pannello="no"] .vgrip-ch{transform:rotate(180deg)}
-.left{display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-width:0;min-height:0}
+/* Quattro righe: titolo del brano, nastro, MANICO (elastico), zona.
+   La riga del titolo mancava e l'elastico era finito al nastro: manico piccolo. */
+.left{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;min-width:0;min-height:0}
 .board{display:flex;align-items:center;justify-content:center;padding:8px 12px;min-height:180px;overflow:auto}
 .bwrap{position:relative;display:inline-block;max-width:100%}
 .flow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
@@ -199,6 +201,8 @@ body[data-pannello="no"] .vgrip-ch{transform:rotate(180deg)}
 /* ----------------------------------------------------------------- attrezzi */
 .tools{display:flex;align-items:center;gap:10px;padding:10px 18px;flex:none;
   border-top:2px solid var(--root);background:var(--panel)}
+.tools .add{border-color:var(--root);color:var(--root);font-weight:500}
+.tools .add:hover{background:var(--root);color:#221803}
 .tools a,.tools button{font-size:13.5px;font-weight:500;color:var(--paper);text-decoration:none;
   border:1px solid var(--line-2);border-radius:var(--r);padding:9px 16px;background:var(--panel-2)}
 .tools a:hover,.tools button:hover{color:var(--root);border-color:var(--root);background:var(--panel)}
@@ -342,7 +346,7 @@ html{scroll-behavior:smooth}
     <button data-lang="en" title="English" aria-label="English"><span class="fl">🇬🇧</span></button>
   </span>
   <button id="tema" class="tog">Chiaro</button>
-  <span class="ver">v3.3.0</span>
+  <span class="ver">v3.3.1</span>
 </header>
 
 <main class="stage">
@@ -391,8 +395,8 @@ html{scroll-behavior:smooth}
 </main>
 
 <nav class="tools">
-  <button data-apre="dlgforme" data-t="bar.forms">Forme</button>
-  <button data-apre="dlgireal" data-t="bar.ireal">iReal</button>
+  <button data-apre="dlgireal" data-t="bar.ireal" class="add">+ Aggiungi brani</button>
+  <button data-apre="dlgforme" data-t="bar.forms">Canzoniere</button>
   <button data-apre="dlgtab" data-t="bar.tab">Tab</button>
   <button data-apre="dlgset" data-t="bar.settings">Impostazioni</button>
   <a href="https://basso.massimodanieli.com/" data-t="bar.guide">Guida</a>
@@ -1682,8 +1686,8 @@ __mod.i18n = (function () {
       'bar.stop': 'Stop',
       'bar.tempo': 'Tempo',
       'bar.guide': 'Guida',
-      'bar.forms': 'Forme',
-      'bar.ireal': 'iReal',
+      'bar.forms': 'Canzoniere',
+      'bar.ireal': '+ Aggiungi brani',
       'bar.tab': 'Tab',
       'bar.settings': 'Impostazioni',
       'bar.gridTitle': 'Spazio fra le battute, virgola dentro la battuta',
@@ -1789,8 +1793,8 @@ __mod.i18n = (function () {
       'bar.stop': 'Stop',
       'bar.tempo': 'Tempo',
       'bar.guide': 'Guide',
-      'bar.forms': 'Forms',
-      'bar.ireal': 'iReal',
+      'bar.forms': 'Songbook',
+      'bar.ireal': '+ Add songs',
       'bar.tab': 'Tab',
       'bar.settings': 'Settings',
       'bar.gridTitle': 'Space between bars, comma within a bar',

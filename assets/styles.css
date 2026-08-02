@@ -138,7 +138,9 @@ button.chip:hover{border-color:var(--faint)}
 .vgrip-txt{writing-mode:vertical-rl;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 body[data-pannello="no"] .vpanel{display:none}
 body[data-pannello="no"] .vgrip-ch{transform:rotate(180deg)}
-.left{display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-width:0;min-height:0}
+/* Quattro righe: titolo del brano, nastro, MANICO (elastico), zona.
+   La riga del titolo mancava e l'elastico era finito al nastro: manico piccolo. */
+.left{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;min-width:0;min-height:0}
 .board{display:flex;align-items:center;justify-content:center;padding:8px 12px;min-height:180px;overflow:auto}
 .bwrap{position:relative;display:inline-block;max-width:100%}
 .flow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
@@ -188,6 +190,8 @@ body[data-pannello="no"] .vgrip-ch{transform:rotate(180deg)}
 /* ----------------------------------------------------------------- attrezzi */
 .tools{display:flex;align-items:center;gap:10px;padding:10px 18px;flex:none;
   border-top:2px solid var(--root);background:var(--panel)}
+.tools .add{border-color:var(--root);color:var(--root);font-weight:500}
+.tools .add:hover{background:var(--root);color:#221803}
 .tools a,.tools button{font-size:13.5px;font-weight:500;color:var(--paper);text-decoration:none;
   border:1px solid var(--line-2);border-radius:var(--r);padding:9px 16px;background:var(--panel-2)}
 .tools a:hover,.tools button:hover{color:var(--root);border-color:var(--root);background:var(--panel)}

@@ -3,6 +3,20 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [3.3.1] — 2026-08-02
+
+### Corretto
+- Il manico era tornato piccolo: dalla 2.3.4 la riga del titolo aveva rubato la
+  riga elastica della colonna (griglia a tre righe per quattro elementi), il
+  riquadro del manico crollava all'altezza minima e il ridimensionamento lo
+  restringeva di conseguenza. Ora la colonna ha quattro righe e l'elastico e'
+  di nuovo del manico.
+
+### Modificato
+- Il pulsante "iReal" si chiama "+ Aggiungi brani" ("+ Add songs") ed e' evidenziato
+  in ambra: dice cosa fa, non come si chiama il formato. "Forme" si chiama
+  "Canzoniere", come la finestra che apre. Guide aggiornate nelle due lingue.
+
 ## [3.3.0] — 2026-08-02
 
 ### Aggiunto
