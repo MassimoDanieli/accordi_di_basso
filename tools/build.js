@@ -1,8 +1,6 @@
-// Costruisce dist/manico.html: un unico file autonomo, con il CSS e tutti i moduli
-// incorporati. Serve per aprire il tool con un doppio clic, senza server, e per
-// distribuirlo come allegato singolo. I sorgenti restano quelli in src/.
-//
-//   node tools/build.js
+// Costruisce assets/app.bundle.js e dist/manico.html.
+// Il file in dist e' autonomo: CSS, motore principale e importatore MP3 sono
+// incorporati, quindi non dipende da file locali accanto alla pagina.
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -37,7 +35,7 @@ function wrap(name) {
     return `${kind} ${id}`;
   });
 
-  const body = src.split('\n').map(l => (l ? '  ' + l : l)).join('\n');
+  const body = src.split('\n').map(line => (line ? `  ${line}` : line)).join('\n');
   return `__mod.${name} = (function () {\n${prelude.join('\n')}\n${body}\n`
     + `  return { ${exported.join(', ')} };\n})();`;
 }
@@ -47,18 +45,28 @@ const bundle = ['(function () {', '"use strict";', 'const __mod = {};']
   .concat(['})();'])
   .join('\n\n');
 
-// Il sito carica questo bundle, non i moduli: un file solo, una versione sola.
-// Elimina alla radice il rischio di moduli misti fra versioni in cache.
+// Il sito carica questo bundle, non i singoli moduli del motore principale.
 writeFileSync(join(root, 'assets', 'app.bundle.js'), bundle);
 
 const css = readFileSync(join(root, 'assets', 'styles.css'), 'utf8');
+const audioUi = readFileSync(join(root, 'src', 'audio-import-ui.js'), 'utf8');
+const audioTranscriber = readFileSync(join(root, 'src', 'audio-transcriber.js'), 'utf8');
+let audioImportPage = readFileSync(join(root, 'audio-import.html'), 'utf8')
+  .replace(/<script src="src\/audio-transcriber\.js[^"]*"><\/script>/,
+    `<script>\n${audioTranscriber}\n<\/script>`);
+
+// Una stringa dentro <script> non deve contenere una chiusura script letterale.
+const audioImportLiteral = JSON.stringify(audioImportPage).replace(/<\/script/gi, '<\\/script');
+const standaloneAudio = `<script>\nwindow.MANICO_AUDIO_IMPORT_SRCDOC = ${audioImportLiteral};\n<\/script>\n`
+  + `<script>\n${audioUi}\n<\/script>`;
 
 let html = readFileSync(join(root, 'app.html'), 'utf8')
   .replace(/<link rel="stylesheet" href="assets\/styles\.css[^"]*">/, `<style>\n${css}\n</style>`)
-  .replace(/<script src="assets\/app\.bundle\.js[^"]*"><\/script>/, `<script>\n${bundle}\n</script>`)
+  .replace(/<script src="src\/audio-import-ui\.js[^"]*"><\/script>/, standaloneAudio)
+  .replace(/<script src="assets\/app\.bundle\.js[^"]*"><\/script>/, `<script>\n${bundle}\n<\/script>`)
   // Nel file unico la guida non e' accanto: si punta al sito.
   .replace(/href="index\.html"/g, 'href="https://basso.massimodanieli.com/"')
-  .replace(/\?v=[0-9.]+/g, '');
+  .replace(/\?v=[^"'<>\s]+/g, '');
 
 mkdirSync(join(root, 'dist'), { recursive: true });
 writeFileSync(join(root, 'dist', 'manico.html'), html);
