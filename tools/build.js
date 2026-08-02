@@ -66,7 +66,8 @@ let html = readFileSync(join(root, 'app.html'), 'utf8')
   .replace(/<script src="assets\/app\.bundle\.js[^"]*"><\/script>/, `<script>\n${bundle}\n<\/script>`)
   // Nel file unico la guida non e' accanto: si punta al sito.
   .replace(/href="index\.html"/g, 'href="https://basso.massimodanieli.com/"')
-  .replace(/\?v=[^"'<>\s]+/g, '');
+  // Il backtick e' escluso: altrimenti si mangia la chiusura dei template literal.
+  .replace(/\?v=[^"'`<>\s]+/g, '');
 
 mkdirSync(join(root, 'dist'), { recursive: true });
 writeFileSync(join(root, 'dist', 'manico.html'), html);
