@@ -4,38 +4,15 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-const version = pkg.version;
-const htmlFiles = ['app.html', 'index.html', 'index.en.html', 'audio-import.html'];
-const publicAssets = [
-  'assets/styles.css',
-  'assets/app.bundle.js',
-  'src/audio-import-ui.js',
-  'src/audio-transcriber.js',
-  'src/theme.js'
-];
-const assetPattern = new RegExp(`(${publicAssets.map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\?v=[^"'<>\\s]+`, 'g');
-
-for (const name of htmlFiles) {
-  const path = join(root, name);
+const version = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
+for (const filename of ['index.html', 'app.html', 'index.en.html']) {
+  const path = join(root, filename);
   let html = readFileSync(path, 'utf8');
-
-  if (/data-versione="[^"]*"/.test(html)) {
-    html = html.replace(/data-versione="[^"]*"/g, `data-versione="${version}"`);
-  } else {
-    html = html.replace(/<html([^>]*)>/, `<html$1 data-versione="${version}">`);
-  }
-
   html = html
-    .replace(assetPattern, (_, asset) => `${asset}?v=${version}`)
-    .replace(/<span class="ver">v[^<]+<\/span>/g, `<span class="ver">v${version}</span>`);
-
+    .replace(/data-versione="[^"]+"/g, `data-versione="${version}"`)
+    .replace(/assets\/styles\.css\?v=[^"']+/g, `assets/styles.css?v=${version}`)
+    .replace(/assets\/app\.bundle\.js\?v=[^"']+/g, `assets/app.bundle.js?v=${version}`);
   writeFileSync(path, html);
 }
-
-execFileSync(process.execPath, [join(root, 'tools', 'build.js')], {
-  cwd: root,
-  stdio: 'inherit'
-});
-
-console.log(`Release ${version} sincronizzata e costruita.`);
+execFileSync(process.execPath, [join(root, 'tools', 'build.js')], { cwd: root, stdio: 'inherit' });
+console.log(`Release ${version} built.`);

@@ -1,15 +1,15 @@
 {
   "name": "manico",
-  "version": "4.4.1",
-  "description": "Visualizzatore di voicing e posizioni sul manico del basso elettrico",
+  "version": "5.0.0",
+  "description": "Trascrittore locale di linee di basso da registrazioni audio",
   "repository": { "type": "git", "url": "https://github.com/MassimoDanieli/accordi_di_basso.git" },
   "homepage": "https://basso.massimodanieli.com/",
   "type": "module",
   "private": true,
   "scripts": {
     "dev": "npx --yes serve . -l 8080",
-    "release": "node tools/release.js",
     "build": "node tools/build.js",
+    "release": "node tools/release.js",
     "check:release": "node tools/check-release.js",
     "test": "node test/smoke.test.js"
   },
