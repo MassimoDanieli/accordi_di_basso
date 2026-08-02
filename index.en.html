@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-versione="3.7.0">
+<html lang="en" data-versione="3.9.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,600..700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=3.7.0">
+<link rel="stylesheet" href="assets/styles.css?v=3.9.0">
 <script>
   // Applicato subito, prima del disegno, per non far lampeggiare la pagina.
   (function () {
@@ -44,7 +44,7 @@
       <button data-lang="it" onclick="location.href='index.html'" title="Italiano">🇮🇹</button>
       <button data-lang="en" class="on" onclick="location.href='index.en.html'" title="English">🇬🇧</button>
     </span>
-    <span class="ver">v3.7.0</span>
+    <span class="ver">v3.9.0</span>
     <button id="tema" class="tog">Chiaro</button>
     <a class="cta" href="app.html">Open the tool &rarr;</a>
   </div>
@@ -131,6 +131,12 @@
     <li>By default the zone follows the current chord, staying close to where you are. Touching the zone
       sliders switches <b>Lock zone</b> on by itself: your choice holds until you release it.</li>
     <li>Left and right arrows step through the chords. Clicking a note on the neck sounds it.</li>
+    <li><b>Section loop</b>: below the neck pick the bars from–to and the playback insists there (looped
+      bars are underlined in the ribbon); the × clears it.</li>
+    <li><b>Transposition</b>: the −/+ keys shift the whole grid a semitone at a time, symbols respelled
+      the common way (Db, Eb, F#, Ab, Bb); tapping the number returns to zero.</li>
+    <li><b>Per-song memory</b>: for songbook tunes, zone, tuning, mode, tempo, metre, transposition and loop
+      save themselves — reopen the song and find it as you left it.</li>
   </ul>
 
   <h2>6. ASCII tab</h2>
@@ -196,7 +202,7 @@ E |-----------------|-----------|</pre>
 </div>
 
 <script type="module">
-  import { initTheme } from './src/theme.js?v=3.7.0';
+  import { initTheme } from './src/theme.js?v=3.9.0';
   initTheme();
 </script>
 </body>

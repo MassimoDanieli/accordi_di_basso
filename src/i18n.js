@@ -19,6 +19,7 @@ const D = {
     'tip.syntax': 'Spazio fra le battute, virgola dentro la battuta:',
     'tip.guide': 'guida completa',
 
+    'loop.lab': 'Loop, battute', 'trasp.lab': 'Trasp.',
     'zone.from': 'Zona, dal tasto',
     'zone.width': 'ampiezza',
     'zone.frets': n => n + (n === 1 ? ' tasto' : ' tasti'),
@@ -94,7 +95,7 @@ const D = {
     'ir.title': 'Importa un brano',
     'ir.hint': 'Tre strade: un link <code>irealb://</code> dal tasto Condividi di iReal Pro (anche playlist intere, con Salva tutti); un file <code>.musicxml</code> (iReal, MuseScore); oppure <b>testo con gli accordi sopra le parole</b> o ChordPro, incollato qui \u2014 per il testo nudo, prima riga titolo e seconda autore. Le forme iReal e MusicXML arrivano srotolate come si suonano. Tutto avviene nel browser: non esce niente dalla pagina.',
     'ir.titolo': 'titolo (per il testo incollato)', 'ir.autore': 'autore',
-    'ir.file': 'oppure un file MusicXML:',
+    'ir.file': 'oppure file MusicXML / ChordPro / testo (anche tanti insieme):',
     'ir.unknown': n => `sigle non riconosciute (in rosso nel nastro): ${n}`,
     'ir.go': 'Importa',
     'ir.empty': 'Incolla prima un link.',
@@ -131,6 +132,7 @@ const D = {
     'tip.syntax': 'Space between bars, comma within a bar:',
     'tip.guide': 'full guide',
 
+    'loop.lab': 'Loop, bars', 'trasp.lab': 'Transp.',
     'zone.from': 'Zone, from fret',
     'zone.width': 'width',
     'zone.frets': n => n + (n === 1 ? ' fret' : ' frets'),
@@ -206,7 +208,7 @@ const D = {
     'ir.title': 'Import a song',
     'ir.hint': 'Three roads: an <code>irealb://</code> link from iReal Pro\u2019s Share button (whole playlists too, with Save all); a <code>.musicxml</code> file (iReal, MuseScore); or <b>text with chords above the lyrics</b> or ChordPro, pasted here \u2014 for plain text, first line title and second line artist. iReal and MusicXML forms arrive unrolled as played. Everything happens in the browser: nothing leaves the page.',
     'ir.titolo': 'title (for pasted text)', 'ir.autore': 'artist',
-    'ir.file': 'or a MusicXML file:',
+    'ir.file': 'or MusicXML / ChordPro / text files (many at once):',
     'ir.unknown': n => `unrecognised symbols (red in the ribbon): ${n}`,
     'ir.go': 'Import',
     'ir.empty': 'Paste a link first.',

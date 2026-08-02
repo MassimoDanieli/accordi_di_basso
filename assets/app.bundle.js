@@ -57,6 +57,26 @@ __mod.theory = (function () {
    * Riconosce un simbolo di accordo. Restituisce null se non lo capisce.
    * pcMap mappa pitch class -> grado in semitoni; -1 indica la nota al basso di uno slash chord.
    */
+  const NOMI_D = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const NOMI_B = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+  const PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+  /** Db Eb F# Ab Bb: la grafia d'uso comune per le alterazioni. */
+  function nomeDi(pc) {
+    pc = ((pc % 12) + 12) % 12;
+    return pc === 6 ? 'F#' : (NOMI_B[pc] !== NOMI_D[pc] ? NOMI_B[pc] : NOMI_D[pc]);
+  }
+
+  /** Traspone una sigla di n semitoni, basso dello slash compreso. */
+  function transposeSymbol(sym, n) {
+    return sym.replace(/([A-G])([#b]?)/g, (tutto, lettera, acc, pos) => {
+      // solo la radice e il basso dopo lo slash: mai le lettere dentro i suffissi
+      if (pos !== 0 && sym[pos - 1] !== '/') return tutto;
+      const pc = PC[lettera] + (acc === '#' ? 1 : acc === 'b' ? -1 : 0);
+      return nomeDi(pc + n);
+    });
+  }
+
   function parseChord(symbol) {
     let s = (symbol || '').trim();
     if (!s) return null;
@@ -127,7 +147,7 @@ __mod.theory = (function () {
   /** Posizione del tasto sul manico, spaziatura reale: 1 - 2^(-n/12). */
   function fretPos(n) { return 1 - Math.pow(2, -n / 12); }
 
-  return { PITCH, SHARP, FLAT, TUNINGS, parseChord, degreeName, degreeColor, noteName, fretPos };
+  return { PITCH, SHARP, FLAT, TUNINGS, transposeSymbol, parseChord, degreeName, degreeColor, noteName, fretPos };
 })();
 
 __mod.voicings = (function () {
@@ -995,13 +1015,18 @@ __mod.testo = (function () {
    * non diventano accordi. Il 7+ italiano e' la settima maggiore.
    */
   function daLatina(tok) {
-    const m = tok.match(/^(DO|RE|MI|FA|SOL|LA|SI)([#b]?)(.*)$/);
+    const R = '(?:DO|RE|MI|FA|SOL|LA|SI|Do|Re|Mi|Fa|Sol|La|Si)';
+    const m = tok.match(new RegExp('^(' + R + ')([#b]?)([^/]*?)(/' + R + '[#b]?)?$'));
     if (!m) return tok;
-    let resto = m[3].replace(/^\/(DO|RE|MI|FA|SOL|LA|SI)([#b]?)$/,
-      (x, r, a) => '/' + LATINA[r] + a);
-    if (/[A-Z]/.test(resto.replace(/N\.C\./, ''))) return tok;   // parole vere, non suffissi
-    resto = resto.replace(/^7\+$/, 'maj7').replace(/^-/, 'm');
-    return LATINA[m[1]] + m[2] + resto;
+    let suff = m[3] || '';
+    if (/[A-Z]/.test(suff)) return tok;                 // parole vere, non suffissi
+    suff = suff.replace(/^7\+$/, 'maj7').replace(/^2$/, 'sus2').replace(/^-/, 'm');
+    let basso = '';
+    if (m[4]) {
+      const b = m[4].slice(1).match(new RegExp('^(' + R + ')([#b]?)$'));
+      basso = '/' + LATINA[b[1].toUpperCase()] + (b[2] || '');
+    }
+    return LATINA[m[1].toUpperCase()] + m[2] + suff + basso;
   }
 
   function pulisci(tok) {
@@ -1018,6 +1043,8 @@ __mod.testo = (function () {
 
   /** Una riga di soli accordi (e stanghette)? */
   function rigaDiAccordi(riga) {
+    // "Intro: Solm Fa" — il prefisso di sezione non deve affondare la riga.
+    riga = riga.replace(/^\s*[A-Za-z]+\s*:\s*/, ' ');
     const toks = riga.trim().split(/\s+/).map(pulisci).filter(Boolean);
     if (!toks.length) return null;
     const buoni = toks.filter(x => x === '|' || eAccordo(x));
@@ -1070,9 +1097,11 @@ __mod.testo = (function () {
     const intestazione = [];
     for (const riga of righe) {
       if (!riga.trim()) continue;
-      if (SEZIONE_RE.test(riga)) continue;
+      // Prima la prova come riga di accordi: "Intro: Solm Fa" e' accordi con
+      // un'etichetta davanti, non un'intestazione da scartare.
       const toks = rigaDiAccordi(riga);
       if (toks) { inBattute(toks).forEach(b => bars.push(b)); continue; }
+      if (SEZIONE_RE.test(riga)) continue;
       // riga di parole: le prime due non-accordi fanno da titolo e autore
       if (intestazione.length < 2 && !bars.length && riga.trim().length < 80) {
         intestazione.push(riga.trim());
@@ -1185,6 +1214,19 @@ __mod.canzoniere = (function () {
     await att(db.transaction(STORE, 'readwrite').objectStore(STORE).delete(id));
   }
 
+  /** Aggiorna le preferenze di un brano gia' in canzoniere. */
+  async function pref(id, p) {
+    const db = await apri();
+    if (!db) {
+      const r = memoria.get(id);
+      if (r) { r.pref = p; memoria.set(id, r); }
+      return;
+    }
+    const st = db.transaction(STORE, 'readwrite').objectStore(STORE);
+    const r = await att(st.get(id));
+    if (r) { r.pref = p; await att(st.put(r)); }
+  }
+
   /** Filtro di ricerca su titolo, compositore e stile. */
   function cerca(list, q) {
     q = (q || '').toLowerCase().trim();
@@ -1213,7 +1255,7 @@ __mod.canzoniere = (function () {
     return n;
   }
 
-  return { idDi, salva, tutti, rimuovi, cerca, esporta, importa };
+  return { idDi, salva, tutti, rimuovi, pref, cerca, esporta, importa };
 })();
 
 __mod.library = (function () {
@@ -1365,6 +1407,7 @@ __mod.i18n = (function () {
       'tip.syntax': 'Spazio fra le battute, virgola dentro la battuta:',
       'tip.guide': 'guida completa',
 
+      'loop.lab': 'Loop, battute', 'trasp.lab': 'Trasp.',
       'zone.from': 'Zona, dal tasto',
       'zone.width': 'ampiezza',
       'zone.frets': n => n + (n === 1 ? ' tasto' : ' tasti'),
@@ -1440,7 +1483,7 @@ __mod.i18n = (function () {
       'ir.title': 'Importa un brano',
       'ir.hint': 'Tre strade: un link <code>irealb://</code> dal tasto Condividi di iReal Pro (anche playlist intere, con Salva tutti); un file <code>.musicxml</code> (iReal, MuseScore); oppure <b>testo con gli accordi sopra le parole</b> o ChordPro, incollato qui \u2014 per il testo nudo, prima riga titolo e seconda autore. Le forme iReal e MusicXML arrivano srotolate come si suonano. Tutto avviene nel browser: non esce niente dalla pagina.',
       'ir.titolo': 'titolo (per il testo incollato)', 'ir.autore': 'autore',
-      'ir.file': 'oppure un file MusicXML:',
+      'ir.file': 'oppure file MusicXML / ChordPro / testo (anche tanti insieme):',
       'ir.unknown': n => `sigle non riconosciute (in rosso nel nastro): ${n}`,
       'ir.go': 'Importa',
       'ir.empty': 'Incolla prima un link.',
@@ -1477,6 +1520,7 @@ __mod.i18n = (function () {
       'tip.syntax': 'Space between bars, comma within a bar:',
       'tip.guide': 'full guide',
 
+      'loop.lab': 'Loop, bars', 'trasp.lab': 'Transp.',
       'zone.from': 'Zone, from fret',
       'zone.width': 'width',
       'zone.frets': n => n + (n === 1 ? ' fret' : ' frets'),
@@ -1552,7 +1596,7 @@ __mod.i18n = (function () {
       'ir.title': 'Import a song',
       'ir.hint': 'Three roads: an <code>irealb://</code> link from iReal Pro\u2019s Share button (whole playlists too, with Save all); a <code>.musicxml</code> file (iReal, MuseScore); or <b>text with chords above the lyrics</b> or ChordPro, pasted here \u2014 for plain text, first line title and second line artist. iReal and MusicXML forms arrive unrolled as played. Everything happens in the browser: nothing leaves the page.',
       'ir.titolo': 'title (for pasted text)', 'ir.autore': 'artist',
-      'ir.file': 'or a MusicXML file:',
+      'ir.file': 'or MusicXML / ChordPro / text files (many at once):',
       'ir.unknown': n => `unrecognised symbols (red in the ribbon): ${n}`,
       'ir.go': 'Import',
       'ir.empty': 'Paste a link first.',
@@ -1630,7 +1674,7 @@ __mod.app = (function () {
   const MusicXML = __mod.musicxml;
   const CZ = __mod.canzoniere;
   const Testo = __mod.testo;
-  const { TUNINGS, parseChord, degreeName, noteName } = __mod.theory;
+  const { TUNINGS, parseChord, degreeName, noteName, transposeSymbol } = __mod.theory;
   const { LIBRARY } = __mod.library;
   const { initTheme, refreshThemeLabel } = __mod.theme;
   const { t, initLang, applyStatic, lang } = __mod.i18n;
@@ -1686,6 +1730,18 @@ __mod.app = (function () {
   }
 
   // ---------------------------------------------------------------- griglia
+
+  function menuLoop() {
+    const nb = state.grid.length ? state.grid[state.grid.length - 1].bar + 1 : 0;
+    const opz = ['<option value="0">\u2014</option>']
+      .concat(Array.from({ length: nb }, (_, k) => `<option value="${k + 1}">${k + 1}</option>`)).join('');
+    const da = $('loopda'), a = $('loopa');
+    const vd = da.value, va = a.value;
+    da.innerHTML = opz; a.innerHTML = opz;
+    da.value = +vd <= nb ? vd : '0';
+    a.value = +va <= nb ? va : '0';
+    if (da.value === '0' || a.value === '0') state.loop = null;
+  }
 
   function parseGrid() {
     const text = $('seq').value;
@@ -1757,7 +1813,8 @@ __mod.app = (function () {
       if (x.ok) {
         const v = chosen(i);
         const sum = v ? v.shape.map(n => noteName(n.pc, x.chord.flats)).join('\u00b7') : '';
-        html += `<button class="chip${i === state.index ? ' on' : ''}" data-pick="${i}">`
+        const inloop = state.loop && x.bar >= state.loop.da - 1 && x.bar <= state.loop.a - 1;
+        html += `<button class="chip${i === state.index ? ' on' : ''}${inloop ? ' inloop' : ''}" data-pick="${i}">`
           + `<span class="cs">${x.chord.symbol}</span>${sum ? `<span class="cn">${sum}</span>` : ''}</button>`;
       }
       else if (x.rest) html += `<span class="chip rest">N.C.</span>`;
@@ -1982,6 +2039,7 @@ __mod.app = (function () {
   }
 
   function render() {
+    menuLoop();
     describeZone(); renderChips(); renderStrip(); renderBoard(); renderVoicings();
   }
 
@@ -2154,6 +2212,18 @@ __mod.app = (function () {
 
   // ---------------------------------------------------------------- trasporto
 
+  /** L'indice successivo, rispettando il loop di sezione quando c'e'. */
+  function prossimoIndice(i) {
+    const n = (i + 1) % state.grid.length;
+    const L = state.loop;
+    if (!L) return n;
+    const inizio = state.grid.findIndex(x => x.bar === L.da - 1);
+    if (inizio < 0) return n;
+    const bar = state.grid[n] ? state.grid[n].bar : -1;
+    if (n === 0 || bar > L.a - 1 || bar < L.da - 1) return inizio;
+    return n;
+  }
+
   function tick() {
     if (!state.playing) return;
     if (state.index === 0) state.giro = (state.giro || 0) + 1;
@@ -2200,12 +2270,12 @@ __mod.app = (function () {
     }
     // Le voci partono verso il prossimo accordo poco prima del cambio,
     // cosi' arrivano sull'attacco: il voice leading si vede accadere.
-    const prossimo = (state.index + 1) % state.grid.length;
+    const prossimo = prossimoIndice(state.index);
     if (state.grid[prossimo] && state.grid[prossimo].ok) {
       flashes.push(setTimeout(() => updateFlow(prossimo), Math.max(60, (seconds - 0.38) * 1000)));
     }
     state.timer = setTimeout(() => {
-      state.index = (state.index + 1) % state.grid.length;
+      state.index = prossimoIndice(state.index);
       tick();
     }, seconds * 1000);
   }
@@ -2342,6 +2412,8 @@ __mod.app = (function () {
     let attesa = null;
     $('seq').addEventListener('input', () => {
       setSongTitle(null);
+      state.songId = null;
+      state.trasp = 0; $('trv').textContent = '0';
       clearTimeout(attesa);
       attesa = setTimeout(() => { parseGrid(); render(); }, 550);
     });
@@ -2370,7 +2442,7 @@ __mod.app = (function () {
     };
     $('vl').onclick = optimiseVoiceLeading;
 
-    $('tun').onchange = e => { state.tuning = e.target.value; state.pick = {}; cache = new Map(); render(); };
+    $('tun').onchange = e => { state.tuning = e.target.value; state.pick = {}; cache = new Map(); render(); salvaPref(); };
     if ($('nfrets')) {
     $('nfrets').value = String(state.frets);
     $('nfrets').onchange = e => {
@@ -2380,7 +2452,7 @@ __mod.app = (function () {
       state.pick = {}; cache = new Map(); render();
     };
     }
-    $('zs').oninput = e => { setLock(true); setZone(+e.target.value); };
+    $('zs').oninput = e => { setLock(true); setZone(+e.target.value); salvaPref(); };
     $('zw').oninput = e => {
       setLock(true);
       state.zoneWidth = +e.target.value;
@@ -2400,14 +2472,41 @@ __mod.app = (function () {
     $('tdim').onclick = e => { state.dimOutside = !state.dimOutside; e.target.classList.toggle('on', state.dimOutside); render(); };
 
     $('pp').onclick = toggleTransport;
-    $('bpm').oninput = e => { state.bpm = +e.target.value; $('bpmv').textContent = state.bpm; };
-    $('beats').onchange = e => { state.beats = +e.target.value; };
+    $('bpm').oninput = e => { state.bpm = +e.target.value; $('bpmv').textContent = state.bpm; salvaPref(); };
+
+    const leggiLoop = () => {
+      const da = +$('loopda').value, a = +$('loopa').value;
+      state.loop = da && a ? { da: Math.min(da, a), a: Math.max(da, a) } : null;
+      renderChips(); salvaPref();
+    };
+    $('loopda').onchange = leggiLoop;
+    $('loopa').onchange = leggiLoop;
+    $('loopx').onclick = () => { $('loopda').value = '0'; $('loopa').value = '0'; leggiLoop(); };
+
+    const trasponi = (n) => {
+      if (!n) return;
+      state.trasp = (state.trasp || 0) + n;
+      $('trv').textContent = state.trasp > 0 ? '+' + state.trasp : String(state.trasp);
+      const testo = $('seq').value.split(/(\s+|,)/).map(tok =>
+        /^[A-G]/.test(tok) ? transposeSymbol(tok, n) : tok).join('');
+      const titolo = state.song, ricordo = state.songId;
+      $('seq').value = testo;
+      parseGrid(); render();
+      if (titolo) setSongTitle(titolo.title, titolo.composer);   // il brano resta lui
+      state.songId = ricordo;
+      salvaPref();
+    };
+    $('trsu').onclick = () => trasponi(1);
+    $('trgiu').onclick = () => trasponi(-1);
+    $('trv').onclick = () => trasponi(-(state.trasp || 0));
+    $('beats').onchange = e => { state.beats = +e.target.value; salvaPref(); };
     $('modes').addEventListener('click', e => {
       const b = e.target.closest('[data-mode]');
       if (!b) return;
       state.playMode = b.dataset.mode;
       $('modes').querySelectorAll('.seg').forEach(x => x.classList.toggle('on', x === b));
       renderBoard();
+      salvaPref();
     });
     $('clk').onclick = e => { state.metronome = !state.metronome; e.target.classList.toggle('on', state.metronome); };
     $('lock').onclick = () => setLock(!state.lockZone);
@@ -2466,9 +2565,20 @@ __mod.app = (function () {
     $('irfile').onchange = e => {
       const files = [...e.target.files];
       if (!files.length) return;
-      Promise.all(files.map(f => f.text())).then(testi => {
+      Promise.all(files.map(f => f.text().then(x => ({ nome: f.name, testo: x })))).then(letti => {
         let songs = [];
-        testi.forEach(x => { try { songs = songs.concat(MusicXML.parse(x)); } catch (err) { /* file illeggibile */ } });
+        letti.forEach(f => {
+          try {
+            const nuovi = /\.(musicxml|xml)$/i.test(f.nome)
+              ? MusicXML.parse(f.testo)
+              : Testo.parse(f.testo);
+            // Il nome del file fa da titolo quando il contenuto non lo dichiara.
+            nuovi.forEach(sng => {
+              if (sng.title === 'senza titolo') sng.title = f.nome.replace(/\.[a-z]+$/i, '').replace(/[_-]+/g, ' ').trim();
+            });
+            songs = songs.concat(nuovi);
+          } catch (err) { /* file illeggibile: avanti col prossimo */ }
+        });
         presentaBrani(songs);
       });
     };
@@ -2583,6 +2693,47 @@ __mod.app = (function () {
     el.innerHTML = `<b>${title}</b>${composer ? ` <span class="by">\u2014 ${composer}</span>` : ''}`;
   }
 
+  /** La memoria per brano: come l'avevi lasciato, cosi' lo ritrovi. */
+  let prefTimer = null;
+  function salvaPref() {
+    if (!state.songId) return;
+    clearTimeout(prefTimer);
+    prefTimer = setTimeout(() => {
+      CZ.pref(state.songId, {
+        bpm: state.bpm, beats: state.beats, mode: state.playMode,
+        tuning: state.tuning, zoneFrom: state.zoneFrom, zw: +$('zw').value,
+        lock: state.lock, trasp: state.trasp || 0,
+        loop: state.loop ? { ...state.loop } : null, vtype: state.vtype
+      });
+    }, 700);
+  }
+
+  function applicaPref(p) {
+    if (!p) return;
+    if (p.tuning && TUNINGS[p.tuning]) { state.tuning = p.tuning; $('tun').value = p.tuning; }
+    if (p.vtype) { state.vtype = p.vtype; $('vtype').value = p.vtype; }
+    if (p.bpm >= 40 && p.bpm <= 200) { state.bpm = p.bpm; $('bpm').value = p.bpm; $('bpmv').textContent = p.bpm; }
+    if (p.beats) { state.beats = p.beats; $('beats').value = String(p.beats); }
+    if (p.mode) {
+      state.playMode = p.mode;
+      $('modes').querySelectorAll('.seg').forEach(x => x.classList.toggle('on', x.dataset.mode === p.mode));
+    }
+    if (p.zw) { $('zw').value = p.zw; $('zwv').textContent = p.zw; }
+    if (typeof p.zoneFrom === 'number') { state.lock = !!p.lock; setZone(p.zoneFrom); $('zs').value = p.zoneFrom; }
+    if (p.trasp) {
+      const testo = $('seq').value.split(/(\s+|,)/).map(tok =>
+        /^[A-G]/.test(tok) ? transposeSymbol(tok, p.trasp) : tok).join('');
+      $('seq').value = testo; state.trasp = p.trasp;
+      $('trv').textContent = p.trasp > 0 ? '+' + p.trasp : String(p.trasp);
+      parseGrid();
+    }
+    if (p.loop && p.loop.da) {
+      $('loopda').value = String(p.loop.da); $('loopa').value = String(p.loop.a);
+      state.loop = { ...p.loop };
+    }
+    render();
+  }
+
   function presentaBrani(songs) {
     const info = $('irinfo'), list = $('irlist'), tutti = $('irtutti');
     if (!songs.length) {
@@ -2630,6 +2781,9 @@ __mod.app = (function () {
     state.beats = b; $('beats').value = String(b);
     loadGrid(IReal.toGrid(song), true);
     setSongTitle(song.title, song.composer);
+    state.songId = CZ.idDi(song);
+    state.trasp = 0; $('trv').textContent = '0';
+    applicaPref(song.pref);
     // Anteprima onesta: se qualche sigla non e' stata riconosciuta, la finestra
     // resta aperta e lo dice; il nastro le mostra in rosso.
     const brutte = [...new Set(state.grid.filter(x => !x.ok && x.raw !== 'N.C.').map(x => x.raw))];

@@ -49,6 +49,26 @@ const SIXTHS = ['6', 'm6', '69', '6/9', 'm69', 'maj6'];
  * Riconosce un simbolo di accordo. Restituisce null se non lo capisce.
  * pcMap mappa pitch class -> grado in semitoni; -1 indica la nota al basso di uno slash chord.
  */
+const NOMI_D = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const NOMI_B = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+const PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+/** Db Eb F# Ab Bb: la grafia d'uso comune per le alterazioni. */
+function nomeDi(pc) {
+  pc = ((pc % 12) + 12) % 12;
+  return pc === 6 ? 'F#' : (NOMI_B[pc] !== NOMI_D[pc] ? NOMI_B[pc] : NOMI_D[pc]);
+}
+
+/** Traspone una sigla di n semitoni, basso dello slash compreso. */
+export function transposeSymbol(sym, n) {
+  return sym.replace(/([A-G])([#b]?)/g, (tutto, lettera, acc, pos) => {
+    // solo la radice e il basso dopo lo slash: mai le lettere dentro i suffissi
+    if (pos !== 0 && sym[pos - 1] !== '/') return tutto;
+    const pc = PC[lettera] + (acc === '#' ? 1 : acc === 'b' ? -1 : 0);
+    return nomeDi(pc + n);
+  });
+}
+
 export function parseChord(symbol) {
   let s = (symbol || '').trim();
   if (!s) return null;

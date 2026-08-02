@@ -64,6 +64,19 @@ export async function rimuovi(id) {
   await att(db.transaction(STORE, 'readwrite').objectStore(STORE).delete(id));
 }
 
+/** Aggiorna le preferenze di un brano gia' in canzoniere. */
+export async function pref(id, p) {
+  const db = await apri();
+  if (!db) {
+    const r = memoria.get(id);
+    if (r) { r.pref = p; memoria.set(id, r); }
+    return;
+  }
+  const st = db.transaction(STORE, 'readwrite').objectStore(STORE);
+  const r = await att(st.get(id));
+  if (r) { r.pref = p; await att(st.put(r)); }
+}
+
 /** Filtro di ricerca su titolo, compositore e stile. */
 export function cerca(list, q) {
   q = (q || '').toLowerCase().trim();

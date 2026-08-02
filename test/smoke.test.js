@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { parseChord, TUNINGS } from '../src/theory.js';
+import { parseChord, transposeSymbol, TUNINGS } from '../src/theory.js';
 import * as V from '../src/voicings.js';
 import * as Tab from '../src/tab.js';
 import * as IReal from '../src/ireal.js';
@@ -189,6 +189,17 @@ await (async () => {
   console.log('  ok  canzoniere: salva, cerca, backup andata e ritorno');
 })();
 
+// --- trasposizione delle sigle
+check('trasposizione: radici, alterazioni e slash', () => {
+  assert.equal(transposeSymbol('C-7', 2), 'D-7');
+  assert.equal(transposeSymbol('Bb^7', 1), 'B^7');
+  assert.equal(transposeSymbol('Eb7#11', 1), 'E7#11');
+  assert.equal(transposeSymbol('C/E', 2), 'D/F#');
+  assert.equal(transposeSymbol('F#h7', 1), 'Gh7');
+  assert.equal(transposeSymbol('A7b13', 3), 'C7b13', 'la b del suffisso non e\u0027 una nota');
+  assert.equal(transposeSymbol('G-6', -3), 'E-6');
+});
+
 // --- testo con gli accordi sopra le parole, e ChordPro
 check('lettore testo: accordi sopra le parole', () => {
   const t = ['Titolo Prova', 'Autore Prova', '', '[Intro]', '| Am | G |', '',
@@ -214,6 +225,10 @@ check('lettore testo: notazione latina dei siti italiani', () => {
   const s0 = Testo.parse(t)[0];
   assert.equal(s0.bars.map(b => b.accordi.join(',')).join(' '),
     'Am E7 Am A7 Dm G7 C Cmaj7 Bb');
+  // la capitalizzata dei siti come Diamante: Fa, Sib, Solm7/Do, Fa7+, Fa2
+  const d = ['Diamante', 'Zucchero', 'Intro: Solm Fa', 'Fa7+ Fa6 Fa', 'parole vere della strofa', 'Fa2 Solm7/Do'].join('\n');
+  assert.equal(Testo.parse(d)[0].bars.map(b => b.accordi.join(',')).join(' '),
+    'Gm F Fmaj7 F6 F Fsus2 Gm7/C');
   // le parole "mi si la" minuscole non diventano accordi
   assert.equal(Testo.parse('X\nY\nmi si la do\nre mi fa sol').length, 0);
 });

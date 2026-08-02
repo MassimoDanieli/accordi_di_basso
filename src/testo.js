@@ -19,13 +19,18 @@ const LATINA = { DO: 'C', RE: 'D', MI: 'E', FA: 'F', SOL: 'G', LA: 'A', SI: 'B' 
  * non diventano accordi. Il 7+ italiano e' la settima maggiore.
  */
 function daLatina(tok) {
-  const m = tok.match(/^(DO|RE|MI|FA|SOL|LA|SI)([#b]?)(.*)$/);
+  const R = '(?:DO|RE|MI|FA|SOL|LA|SI|Do|Re|Mi|Fa|Sol|La|Si)';
+  const m = tok.match(new RegExp('^(' + R + ')([#b]?)([^/]*?)(/' + R + '[#b]?)?$'));
   if (!m) return tok;
-  let resto = m[3].replace(/^\/(DO|RE|MI|FA|SOL|LA|SI)([#b]?)$/,
-    (x, r, a) => '/' + LATINA[r] + a);
-  if (/[A-Z]/.test(resto.replace(/N\.C\./, ''))) return tok;   // parole vere, non suffissi
-  resto = resto.replace(/^7\+$/, 'maj7').replace(/^-/, 'm');
-  return LATINA[m[1]] + m[2] + resto;
+  let suff = m[3] || '';
+  if (/[A-Z]/.test(suff)) return tok;                 // parole vere, non suffissi
+  suff = suff.replace(/^7\+$/, 'maj7').replace(/^2$/, 'sus2').replace(/^-/, 'm');
+  let basso = '';
+  if (m[4]) {
+    const b = m[4].slice(1).match(new RegExp('^(' + R + ')([#b]?)$'));
+    basso = '/' + LATINA[b[1].toUpperCase()] + (b[2] || '');
+  }
+  return LATINA[m[1].toUpperCase()] + m[2] + suff + basso;
 }
 
 function pulisci(tok) {
@@ -42,6 +47,8 @@ function eAccordo(tok) {
 
 /** Una riga di soli accordi (e stanghette)? */
 function rigaDiAccordi(riga) {
+  // "Intro: Solm Fa" — il prefisso di sezione non deve affondare la riga.
+  riga = riga.replace(/^\s*[A-Za-z]+\s*:\s*/, ' ');
   const toks = riga.trim().split(/\s+/).map(pulisci).filter(Boolean);
   if (!toks.length) return null;
   const buoni = toks.filter(x => x === '|' || eAccordo(x));
@@ -94,9 +101,11 @@ function daTestoNudo(testo) {
   const intestazione = [];
   for (const riga of righe) {
     if (!riga.trim()) continue;
-    if (SEZIONE_RE.test(riga)) continue;
+    // Prima la prova come riga di accordi: "Intro: Solm Fa" e' accordi con
+    // un'etichetta davanti, non un'intestazione da scartare.
     const toks = rigaDiAccordi(riga);
     if (toks) { inBattute(toks).forEach(b => bars.push(b)); continue; }
+    if (SEZIONE_RE.test(riga)) continue;
     // riga di parole: le prime due non-accordi fanno da titolo e autore
     if (intestazione.length < 2 && !bars.length && riga.trim().length < 80) {
       intestazione.push(riga.trim());

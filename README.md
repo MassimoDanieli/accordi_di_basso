@@ -43,7 +43,10 @@ con il metro a fianco. Play in loop da 40 a
 200 bpm; 4/4, 3/4 e 2/4 con la loro pulsazione, 6/8 su due pulsazioni puntate. La
 linea walking percorre le note dell'accordo nella direzione del prossimo cambio con
 la cromatica dal lato del moto, e il fraseggio varia a ogni giro (ottavi swingati,
-ghost sul levare, salti d'ottava) restando deterministico per battuta e giro. Ogni
+ghost sul levare, salti d'ottava) restando deterministico per battuta e giro. Loop di sezione sulle
+battute scelte, trasposizione della griglia a semitoni con la grafia d'uso, e
+memoria per brano: zona, accordatura, modalita', tempo, trasposizione e loop si
+salvano da soli sui brani del canzoniere. Ogni
 nota si accende sul manico nel momento in cui la senti; in walking le note di
 passaggio compaiono come pallini rossi. Al cambio di accordo le voci del voicing
 planano verso le nuove posizioni come anelli colorati con la scia, partendo poco

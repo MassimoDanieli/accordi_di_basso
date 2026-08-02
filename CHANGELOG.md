@@ -3,6 +3,33 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [3.9.0] — 2026-08-02
+
+### Aggiunto
+- Loop di sezione: sotto il manico si scelgono le battute da-a e l'esecuzione
+  insiste li', con le battute del loop sottolineate nel nastro. Il gesto numero
+  uno dello studio.
+- Trasposizione della griglia a semitoni (tasti -/+ nella riga della zona),
+  sigle riscritte con la grafia d'uso comune (Db, Eb, F#, Ab, Bb), slash
+  compresi; un tocco sul numero riporta a zero. Il motore e' in theory.js, con
+  i suoi test.
+- Memoria per brano: per le canzoni del canzoniere si salvano da soli zona,
+  ampiezza, accordatura, modalita', tipo di voicing, tempo, metro, trasposizione
+  e loop — riapri il brano e lo ritrovi come l'avevi lasciato.
+
+## [3.8.0] — 2026-08-02
+
+### Aggiunto
+- I file di testo entrano dall'input file, anche a mazzi: .cho/.crd/.pro
+  (ChordPro) e .txt insieme ai MusicXML, tanti in una volta. Quando il contenuto
+  non dichiara il titolo, lo fa il nome del file: una cartella di canzoni
+  ChordPro diventa canzoniere in un colpo.
+
+### Corretto
+- La notazione latina vale anche capitalizzata (Fa, Sib, Solm7), come la scrive
+  meta' dei siti italiani, con gli slash (Solm7/Do), il 7+ (settima maggiore) e
+  il 2 (sus2). I prefissi tipo "Intro:" non affondano piu' la riga di accordi.
+
 ## [3.7.0] — 2026-08-02
 
 ### Aggiunto
