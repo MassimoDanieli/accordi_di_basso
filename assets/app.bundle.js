@@ -973,6 +973,105 @@ __mod.musicxml = (function () {
   return { leggiMisure, parse };
 })();
 
+__mod.canzoniere = (function () {
+
+  // Il canzoniere: i brani importati restano sul dispositivo, in IndexedDB, e si
+  // ritrovano per titolo, autore o stile. Niente server, niente rete: il backup e'
+  // un file JSON che esce ed entra dalla finestra del canzoniere.
+  //
+  // Dove IndexedDB non c'e' (o e' rotto), si ripiega in memoria: tutto funziona
+  // uguale per la sessione, semplicemente senza persistenza.
+
+  const DB = 'manico', STORE = 'brani';
+  let memoria = new Map();
+  let usaIDB = typeof indexedDB !== 'undefined';
+  let dbP = null;
+
+  function apri() {
+    if (!usaIDB) return Promise.resolve(null);
+    if (dbP) return dbP;
+    dbP = new Promise(res => {
+      const r = indexedDB.open(DB, 1);
+      r.onupgradeneeded = () => r.result.createObjectStore(STORE, { keyPath: 'id' });
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => { usaIDB = false; res(null); };
+    });
+    return dbP;
+  }
+
+  function att(req) {
+    return new Promise((res, rej) => {
+      req.onsuccess = () => res(req.result);
+      req.onerror = () => rej(req.error);
+    });
+  }
+
+  /** L'identita' di un brano: titolo e compositore, senza maiuscole. */
+  const idDi = s => ((s.title || '') + '|' + (s.composer || '')).toLowerCase().trim();
+
+  /** Salva (o aggiorna) un brano. Restituisce il record salvato. */
+  async function salva(song) {
+    if (!song || !song.title || !Array.isArray(song.bars) || !song.bars.length) return null;
+    const rec = {
+      id: idDi(song),
+      title: song.title, composer: song.composer || '', key: song.key || '',
+      stile: song.stile || '', bpm: song.bpm || 0,
+      bars: song.bars,
+      aggiunto: Date.now()
+    };
+    const db = await apri();
+    if (!db) { memoria.set(rec.id, rec); return rec; }
+    await att(db.transaction(STORE, 'readwrite').objectStore(STORE).put(rec));
+    return rec;
+  }
+
+  /** Tutti i brani, in ordine di titolo. */
+  async function tutti() {
+    const db = await apri();
+    const list = db
+      ? await att(db.transaction(STORE, 'readonly').objectStore(STORE).getAll())
+      : [...memoria.values()];
+    return list.sort((a, b) => a.title.localeCompare(b.title));
+  }
+
+  /** Toglie un brano. */
+  async function rimuovi(id) {
+    const db = await apri();
+    if (!db) { memoria.delete(id); return; }
+    await att(db.transaction(STORE, 'readwrite').objectStore(STORE).delete(id));
+  }
+
+  /** Filtro di ricerca su titolo, compositore e stile. */
+  function cerca(list, q) {
+    q = (q || '').toLowerCase().trim();
+    if (!q) return list;
+    return list.filter(s =>
+      (s.title || '').toLowerCase().includes(q) ||
+      (s.composer || '').toLowerCase().includes(q) ||
+      (s.stile || '').toLowerCase().includes(q));
+  }
+
+  /** Il backup: tutto il canzoniere in un JSON. */
+  async function esporta() {
+    return JSON.stringify({ manico: 'canzoniere', versione: 1, brani: await tutti() }, null, 1);
+  }
+
+  /** Rientro dal backup: salva i brani validi, restituisce quanti. */
+  async function importa(testo) {
+    let dati;
+    try { dati = JSON.parse(testo); } catch (e) { return 0; }
+    const brani = Array.isArray(dati) ? dati : (dati && dati.brani);
+    if (!Array.isArray(brani)) return 0;
+    let n = 0;
+    for (const b of brani) {
+      if (await salva(b)) n++;
+    }
+    return n;
+  }
+
+  return { idDi, salva, tutti, rimuovi, cerca, esporta, importa };
+})();
+
 __mod.library = (function () {
 
   // Forme armoniche, brani tradizionali di pubblico dominio e versioni essenziali
@@ -1180,6 +1279,16 @@ __mod.i18n = (function () {
       'lib.hint': 'Forme essenziali, brani tradizionali e versioni semplificate di brani celebri, con il tempo consigliato. Per le griglie complete degli standard usa l\u2019importazione dalle tue carte iReal.',
       'lib.load': 'Carica',
 
+      'cz.title': 'Canzoniere',
+      'cz.hint': 'I brani importati restano <b>su questo dispositivo</b> e si ritrovano qui. Il backup e\u2019 un file JSON: esportalo ogni tanto, il browser non e\u2019 un archivio eterno.',
+      'cz.cerca': 'cerca per titolo, autore o stile\u2026',
+      'cz.vuoto': 'Ancora nessun brano: importane uno dalla finestra Importa e lo trovi qui.',
+      'cz.niente': 'Niente con questo nome.',
+      'cz.batt': n => `${n} batt.`,
+      'cz.out': 'Esporta backup',
+      'cz.in': 'Importa backup',
+      'cz.fatti': n => `${n} brani ripristinati dal backup.`,
+      'cz.salvato': 'salvato nel canzoniere',
       'ir.title': 'Importa un brano',
       'ir.hint': 'Incolla un link <code>irealb://</code> preso dal tasto Condividi di iReal Pro, oppure carica un file <code>.musicxml</code> (iReal, MuseScore). La forma viene srotolata come si suona: ritornelli, finali, segno, coda, da capo. Tutto avviene nel browser: non esce niente dalla pagina.',
       'ir.file': 'oppure un file MusicXML:',
@@ -1277,6 +1386,16 @@ __mod.i18n = (function () {
       'lib.hint': 'Essential forms, traditional tunes and simplified versions of well-known songs, each with a suggested tempo. For complete standard charts, import your own iReal files.',
       'lib.load': 'Load',
 
+      'cz.title': 'Songbook',
+      'cz.hint': 'Imported songs stay <b>on this device</b> and live here. The backup is a JSON file: export it now and then, a browser is not an eternal archive.',
+      'cz.cerca': 'search by title, composer or style\u2026',
+      'cz.vuoto': 'No songs yet: import one from the Import window and it lands here.',
+      'cz.niente': 'Nothing by that name.',
+      'cz.batt': n => `${n} bars`,
+      'cz.out': 'Export backup',
+      'cz.in': 'Import backup',
+      'cz.fatti': n => `${n} songs restored from backup.`,
+      'cz.salvato': 'saved to the songbook',
       'ir.title': 'Import a song',
       'ir.hint': 'Paste an <code>irealb://</code> link from iReal Pro\u2019s Share button, or load a <code>.musicxml</code> file (iReal, MuseScore). The form is unrolled as played: repeats, endings, segno, coda, da capo. Everything happens in the browser: nothing leaves the page.',
       'ir.file': 'or a MusicXML file:',
@@ -1355,6 +1474,7 @@ __mod.app = (function () {
   const Tab = __mod.tab;
   const IReal = __mod.ireal;
   const MusicXML = __mod.musicxml;
+  const CZ = __mod.canzoniere;
   const { TUNINGS, parseChord, degreeName, noteName } = __mod.theory;
   const { LIBRARY } = __mod.library;
   const { initTheme, refreshThemeLabel } = __mod.theme;
@@ -2170,6 +2290,43 @@ __mod.app = (function () {
     };
     $('irlist').onchange = e => loadSong(+e.target.value);
 
+    $('czq').oninput = () => renderCanzoniere();
+    $('czlist').addEventListener('click', e => {
+      const via = e.target.closest('[data-via]');
+      if (via) {
+        CZ.rimuovi(via.dataset.via).then(renderCanzoniere);
+        e.stopPropagation(); return;
+      }
+      const voce = e.target.closest('.czvoce[data-id]');
+      if (!voce) return;
+      CZ.tutti().then(list => {
+        const sng = list.find(x => x.id === voce.dataset.id);
+        if (!sng) return;
+        state.songs = [sng];
+        loadSong(0);
+        closeDialog($('dlgforme'));
+      });
+    });
+    $('czout').onclick = () => {
+      CZ.esporta().then(json => {
+        try {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+          a.download = 'manico-canzoniere.json';
+          a.click();
+        } catch (e) { /* ambiente senza download: niente dramma */ }
+      });
+    };
+    $('czin').onchange = e => {
+      const f = e.target.files[0];
+      if (!f) return;
+      f.text().then(x => CZ.importa(x)).then(n => {
+        renderCanzoniere();
+        $('czq').value = '';
+      });
+      e.target.value = '';
+    };
+
     // Delega degli eventi sui contenuti ridisegnati.
     $('chips').addEventListener('click', e => {
       const b = e.target.closest('[data-pick]');
@@ -2221,6 +2378,7 @@ __mod.app = (function () {
       b.onclick = () => {
         const d = $(b.dataset.apre);
         if (b.dataset.apre === 'dlgtab') buildTab();
+        if (b.dataset.apre === 'dlgforme') renderCanzoniere();
         if (d.showModal) d.showModal(); else d.setAttribute('open', '');
       };
     });
@@ -2267,6 +2425,11 @@ __mod.app = (function () {
     // resta aperta e lo dice; il nastro le mostra in rosso.
     const brutte = [...new Set(state.grid.filter(x => !x.ok && x.raw !== 'N.C.').map(x => x.raw))];
     let info = t('ir.loaded', song.title, song.composer, song.key, song.bars.length);
+    // Il brano entra nel canzoniere da solo, cosi' domani lo ritrovi.
+    if (song.title && song.title !== 'senza titolo') {
+      CZ.salva(song).then(r => { if (r) renderCanzoniere(); });
+      info += ' \u00b7 ' + t('cz.salvato');
+    }
     if (brutte.length) {
       $('irinfo').innerHTML = info + `<br><span class="err">${t('ir.unknown', brutte.join(' '))}</span>`;
     } else {
@@ -2275,7 +2438,24 @@ __mod.app = (function () {
     }
   }
 
-  window.MANICO = { versione: document.documentElement.dataset.versione || '?', fraseggio: walkingEvents };
+  /** La lista del canzoniere, filtrata dalla ricerca. */
+  function renderCanzoniere() {
+    const box = $('czlist');
+    if (!box) return;
+    CZ.tutti().then(list => {
+      const filtrati = CZ.cerca(list, $('czq').value);
+      if (!list.length) { box.innerHTML = `<div class="czvoce"><span class="tit hint">${t('cz.vuoto')}</span></div>`; return; }
+      if (!filtrati.length) { box.innerHTML = `<div class="czvoce"><span class="tit hint">${t('cz.niente')}</span></div>`; return; }
+      box.innerHTML = filtrati.map(sng =>
+        `<div class="czvoce" data-id="${sng.id}">
+          <span class="tit"><b>${sng.title}</b>${sng.composer ? ' \u2014 ' + sng.composer : ''}</span>
+          <span class="meta">${[sng.stile, sng.bpm ? sng.bpm + ' bpm' : '', t('cz.batt', sng.bars.length)].filter(Boolean).join(' \u00b7 ')}</span>
+          <button class="via" data-via="${sng.id}" title="\u00d7">\u00d7</button>
+        </div>`).join('');
+    });
+  }
+
+  window.MANICO = { versione: document.documentElement.dataset.versione || '?', fraseggio: walkingEvents, canzoniere: CZ };
 
   try {
     init();

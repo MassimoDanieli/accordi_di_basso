@@ -3,6 +3,21 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [3.3.0] — 2026-08-02
+
+### Aggiunto
+- Il Canzoniere (src/canzoniere.js): ogni brano importato entra da solo in un
+  archivio locale sul dispositivo (IndexedDB, con ripiego in memoria dove manca),
+  consultabile per titolo, autore o stile dal pannello Forme, che ora si chiama
+  Canzoniere. Un tocco carica il brano con tempo e metro suoi, la × accanto lo
+  toglie. Backup JSON in uscita e in entrata, perche' il browser non e' un
+  archivio eterno. Le forme di serie restano nella stessa finestra.
+- Nessun server e nessuna rete: le carte restano sul dispositivo.
+
+### Corretto
+- Il bundler non riconosceva `export async function` e lasciava il gettone nel
+  bundle, rompendo l'app: scoperto dal collaudo prima del rilascio, corretto.
+
 ## [3.2.0] — 2026-08-01
 
 ### Aggiunto

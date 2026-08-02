@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" data-versione="3.2.0">
+<html lang="it" data-versione="3.3.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,600..700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=3.2.0">
+<link rel="stylesheet" href="assets/styles.css?v=3.3.0">
 <script>
   // Applicato subito, prima del disegno, per non far lampeggiare la pagina.
   (function () {
@@ -44,7 +44,7 @@
       <button data-lang="it" class="on" onclick="location.href='index.html'" title="Italiano">🇮🇹</button>
       <button data-lang="en" onclick="location.href='index.en.html'" title="English">🇬🇧</button>
     </span>
-    <span class="ver">v3.2.0</span>
+    <span class="ver">v3.3.0</span>
     <button id="tema" class="tog">Chiaro</button>
     <a class="cta" href="app.html">Apri lo strumento &rarr;</a>
   </div>
@@ -158,8 +158,12 @@ E |-----------------|-----------|</pre>
     parte, e la pagina non fa richieste di rete. Il pannello Forme include anche versioni essenziali
     semplificate di brani celebri, con il tempo consigliato; per le griglie complete degli standard usi le
     tue carte.</p></div>
-  <p>Il menu <b>Forme armoniche</b> contiene invece forme generiche — blues, rhythm changes, cicli di
-    II-V-I, cadenza andalusa, ciclo di terze maggiori — e brani tradizionali di pubblico dominio.</p>
+  <p>Ogni brano importato entra da solo nel <b>Canzoniere</b> (il pannello Forme), che vive
+    <b>su questo dispositivo</b>: lo ritrovi per titolo, autore o stile, lo carichi con un tocco, lo
+    togli con la ×. Il canzoniere si salva e si ripristina con un <b>backup JSON</b> —
+    esportalo ogni tanto: il browser non e' un archivio eterno. Nella stessa finestra restano le
+    <b>forme di serie</b>: blues, rhythm changes, cicli di II-V-I, cadenza andalusa, ciclo di terze
+    maggiori e brani tradizionali di pubblico dominio.</p>
 
   <h2>8. Il basso</h2>
   <p>Quattro accordature: quattro corde <code>E A D G</code>, cinque corde <code>B E A D G</code>, cinque
@@ -178,7 +182,7 @@ E |-----------------|-----------|</pre>
 </div>
 
 <script type="module">
-  import { initTheme } from './src/theme.js?v=3.2.0';
+  import { initTheme } from './src/theme.js?v=3.3.0';
   initTheme();
 </script>
 </body>

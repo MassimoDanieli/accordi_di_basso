@@ -5,6 +5,7 @@ import * as Tab from '../src/tab.js';
 import * as IReal from '../src/ireal.js';
 import * as F from '../src/forma.js';
 import * as MusicXML from '../src/musicxml.js';
+import * as CZ from '../src/canzoniere.js';
 
 const open = TUNINGS['4'].open;
 let failed = 0;
@@ -163,6 +164,29 @@ check('lettore MusicXML: misure, armonie e ritornello', () => {
   assert.equal(songs[0].bars.map(b => b.accordi.join(',')).join(' '), 'Dm7 G7 Dm7 G7');
   assert.equal(songs[0].bars[0].metro, '4/4');
 });
+
+// --- canzoniere: salva, ritrova, filtra, backup andata e ritorno
+await (async () => {
+  const brano = { title: 'Prova Blues', composer: 'Autore Test', stile: 'Blues',
+    bpm: 100, bars: [{ accordi: ['C7'], metro: '4/4' }, { accordi: ['F7'], metro: '4/4' }] };
+  const salvato = await CZ.salva(brano);
+  assert.ok(salvato && salvato.id === 'prova blues|autore test');
+  await CZ.salva({ ...brano, title: 'Altro Valzer', composer: 'B', stile: 'Waltz' });
+  const lista = await CZ.tutti();
+  assert.equal(lista.length, 2);
+  assert.equal(lista[0].title, 'Altro Valzer', 'ordinati per titolo');
+  assert.equal(CZ.cerca(lista, 'blues').length, 1, 'ricerca per stile');
+  assert.equal(CZ.cerca(lista, 'autore').length, 1, 'ricerca per compositore');
+  assert.equal(CZ.cerca(lista, 'niente').length, 0);
+  const json = await CZ.esporta();
+  await CZ.rimuovi('prova blues|autore test');
+  assert.equal((await CZ.tutti()).length, 1);
+  const n = await CZ.importa(json);
+  assert.equal(n, 2, 'il backup rientra tutto');
+  assert.equal((await CZ.tutti()).length, 2);
+  assert.equal(await CZ.salva({ title: 'senza battute', bars: [] }), null, 'niente brani vuoti');
+  console.log('  ok  canzoniere: salva, cerca, backup andata e ritorno');
+})();
 
 // --- link irealb reale (Autumn Leaves), regressione sul de-offuscamento
 check('lettore iReal su link reale (Autumn Leaves)', () => {

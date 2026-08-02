@@ -7,6 +7,7 @@ import * as R from './render.js';
 import * as Tab from './tab.js';
 import * as IReal from './ireal.js';
 import * as MusicXML from './musicxml.js';
+import * as CZ from './canzoniere.js';
 import { LIBRARY } from './library.js';
 import { initTheme, refreshThemeLabel } from './theme.js';
 import { t, initLang, applyStatic, lang } from './i18n.js';
@@ -816,6 +817,43 @@ function init() {
   };
   $('irlist').onchange = e => loadSong(+e.target.value);
 
+  $('czq').oninput = () => renderCanzoniere();
+  $('czlist').addEventListener('click', e => {
+    const via = e.target.closest('[data-via]');
+    if (via) {
+      CZ.rimuovi(via.dataset.via).then(renderCanzoniere);
+      e.stopPropagation(); return;
+    }
+    const voce = e.target.closest('.czvoce[data-id]');
+    if (!voce) return;
+    CZ.tutti().then(list => {
+      const sng = list.find(x => x.id === voce.dataset.id);
+      if (!sng) return;
+      state.songs = [sng];
+      loadSong(0);
+      closeDialog($('dlgforme'));
+    });
+  });
+  $('czout').onclick = () => {
+    CZ.esporta().then(json => {
+      try {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+        a.download = 'manico-canzoniere.json';
+        a.click();
+      } catch (e) { /* ambiente senza download: niente dramma */ }
+    });
+  };
+  $('czin').onchange = e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    f.text().then(x => CZ.importa(x)).then(n => {
+      renderCanzoniere();
+      $('czq').value = '';
+    });
+    e.target.value = '';
+  };
+
   // Delega degli eventi sui contenuti ridisegnati.
   $('chips').addEventListener('click', e => {
     const b = e.target.closest('[data-pick]');
@@ -867,6 +905,7 @@ function init() {
     b.onclick = () => {
       const d = $(b.dataset.apre);
       if (b.dataset.apre === 'dlgtab') buildTab();
+      if (b.dataset.apre === 'dlgforme') renderCanzoniere();
       if (d.showModal) d.showModal(); else d.setAttribute('open', '');
     };
   });
@@ -913,6 +952,11 @@ function loadSong(k) {
   // resta aperta e lo dice; il nastro le mostra in rosso.
   const brutte = [...new Set(state.grid.filter(x => !x.ok && x.raw !== 'N.C.').map(x => x.raw))];
   let info = t('ir.loaded', song.title, song.composer, song.key, song.bars.length);
+  // Il brano entra nel canzoniere da solo, cosi' domani lo ritrovi.
+  if (song.title && song.title !== 'senza titolo') {
+    CZ.salva(song).then(r => { if (r) renderCanzoniere(); });
+    info += ' \u00b7 ' + t('cz.salvato');
+  }
   if (brutte.length) {
     $('irinfo').innerHTML = info + `<br><span class="err">${t('ir.unknown', brutte.join(' '))}</span>`;
   } else {
@@ -921,7 +965,24 @@ function loadSong(k) {
   }
 }
 
-window.MANICO = { versione: document.documentElement.dataset.versione || '?', fraseggio: walkingEvents };
+/** La lista del canzoniere, filtrata dalla ricerca. */
+function renderCanzoniere() {
+  const box = $('czlist');
+  if (!box) return;
+  CZ.tutti().then(list => {
+    const filtrati = CZ.cerca(list, $('czq').value);
+    if (!list.length) { box.innerHTML = `<div class="czvoce"><span class="tit hint">${t('cz.vuoto')}</span></div>`; return; }
+    if (!filtrati.length) { box.innerHTML = `<div class="czvoce"><span class="tit hint">${t('cz.niente')}</span></div>`; return; }
+    box.innerHTML = filtrati.map(sng =>
+      `<div class="czvoce" data-id="${sng.id}">
+        <span class="tit"><b>${sng.title}</b>${sng.composer ? ' \u2014 ' + sng.composer : ''}</span>
+        <span class="meta">${[sng.stile, sng.bpm ? sng.bpm + ' bpm' : '', t('cz.batt', sng.bars.length)].filter(Boolean).join(' \u00b7 ')}</span>
+        <button class="via" data-via="${sng.id}" title="\u00d7">\u00d7</button>
+      </div>`).join('');
+  });
+}
+
+window.MANICO = { versione: document.documentElement.dataset.versione || '?', fraseggio: walkingEvents, canzoniere: CZ };
 
 try {
   init();

@@ -59,6 +59,21 @@ input[type=text],textarea,select{background:var(--panel-2);border:1px solid var(
   color:var(--paper);border-radius:var(--r);padding:8px 10px;font:inherit;outline:none;max-width:100%}
 input[type=text]{font-family:var(--mono);font-size:14px}
 textarea{width:100%;min-height:84px;resize:vertical;font-family:var(--mono);font-size:12px;line-height:1.5}
+.czlist{max-height:220px;overflow-y:auto;overscroll-behavior:contain;margin:10px 0;
+  border:1px solid var(--line);border-radius:var(--r)}
+.czlist:empty{display:none}
+.czvoce{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer}
+.czvoce + .czvoce{border-top:1px solid var(--line)}
+.czvoce:hover{background:var(--panel-2)}
+.czvoce .tit{font-family:var(--serif);font-size:14px}
+.czvoce .meta{color:var(--muted);font-size:11.5px;margin-left:auto;flex:none}
+.czvoce .via{flex:none;border:0;background:none;color:var(--muted);font-size:15px;padding:2px 6px}
+.czvoce .via:hover{color:var(--sev)}
+dialog h3{margin:14px 0 6px;font-size:13px;color:var(--muted);font-weight:500}
+.btnfile{position:relative;overflow:hidden;display:inline-flex}
+.btnfile input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.btnfile span{border:1px solid var(--line-2);border-radius:var(--r);padding:8px 12px;font-size:12.5px}
+.btnfile:hover span{background:var(--panel-2)}
 .filerow{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;color:var(--muted)}
 .filerow input{font-size:12px}
 select{cursor:pointer;font-size:13px}
