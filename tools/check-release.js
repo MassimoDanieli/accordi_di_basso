@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Script } from 'node:vm';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
@@ -10,6 +11,14 @@ const read = name => readFileSync(join(root, name), 'utf8');
 
 function expect(condition, message) {
   if (!condition) errors.push(message);
+}
+
+function expectScript(source, name) {
+  try {
+    new Script(source, { filename: name });
+  } catch (error) {
+    errors.push(`${name}: JavaScript non valido (${error.message})`);
+  }
 }
 
 for (const name of ['app.html', 'index.html', 'index.en.html', 'audio-import.html']) {
@@ -27,6 +36,9 @@ for (const name of ['app.html', 'index.html', 'index.en.html', 'audio-import.htm
 const audioUi = read('src/audio-import-ui.js');
 expect(!/const ASSET_VERSION\s*=\s*['"][^'"]+['"]/.test(audioUi),
   'src/audio-import-ui.js: ASSET_VERSION non deve essere fissata a mano');
+expectScript(audioUi, 'src/audio-import-ui.js');
+expectScript(read('src/audio-transcriber.js'), 'src/audio-transcriber.js');
+expectScript(read('assets/app.bundle.js'), 'assets/app.bundle.js');
 
 for (const name of ['assets/app.bundle.js', 'dist/manico.html']) {
   const path = join(root, name);
@@ -42,6 +54,10 @@ if (existsSync(join(root, 'dist/manico.html'))) {
     'dist/manico.html: contiene ancora script locali esterni');
   expect(!/<link[^>]+href="assets\//.test(standalone),
     'dist/manico.html: contiene ancora CSS locale esterno');
+
+  const scripts = [...standalone.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
+  expect(scripts.length >= 3, 'dist/manico.html: script incorporati mancanti');
+  scripts.forEach((match, index) => expectScript(match[1], `dist/manico.html#script-${index + 1}`));
 }
 
 if (errors.length) {
