@@ -3,6 +3,15 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [3.7.0] — 2026-08-02
+
+### Aggiunto
+- Il lettore di testo capisce la notazione latina dei siti italiani: LAm, MI7,
+  REm, SOL7, SIb, FA#m, e il 7+ che in Italia e' la settima maggiore (DO7+ =
+  Cmaj7). La radice deve essere maiuscola, cosi' le parole "mi", "si", "la" dei
+  testi non diventano accordi. L'indovino del titolo impara le intestazioni dei
+  siti italiani ("X Accordi ... - Autore").
+
 ## [3.6.0] — 2026-08-02
 
 ### Aggiunto

@@ -209,11 +209,22 @@ check('lettore testo: ChordPro con direttive', () => {
   assert.equal(s0.bars.length, 4);
 });
 
+check('lettore testo: notazione latina dei siti italiani', () => {
+  const t = ['Titolo', 'Autore', 'LAm MI7 LAm', 'parole della strofa', 'LA7 REm SOL7 DO', 'altre parole', 'DO7+ SIb'].join('\n');
+  const s0 = Testo.parse(t)[0];
+  assert.equal(s0.bars.map(b => b.accordi.join(',')).join(' '),
+    'Am E7 Am A7 Dm G7 C Cmaj7 Bb');
+  // le parole "mi si la" minuscole non diventano accordi
+  assert.equal(Testo.parse('X\nY\nmi si la do\nre mi fa sol').length, 0);
+});
+
 check('lettore testo: indovino del titolo dalle pagine', () => {
   assert.deepEqual(Testo.indovinaTitolo('Creep Chords by Radiohead @ Ultimate-Guitar.Com'),
     { title: 'Creep', composer: 'Radiohead' });
   assert.deepEqual(Testo.indovinaTitolo('Tom Jobim - Corcovado'),
     { title: 'Corcovado', composer: 'Tom Jobim' });
+  assert.deepEqual(Testo.indovinaTitolo('BOCCA DI ROSA Accordi 100% Corretti -Fabrizio De Andr\u00e9'),
+    { title: 'BOCCA DI ROSA', composer: 'Fabrizio De Andr\u00e9' });
 });
 
 check('lettore testo: le parole da sole non bastano', () => {

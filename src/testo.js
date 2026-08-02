@@ -11,8 +11,26 @@ import { parseChord } from './theory.js';
 
 const SEZIONE_RE = /^\s*\[?\s*(intro|verse|verso|chorus|ritornello|bridge|ponte|solo|outro|coda|interlude|pre-chorus|strofa)\b[^\]]*\]?\s*:?\s*$/i;
 
+const LATINA = { DO: 'C', RE: 'D', MI: 'E', FA: 'F', SOL: 'G', LA: 'A', SI: 'B' };
+
+/**
+ * Traduce la notazione latina (LAm, MI7, SIb, DO7+) in quella anglosassone.
+ * La radice deve essere maiuscola: cosi' le parole "mi", "si", "la" nei testi
+ * non diventano accordi. Il 7+ italiano e' la settima maggiore.
+ */
+function daLatina(tok) {
+  const m = tok.match(/^(DO|RE|MI|FA|SOL|LA|SI)([#b]?)(.*)$/);
+  if (!m) return tok;
+  let resto = m[3].replace(/^\/(DO|RE|MI|FA|SOL|LA|SI)([#b]?)$/,
+    (x, r, a) => '/' + LATINA[r] + a);
+  if (/[A-Z]/.test(resto.replace(/N\.C\./, ''))) return tok;   // parole vere, non suffissi
+  resto = resto.replace(/^7\+$/, 'maj7').replace(/^-/, 'm');
+  return LATINA[m[1]] + m[2] + resto;
+}
+
 function pulisci(tok) {
-  return tok.replace(/^[([]+|[)\],.]+$/g, '').replace(/^N\.?C\.?$/i, 'N.C.');
+  tok = tok.replace(/^[([]+|[)\],.]+$/g, '').replace(/^N\.?C\.?$/i, 'N.C.');
+  return daLatina(tok);
 }
 
 function eAccordo(tok) {
@@ -104,6 +122,8 @@ export function indovinaTitolo(t) {
   m = t.match(/^(.+?)\s*[-\u2013]\s*(.+?)\s+(?:chords|accordi|cifra(?:\s+club)?)\s*$/i);
   if (m) return { title: m[2].trim(), composer: m[1].trim() };
   m = t.match(/^(.+?)\s+(?:chords|accordi)\s*[-\u2013]\s*(.+)$/i);
+  if (m) return { title: m[1].trim(), composer: m[2].trim() };
+  m = t.match(/^(.+?)\s+accordi\b.*?[-\u2013]\s*(.+)$/i);
   if (m) return { title: m[1].trim(), composer: m[2].trim() };
   m = t.match(/^(.+?)\s*[-\u2013]\s*(.+)$/);
   if (m) return { title: m[2].replace(/\s+(chords|accordi)$/i, '').trim(), composer: m[1].trim() };

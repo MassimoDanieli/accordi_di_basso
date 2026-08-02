@@ -63,7 +63,7 @@ formati, confrontati misura per misura (283 misure identiche su cinque standard 
 prova), piu' una batteria di test sintetici, uno per ogni gettone del formato.
 Per il repertorio moderno c'e' l'incolla-testo: accordi sopra
 le parole (il formato dei siti di accordi) o ChordPro, con le righe di soli
-accordi pescate fra le parole, le stanghette a dividere le battute quando ci
+accordi pescate fra le parole (notazione latina dei siti italiani compresa), le stanghette a dividere le battute quando ci
 sono, e la griglia sempre modificabile a mano. Il segnalibro
 "Manda a Manico" (nella guida) porta la pagina di accordi al tool con un clic,
 titolo e autore indovinati, passando dal frammento dell'indirizzo: niente server. Tutto avviene nel browser: nulla
