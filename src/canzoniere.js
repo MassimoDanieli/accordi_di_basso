@@ -72,9 +72,12 @@ export async function pref(id, p) {
     if (r) { r.pref = p; memoria.set(id, r); }
     return;
   }
-  const st = db.transaction(STORE, 'readwrite').objectStore(STORE);
-  const r = await att(st.get(id));
-  if (r) { r.pref = p; await att(st.put(r)); }
+  const readStore = db.transaction(STORE, 'readonly').objectStore(STORE);
+  const r = await att(readStore.get(id));
+  if (!r) return;
+  r.pref = p;
+  const writeStore = db.transaction(STORE, 'readwrite').objectStore(STORE);
+  await att(writeStore.put(r));
 }
 
 /** Filtro di ricerca su titolo, compositore e stile. */

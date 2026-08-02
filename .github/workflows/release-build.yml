@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-and-build:
+  test-build-release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -25,5 +25,11 @@ jobs:
           package-manager-cache: false
       - name: Test
         run: npm test
-      - name: Build
-        run: npm run build
+      - name: Rebuild release artifacts
+        run: npm run release
+      - name: Check release consistency
+        run: npm run check:release
+      - name: Reject stale generated files
+        run: git diff --exit-code
+      - name: Verify Docker image
+        run: docker build --tag manico-ci .

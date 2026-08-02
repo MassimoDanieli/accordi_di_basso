@@ -1031,7 +1031,7 @@ function salvaPref() {
     CZ.pref(state.songId, {
       bpm: state.bpm, beats: state.beats, mode: state.playMode,
       tuning: state.tuning, zoneFrom: state.zoneFrom, zw: +$('zw').value,
-      lock: state.lock, trasp: state.trasp || 0,
+      lock: state.lockZone, trasp: state.trasp || 0,
       loop: state.loop ? { ...state.loop } : null, vtype: state.vtype
     });
   }, 700);
@@ -1047,8 +1047,17 @@ function applicaPref(p) {
     state.playMode = p.mode;
     $('modes').querySelectorAll('.seg').forEach(x => x.classList.toggle('on', x.dataset.mode === p.mode));
   }
-  if (p.zw) { $('zw').value = p.zw; $('zwv').textContent = p.zw; }
-  if (typeof p.zoneFrom === 'number') { state.lock = !!p.lock; setZone(p.zoneFrom); $('zs').value = p.zoneFrom; }
+  if (p.zw) {
+    state.zoneWidth = +p.zw;
+    $('zw').value = String(state.zoneWidth);
+    $('zwv').textContent = t('zone.frets', state.zoneWidth);
+    $('zs').max = state.frets - state.zoneWidth + 1;
+  }
+  if (typeof p.zoneFrom === 'number') {
+    setLock(!!p.lock);
+    const maxFrom = Math.max(0, state.frets - state.zoneWidth + 1);
+    setZone(Math.min(Math.max(0, p.zoneFrom), maxFrom));
+  }
   if (p.trasp) {
     const testo = $('seq').value.split(/(\s+|,)/).map(tok =>
       /^[A-G]/.test(tok) ? transposeSymbol(tok, p.trasp) : tok).join('');
