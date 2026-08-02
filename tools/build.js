@@ -14,6 +14,16 @@ const MODULES = ['theory', 'voicings', 'audio', 'render', 'tab', 'forma', 'ireal
 const IMPORT_NAMED = /^import\s*\{([^}]+)\}\s*from\s*['"]\.\/(\w+)\.js['"];?\s*$/gm;
 const IMPORT_STAR = /^import\s*\*\s*as\s*(\w+)\s*from\s*['"]\.\/(\w+)\.js['"];?\s*$/gm;
 
+function replaceOnce(source, pattern, replacement, label) {
+  let matches = 0;
+  const output = source.replace(pattern, (...args) => {
+    matches += 1;
+    return typeof replacement === 'function' ? replacement(...args) : replacement;
+  });
+  if (matches !== 1) throw new Error(`${label}: attesa una corrispondenza, trovate ${matches}`);
+  return output;
+}
+
 /** Trasforma un modulo ES in una funzione anonima che restituisce i suoi export. */
 function wrap(name) {
   let src = readFileSync(join(root, 'src', `${name}.js`), 'utf8');
@@ -51,23 +61,43 @@ writeFileSync(join(root, 'assets', 'app.bundle.js'), bundle);
 const css = readFileSync(join(root, 'assets', 'styles.css'), 'utf8');
 const audioUi = readFileSync(join(root, 'src', 'audio-import-ui.js'), 'utf8');
 const audioTranscriber = readFileSync(join(root, 'src', 'audio-transcriber.js'), 'utf8');
-let audioImportPage = readFileSync(join(root, 'audio-import.html'), 'utf8')
-  .replace(/<script src="src\/audio-transcriber\.js[^"]*"><\/script>/,
-    `<script>\n${audioTranscriber}\n<\/script>`);
+
+let audioImportPage = readFileSync(join(root, 'audio-import.html'), 'utf8');
+audioImportPage = replaceOnce(
+  audioImportPage,
+  /<script src="src\/audio-transcriber\.js(?:\?v=[^"]+)?"><\/script>/,
+  `<script>\n${audioTranscriber}\n<\/script>`,
+  'script del trascrittore audio'
+);
 
 // Una stringa dentro <script> non deve contenere una chiusura script letterale.
 const audioImportLiteral = JSON.stringify(audioImportPage).replace(/<\/script/gi, '<\\/script');
 const standaloneAudio = `<script>\nwindow.MANICO_AUDIO_IMPORT_SRCDOC = ${audioImportLiteral};\n<\/script>\n`
   + `<script>\n${audioUi}\n<\/script>`;
 
-let html = readFileSync(join(root, 'app.html'), 'utf8')
-  .replace(/<link rel="stylesheet" href="assets\/styles\.css[^"]*">/, `<style>\n${css}\n</style>`)
-  .replace(/<script src="src\/audio-import-ui\.js[^"]*"><\/script>/, standaloneAudio)
-  .replace(/<script src="assets\/app\.bundle\.js[^"]*"><\/script>/, `<script>\n${bundle}\n<\/script>`)
-  // Nel file unico la guida non e' accanto: si punta al sito.
-  .replace(/href="index\.html"/g, 'href="https://basso.massimodanieli.com/"')
-  // Il backtick e' escluso: altrimenti si mangia la chiusura dei template literal.
-  .replace(/\?v=[^"'`<>\s]+/g, '');
+// IMPORTANTE: si sostituiscono soltanto i tag HTML esterni. Non bisogna mai
+// rimuovere globalmente le query ?v= dopo aver incorporato JavaScript: una query
+// puo' vivere dentro un template literal e una regex globale puo' spezzarlo.
+let html = readFileSync(join(root, 'app.html'), 'utf8');
+html = replaceOnce(
+  html,
+  /<link rel="stylesheet" href="assets\/styles\.css(?:\?v=[^"]+)?">/,
+  `<style>\n${css}\n</style>`,
+  'foglio di stile principale'
+);
+html = replaceOnce(
+  html,
+  /<script src="src\/audio-import-ui\.js(?:\?v=[^"]+)?"><\/script>/,
+  standaloneAudio,
+  'interfaccia importazione audio'
+);
+html = replaceOnce(
+  html,
+  /<script src="assets\/app\.bundle\.js(?:\?v=[^"]+)?"><\/script>/,
+  `<script>\n${bundle}\n<\/script>`,
+  'bundle principale'
+);
+html = html.replace(/href="index\.html"/g, 'href="https://basso.massimodanieli.com/"');
 
 mkdirSync(join(root, 'dist'), { recursive: true });
 writeFileSync(join(root, 'dist', 'manico.html'), html);
