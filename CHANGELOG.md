@@ -3,6 +3,16 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [3.6.0] — 2026-08-02
+
+### Aggiunto
+- Il segnalibro "Manda a Manico" (da trascinare dalla guida): su qualunque pagina
+  di accordi, un clic apre Manico col brano gia' incollato e titolo e autore
+  indovinati dal titolo della pagina. Il brano viaggia nel frammento
+  dell'indirizzo, che resta nel browser: nessun server di mezzo.
+- Campi Titolo e Autore nella finestra di importazione, per il testo incollato:
+  sostituiscono la convenzione delle due righe in testa e comandano sul risultato.
+
 ## [3.5.0] — 2026-08-02
 
 ### Aggiunto

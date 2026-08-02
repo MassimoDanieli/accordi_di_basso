@@ -92,6 +92,24 @@ function daTestoNudo(testo) {
   }];
 }
 
+/**
+ * Indovina titolo e autore dal titolo di una pagina web:
+ * "Song Chords by Artist @ Sito", "Artist - Song Chords", "Song - Artist" e simili.
+ */
+export function indovinaTitolo(t) {
+  if (!t) return { title: '', composer: '' };
+  t = t.replace(/\s*[@|\u2014].*$/, '').replace(/\s*\(ver\s*\d+\)\s*/i, ' ').trim();
+  let m = t.match(/^(.+?)\s+(?:chords|tab|accordi|cifra)\s+by\s+(.+)$/i);
+  if (m) return { title: m[1].trim(), composer: m[2].trim() };
+  m = t.match(/^(.+?)\s*[-\u2013]\s*(.+?)\s+(?:chords|accordi|cifra(?:\s+club)?)\s*$/i);
+  if (m) return { title: m[2].trim(), composer: m[1].trim() };
+  m = t.match(/^(.+?)\s+(?:chords|accordi)\s*[-\u2013]\s*(.+)$/i);
+  if (m) return { title: m[1].trim(), composer: m[2].trim() };
+  m = t.match(/^(.+?)\s*[-\u2013]\s*(.+)$/);
+  if (m) return { title: m[2].replace(/\s+(chords|accordi)$/i, '').trim(), composer: m[1].trim() };
+  return { title: t.replace(/\s+(chords|accordi)$/i, '').trim(), composer: '' };
+}
+
 /** Il punto d'ingresso: riconosce ChordPro dai suoi segni, altrimenti testo nudo. */
 export function parse(testo) {
   if (!testo || !testo.trim()) return [];

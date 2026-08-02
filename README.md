@@ -64,7 +64,9 @@ prova), piu' una batteria di test sintetici, uno per ogni gettone del formato.
 Per il repertorio moderno c'e' l'incolla-testo: accordi sopra
 le parole (il formato dei siti di accordi) o ChordPro, con le righe di soli
 accordi pescate fra le parole, le stanghette a dividere le battute quando ci
-sono, e la griglia sempre modificabile a mano. Tutto avviene nel browser: nulla
+sono, e la griglia sempre modificabile a mano. Il segnalibro
+"Manda a Manico" (nella guida) porta la pagina di accordi al tool con un clic,
+titolo e autore indovinati, passando dal frammento dell'indirizzo: niente server. Tutto avviene nel browser: nulla
 esce dalla pagina. Le playlist si salvano in blocco
 nel canzoniere con un bottone (provato con le raccolte essenziali di iReal da
 centinaia di brani). I brani singoli entrano da

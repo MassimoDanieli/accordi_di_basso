@@ -209,6 +209,13 @@ check('lettore testo: ChordPro con direttive', () => {
   assert.equal(s0.bars.length, 4);
 });
 
+check('lettore testo: indovino del titolo dalle pagine', () => {
+  assert.deepEqual(Testo.indovinaTitolo('Creep Chords by Radiohead @ Ultimate-Guitar.Com'),
+    { title: 'Creep', composer: 'Radiohead' });
+  assert.deepEqual(Testo.indovinaTitolo('Tom Jobim - Corcovado'),
+    { title: 'Corcovado', composer: 'Tom Jobim' });
+});
+
 check('lettore testo: le parole da sole non bastano', () => {
   assert.equal(Testo.parse('solo parole\nsenza nessun accordo\nqui dentro').length, 0);
 });

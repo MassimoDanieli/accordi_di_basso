@@ -76,6 +76,9 @@ dialog h3{margin:14px 0 6px;font-size:13px;color:var(--muted);font-weight:500}
 .btnfile:hover span{background:var(--panel-2)}
 .filerow{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;color:var(--muted)}
 .filerow input{font-size:12px}
+.filerow input[type=text]{flex:1;min-width:0}
+a.bm{display:inline-block;border:1.5px dashed var(--root);border-radius:8px;padding:4px 12px;
+  color:var(--root);font-weight:500;cursor:grab}
 select{cursor:pointer;font-size:13px}
 input:focus,textarea:focus,select:focus{border-color:var(--root)}
 button{background:transparent;border:1px solid var(--line-2);color:var(--paper);border-radius:var(--r);

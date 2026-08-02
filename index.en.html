@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-versione="3.5.0">
+<html lang="en" data-versione="3.6.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,600..700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=3.5.0">
+<link rel="stylesheet" href="assets/styles.css?v=3.6.0">
 <script>
   // Applicato subito, prima del disegno, per non far lampeggiare la pagina.
   (function () {
@@ -44,7 +44,7 @@
       <button data-lang="it" onclick="location.href='index.html'" title="Italiano">🇮🇹</button>
       <button data-lang="en" class="on" onclick="location.href='index.en.html'" title="English">🇬🇧</button>
     </span>
-    <span class="ver">v3.5.0</span>
+    <span class="ver">v3.6.0</span>
     <button id="tema" class="tog">Chiaro</button>
     <a class="cta" href="app.html">Open the tool &rarr;</a>
   </div>
@@ -157,6 +157,13 @@ E |-----------------|-----------|</pre>
     barlines <code>|</code>, when present, split the bars, otherwise each chord takes one bar — and
     the grid stays hand-editable, to tune durations by ear. For plain text the convention is: first line
     the title, second the artist; ChordPro declares them itself, tempo included.</p>
+  <h3>The “Send to Manico” bookmarklet</h3>
+  <p>To skip the copy-paste: drag this link to your bookmarks bar —
+    <a href="javascript:(()=>{const s=String(getSelection())||document.body.innerText;location.href='https://basso.massimodanieli.com/app.html#brano='+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify({t:document.title,c:s.slice(0,60000)})))))})()" class="bm">Send to Manico</a> — then, on any chord page, click the
+    bookmark. Manico opens with the song already pasted and <b>title and artist guessed from the page
+    title</b>, ready to fix in the two fields if needed. Select just the chart block first and it sends
+    that; otherwise it sends the whole page and Manico drops the words. The song travels in the URL
+    fragment, which stays in the browser: it goes through no server.</p>
   <p>With a <b>playlist</b> link the window offers <b>Save all</b>: the whole collection lands in the
     songbook in one stroke — including the essential playlists published by iReal (Jazz, Pop, Blues,
     Brazilian…) with hundreds of songs. The menu stays there to load one right away.</p>
@@ -189,7 +196,7 @@ E |-----------------|-----------|</pre>
 </div>
 
 <script type="module">
-  import { initTheme } from './src/theme.js?v=3.5.0';
+  import { initTheme } from './src/theme.js?v=3.6.0';
   initTheme();
 </script>
 </body>

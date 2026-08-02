@@ -811,9 +811,31 @@ function init() {
     // Non era un link iReal: forse e' testo con gli accordi, o ChordPro.
     if (!songs.length && !/^irealb/i.test(raw)) {
       try { songs = Testo.parse(raw); } catch (e) { songs = []; }
+      // I campi Titolo/Autore comandano sul testo incollato.
+      if (songs.length === 1) {
+        const ti = $('irtitolo').value.trim(), au = $('irautore').value.trim();
+        if (ti) songs[0].title = ti;
+        if (au) songs[0].composer = au;
+      }
     }
     presentaBrani(songs);
   };
+
+  // Il segnalibro "Manda a Manico": il brano arriva nel frammento dell'indirizzo,
+  // che non viaggia verso nessun server. Titolo e autore indovinati dalla pagina.
+  if (location.hash.startsWith('#brano=')) {
+    try {
+      const dati = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(location.hash.slice(7))))));
+      history.replaceState(null, '', location.pathname + location.search);
+      const stima = Testo.indovinaTitolo(dati.t || '');
+      $('irtitolo').value = stima.title;
+      $('irautore').value = stima.composer;
+      $('ireal').value = dati.c || '';
+      const d = $('dlgireal');
+      if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+      $('irgo').onclick();
+    } catch (e) { /* frammento malformato: nessun dramma */ }
+  }
   $('irfile').onchange = e => {
     const files = [...e.target.files];
     if (!files.length) return;

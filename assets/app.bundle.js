@@ -1068,6 +1068,24 @@ __mod.testo = (function () {
     }];
   }
 
+  /**
+   * Indovina titolo e autore dal titolo di una pagina web:
+   * "Song Chords by Artist @ Sito", "Artist - Song Chords", "Song - Artist" e simili.
+   */
+  function indovinaTitolo(t) {
+    if (!t) return { title: '', composer: '' };
+    t = t.replace(/\s*[@|\u2014].*$/, '').replace(/\s*\(ver\s*\d+\)\s*/i, ' ').trim();
+    let m = t.match(/^(.+?)\s+(?:chords|tab|accordi|cifra)\s+by\s+(.+)$/i);
+    if (m) return { title: m[1].trim(), composer: m[2].trim() };
+    m = t.match(/^(.+?)\s*[-\u2013]\s*(.+?)\s+(?:chords|accordi|cifra(?:\s+club)?)\s*$/i);
+    if (m) return { title: m[2].trim(), composer: m[1].trim() };
+    m = t.match(/^(.+?)\s+(?:chords|accordi)\s*[-\u2013]\s*(.+)$/i);
+    if (m) return { title: m[1].trim(), composer: m[2].trim() };
+    m = t.match(/^(.+?)\s*[-\u2013]\s*(.+)$/);
+    if (m) return { title: m[2].replace(/\s+(chords|accordi)$/i, '').trim(), composer: m[1].trim() };
+    return { title: t.replace(/\s+(chords|accordi)$/i, '').trim(), composer: '' };
+  }
+
   /** Il punto d'ingresso: riconosce ChordPro dai suoi segni, altrimenti testo nudo. */
   function parse(testo) {
     if (!testo || !testo.trim()) return [];
@@ -1076,7 +1094,7 @@ __mod.testo = (function () {
     return songs.length ? songs : daTestoNudo(testo);
   }
 
-  return { parse };
+  return { indovinaTitolo, parse };
 })();
 
 __mod.canzoniere = (function () {
@@ -1401,6 +1419,7 @@ __mod.i18n = (function () {
       'cz.tanti': n => `${n} brani \u2014 affina la ricerca per vederli tutti.`,
       'ir.title': 'Importa un brano',
       'ir.hint': 'Tre strade: un link <code>irealb://</code> dal tasto Condividi di iReal Pro (anche playlist intere, con Salva tutti); un file <code>.musicxml</code> (iReal, MuseScore); oppure <b>testo con gli accordi sopra le parole</b> o ChordPro, incollato qui \u2014 per il testo nudo, prima riga titolo e seconda autore. Le forme iReal e MusicXML arrivano srotolate come si suonano. Tutto avviene nel browser: non esce niente dalla pagina.',
+      'ir.titolo': 'titolo (per il testo incollato)', 'ir.autore': 'autore',
       'ir.file': 'oppure un file MusicXML:',
       'ir.unknown': n => `sigle non riconosciute (in rosso nel nastro): ${n}`,
       'ir.go': 'Importa',
@@ -1512,6 +1531,7 @@ __mod.i18n = (function () {
       'cz.tanti': n => `${n} songs \u2014 narrow the search to see them all.`,
       'ir.title': 'Import a song',
       'ir.hint': 'Three roads: an <code>irealb://</code> link from iReal Pro\u2019s Share button (whole playlists too, with Save all); a <code>.musicxml</code> file (iReal, MuseScore); or <b>text with chords above the lyrics</b> or ChordPro, pasted here \u2014 for plain text, first line title and second line artist. iReal and MusicXML forms arrive unrolled as played. Everything happens in the browser: nothing leaves the page.',
+      'ir.titolo': 'title (for pasted text)', 'ir.autore': 'artist',
       'ir.file': 'or a MusicXML file:',
       'ir.unknown': n => `unrecognised symbols (red in the ribbon): ${n}`,
       'ir.go': 'Import',
@@ -2398,9 +2418,31 @@ __mod.app = (function () {
       // Non era un link iReal: forse e' testo con gli accordi, o ChordPro.
       if (!songs.length && !/^irealb/i.test(raw)) {
         try { songs = Testo.parse(raw); } catch (e) { songs = []; }
+        // I campi Titolo/Autore comandano sul testo incollato.
+        if (songs.length === 1) {
+          const ti = $('irtitolo').value.trim(), au = $('irautore').value.trim();
+          if (ti) songs[0].title = ti;
+          if (au) songs[0].composer = au;
+        }
       }
       presentaBrani(songs);
     };
+
+    // Il segnalibro "Manda a Manico": il brano arriva nel frammento dell'indirizzo,
+    // che non viaggia verso nessun server. Titolo e autore indovinati dalla pagina.
+    if (location.hash.startsWith('#brano=')) {
+      try {
+        const dati = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(location.hash.slice(7))))));
+        history.replaceState(null, '', location.pathname + location.search);
+        const stima = Testo.indovinaTitolo(dati.t || '');
+        $('irtitolo').value = stima.title;
+        $('irautore').value = stima.composer;
+        $('ireal').value = dati.c || '';
+        const d = $('dlgireal');
+        if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+        $('irgo').onclick();
+      } catch (e) { /* frammento malformato: nessun dramma */ }
+    }
     $('irfile').onchange = e => {
       const files = [...e.target.files];
       if (!files.length) return;
