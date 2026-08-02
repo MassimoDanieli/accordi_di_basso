@@ -1,0 +1,95 @@
+name: Apply Manico 5 production build
+
+on:
+  push:
+    branches: [agent/manico-5-production]
+    paths:
+      - '.manico5-ready'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: manico5-production
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Verify staged payload chunks
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(wc -c < .manico5-part-00)" -eq 12000
+          test "$(wc -c < .manico5-part-01)" -eq 12000
+          test "$(wc -c < .manico5-part-02)" -eq 12000
+          test "$(wc -c < .manico5-part-03)" -eq 12000
+          test "$(wc -c < .manico5-part-04)" -eq 12000
+          test "$(wc -c < .manico5-part-05)" -eq 10336
+
+          cat > /tmp/manico5-chunks.sha256 <<'EOF'
+          c4bebee39ca8f7cf32b9c2a6150ceb41b0c4666cbff4faf301623df8c1823b8d  .manico5-part-00
+          be0d904c9f114aac9b36315352458a270efc22e0cf3f4355b56f5fa742e498c1  .manico5-part-01
+          c991c633956e07d1436f33bbfb74d8b4e5a25eeb81fa6a7026ed462465e4bfb8  .manico5-part-02
+          6c9a102b96b45753361052294b4445c7e54483c48fa83baa7935a84a525b1403  .manico5-part-03
+          46c7c40e6e64a150eacb5b1a046e94251de5c5ea3ee9e1c98de7c168a4ccdb09  .manico5-part-04
+          86562994308fedfa7dddd04bfbd847306394b636bf3d45a2c0adcbbf2cb0c500  .manico5-part-05
+          EOF
+          sha256sum --check /tmp/manico5-chunks.sha256
+
+          cat .manico5-part-00 .manico5-part-01 .manico5-part-02 \
+              .manico5-part-03 .manico5-part-04 .manico5-part-05 \
+              > /tmp/manico5-production.tar.gz.b64
+          base64 --decode /tmp/manico5-production.tar.gz.b64 > /tmp/manico5-production.tar.gz
+          echo "08db76b6203e16160bdf7616d8f737c22fdd32fc880b2b2533678670334a8550  /tmp/manico5-production.tar.gz" \
+            | sha256sum --check
+          tar --list --gzip --file /tmp/manico5-production.tar.gz > /tmp/manico5-files.txt
+          test -s /tmp/manico5-files.txt
+
+      - name: Replace legacy application with Manico 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name .git \
+            ! -name LICENSE \
+            ! -name CNAME \
+            -exec rm -rf {} +
+          tar --extract --gzip --file /tmp/manico5-production.tar.gz --directory .
+
+      - name: Test transcription engine
+        run: npm test
+
+      - name: Build synchronized release
+        run: npm run release
+
+      - name: Validate release
+        run: npm run check:release
+
+      - name: Reject stale generated files
+        run: git diff --exit-code
+
+      - name: Verify Docker image
+        run: docker build --tag manico5-ci .
+
+      - name: Commit production rewrite
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Rebuild Manico as a bass transcriber"
+          git push
