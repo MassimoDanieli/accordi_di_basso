@@ -3,6 +3,20 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [4.0.0] — 2026-08-02
+
+### Il traguardo
+- Manico 4 e' un leggio intelligente per bassisti: non accompagna, allena. Questa
+  versione consolida cio' che le 3.x hanno costruito in due giorni: l'espansore
+  della forma verificato con l'oracolo MusicXML (283 misure identiche su cinque
+  standard), l'import da link iReal con Salva tutti per le playlist intere, da
+  file MusicXML e ChordPro anche a mazzi, dal testo con gli accordi sopra le
+  parole in notazione anglosassone e latina, il segnalibro Manda a Manico, il
+  canzoniere locale con ricerca e backup, gli anelli che mostrano il voice
+  leading, il walking con fraseggio, l'arpeggio nota per nota, il loop di
+  sezione, la trasposizione e la memoria per brano. Tutto nel browser, tutto sul
+  dispositivo, niente server. Le guide aprono con il manifesto.
+
 ## [3.9.0] — 2026-08-02
 
 ### Aggiunto

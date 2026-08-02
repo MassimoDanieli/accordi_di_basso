@@ -3,9 +3,16 @@
 Voicing e posizioni sul manico del basso elettrico, nel browser, senza dipendenze.
 In linea su https://basso.massimodanieli.com — sorgenti: https://github.com/MassimoDanieli/accordi_di_basso
 
-Scrivi una griglia di accordi, scegli una zona di tasti e Manico mostra quali voicing
-ci stanno dentro, li collega con il minimo movimento della mano, li suona a tempo con
-le note che si accendono sul manico, e li esporta in tab ASCII.
+Manico e' un leggio intelligente per bassisti. Non accompagna: allena. Scrivi una
+griglia o carica un brano — da un link iReal Pro (anche playlist intere), da un
+file MusicXML, dal testo con gli accordi sopra le parole o ChordPro, in notazione
+anglosassone o latina — e Manico srotola la forma come si suona, mostra i voicing
+dentro la zona di tasti dove sta la tua mano, collega gli accordi col minimo
+movimento (e te lo fa vedere: gli anelli planano da una posizione all'altra),
+arpeggia nota per nota, cammina in walking con fraseggio vero, ripete in loop la
+sezione che stai studiando, traspone in ogni tonalita', e si ricorda per ogni
+brano del canzoniere come l'avevi lasciato. Tutto nel browser, tutto sul tuo
+dispositivo, niente server.
 
 ## Pagine
 
