@@ -1,0 +1,38 @@
+name: Verify standalone build fix
+
+on:
+  push:
+    branches: [fix/standalone-build-script]
+    paths:
+      - '.github/workflows/rebuild-standalone-branch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Test source
+        run: npm test
+      - name: Rebuild release artifacts
+        run: npm run release
+      - name: Validate generated release
+        run: npm run check:release
+      - name: Commit regenerated standalone file
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/app.bundle.js dist/manico.html
+          if git diff --cached --quiet; then
+            echo "Generated artifacts already current"
+            exit 0
+          fi
+          git commit -m "Regenerate valid standalone artifact"
+          git push
