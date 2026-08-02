@@ -14,7 +14,7 @@ export function stringOrder(count, flipped) {
 /** Geometria del manico, condivisa dal disegno e dal livello del movimento. */
 export function boardGeometry(open, frets, flipped) {
   const ord = stringOrder(open.length, flipped);
-  const PT = 32, PB = 36, ROW = 60, W = 800, NUT = 78, BW = W - NUT - 12;
+  const PT = 36, PB = 42, ROW = 74, W = 800, NUT = 82, BW = W - NUT - 12;
   const H = PT + ROW * (open.length - 1) + PB;
   const fx = f => NUT + (fretPos(f) / fretPos(frets)) * BW;
   const cx = f => (f === 0 ? NUT - 21 : (fx(f - 1) + fx(f)) / 2);
@@ -54,19 +54,19 @@ export function fretboard(opts) {
   const my = PT + ROW * (open.length - 1) / 2;
   DOTS.filter(d => d <= frets).forEach(d => {
     s += d % 12 === 0
-      ? `<circle cx="${cx(d)}" cy="${my - 19}" r="6" fill="var(--inlay)"/><circle cx="${cx(d)}" cy="${my + 19}" r="6" fill="var(--inlay)"/>`
-      : `<circle cx="${cx(d)}" cy="${my}" r="6" fill="var(--inlay)"/>`;
+      ? `<circle cx="${cx(d)}" cy="${my - 23}" r="7" fill="var(--inlay)"/><circle cx="${cx(d)}" cy="${my + 23}" r="7" fill="var(--inlay)"/>`
+      : `<circle cx="${cx(d)}" cy="${my}" r="7" fill="var(--inlay)"/>`;
   });
 
   ord.forEach((si, row) => {
     const y = sy(row);
     s += `<line x1="${NUT - 44}" y1="${y}" x2="${fx(frets)}" y2="${y}" stroke="var(--string)" stroke-width="${1.2 + (open.length - 1 - si) * 0.7}" opacity=".55"/>`;
-    s += `<text x="10" y="${y + 5}" fill="var(--faint)" font-size="16" font-family="${MONO}">${SHARP[open[si] % 12]}</text>`;
+    s += `<text x="10" y="${y + 5}" fill="var(--faint)" font-size="19" font-family="${MONO}">${SHARP[open[si] % 12]}</text>`;
   });
 
   for (let f = 0; f <= frets; f++) {
     const inZone = f >= zoneFrom && f <= zoneTo;
-    s += `<text x="${cx(f)}" y="${H - 12}" text-anchor="middle" font-size="15" font-family="${MONO}" fill="${inZone ? 'var(--root)' : 'var(--faint)'}">${f}</text>`;
+    s += `<text x="${cx(f)}" y="${H - 13}" text-anchor="middle" font-size="17" font-family="${MONO}" fill="${inZone ? 'var(--root)' : 'var(--faint)'}">${f}</text>`;
   }
 
   if (chord) {
@@ -84,9 +84,9 @@ export function fretboard(opts) {
         const col = degreeColor(iv);
         const op = picked ? 1 : (inZone ? 0.4 : 0.13);
         s += `<g opacity="${op}" style="cursor:pointer" data-midi="${midi}" data-pos="${si}:${f}" class="note">`
-          + `<circle cx="${x}" cy="${y}" r="20" fill="${col}"/>`
-          + (picked ? `<circle cx="${x}" cy="${y}" r="25.5" fill="none" stroke="${col}" stroke-width="2"/>` : '')
-          + `<text x="${x}" y="${y + 6}" text-anchor="middle" font-size="${text.length > 2 ? 15 : 17}" font-weight="600" font-family="${MONO}" fill="#1A1512">${text}</text></g>`;
+          + `<circle cx="${x}" cy="${y}" r="24" fill="${col}"/>`
+          + (picked ? `<circle cx="${x}" cy="${y}" r="30" fill="none" stroke="${col}" stroke-width="2.4"/>` : '')
+          + `<text x="${x}" y="${y + 6}" text-anchor="middle" font-size="${text.length > 2 ? 17 : 20}" font-weight="600" font-family="${MONO}" fill="#1A1512">${text}</text></g>`;
       }
     });
   }
@@ -95,8 +95,8 @@ export function fretboard(opts) {
     const row = ord.indexOf(g.si);
     if (row < 0 || g.f > frets || g.f < 0) return;
     s += `<g class="note ghost" data-pos="${g.si}:${g.f}">`
-      + `<circle cx="${cx(g.f)}" cy="${sy(row)}" r="14" fill="var(--pass)"/>`
-      + `<text x="${cx(g.f)}" y="${sy(row) + 4}" text-anchor="middle" font-size="12" font-weight="600" font-family="${MONO}" fill="#FFF6EE">${SHARP[g.pc]}</text></g>`;
+      + `<circle cx="${cx(g.f)}" cy="${sy(row)}" r="17" fill="var(--pass)"/>`
+      + `<text x="${cx(g.f)}" y="${sy(row) + 5}" text-anchor="middle" font-size="14" font-weight="600" font-family="${MONO}" fill="#FFF6EE">${SHARP[g.pc]}</text></g>`;
   });
 
   return s + '</svg>';

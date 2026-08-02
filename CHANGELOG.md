@@ -3,6 +3,15 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [3.3.3] — 2026-08-02
+
+### Modificato
+- Il manico e' piu' grande dentro, non solo piu' largo: corde piu' distanti (74
+  invece di 60), pallini delle note da 20 a 24 con etichette piu' grandi, nomi
+  delle corde e numeri dei tasti cresciuti, tacche piu' evidenti, anelli del
+  movimento e pallini del walking al passo. Margini del riquadro limati: ogni
+  pixel va al manico.
+
 ## [3.3.2] — 2026-08-02
 
 ### Corretto

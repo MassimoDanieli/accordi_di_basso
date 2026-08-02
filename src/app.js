@@ -174,7 +174,7 @@ function fitBoard() {
   if (!svg) return;
   const vb = (svg.getAttribute('viewBox') || '0 0 800 250').split(/\s+/).map(Number);
   const ratio = vb[2] / vb[3];
-  const w = Math.max(0, box.clientWidth - 24);
+  const w = Math.max(0, box.clientWidth - 12);
   const h = Math.max(0, box.clientHeight - 16);
   // La larghezza comanda: il manico si legge in orizzontale. L'altezza puo'
   // limitare, ma mai sotto i 720px: meglio due dita di scorrimento verticale
@@ -214,7 +214,7 @@ function updateFlow(idx) {
       flow.appendChild(trail);
       ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       ring.setAttribute('class', 'ring');
-      ring.setAttribute('r', '25');
+      ring.setAttribute('r', '30');
       ring.style.transform = `translate(${n.p.x}px, ${n.p.y}px)`;
       flow.appendChild(ring);
     }
