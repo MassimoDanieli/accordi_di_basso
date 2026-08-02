@@ -3,6 +3,15 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [3.3.4] — 2026-08-02
+
+### Corretto
+- Senza un brano caricato il manico restava piccolo: la riga del titolo, quando
+  nascosta, non genera il suo elemento di griglia e tutta la colonna scalava di
+  un posto — la riga elastica finiva alla zona invece che al manico. Ora ogni
+  elemento della colonna e' inchiodato alla sua riga, titolo presente o no: il
+  manico e' grande sempre, non solo a canzone caricata.
+
 ## [3.3.3] — 2026-08-02
 
 ### Modificato

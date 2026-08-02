@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" data-versione="3.3.3">
+<html lang="it" data-versione="3.3.4">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -149,9 +149,15 @@ button.chip:hover{border-color:var(--faint)}
 .vgrip-txt{writing-mode:vertical-rl;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 body[data-pannello="no"] .vpanel{display:none}
 body[data-pannello="no"] .vgrip-ch{transform:rotate(180deg)}
-/* Quattro righe: titolo del brano, nastro, MANICO (elastico), zona.
-   La riga del titolo mancava e l'elastico era finito al nastro: manico piccolo. */
+/* Quattro righe: titolo, nastro, MANICO (elastico), zona. Ogni elemento e'
+   inchiodato alla sua riga: il titolo nascosto (display:none) non genera
+   l'elemento di griglia, e senza posizioni esplicite tutto scalava di un posto
+   e l'elastico finiva alla zona invece che al manico. */
 .left{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;min-width:0;min-height:0}
+.left .songline{grid-row:1}
+.left .ribbon{grid-row:2}
+.left .board{grid-row:3}
+.left .zoneline{grid-row:4}
 .board{display:flex;align-items:center;justify-content:center;padding:4px 6px;min-height:200px;overflow:auto}
 .bwrap{position:relative;display:inline-block;max-width:100%}
 .flow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
@@ -346,7 +352,7 @@ html{scroll-behavior:smooth}
     <button data-lang="en" title="English" aria-label="English"><span class="fl">🇬🇧</span></button>
   </span>
   <button id="tema" class="tog">Chiaro</button>
-  <span class="ver">v3.3.3</span>
+  <span class="ver">v3.3.4</span>
 </header>
 
 <main class="stage">
