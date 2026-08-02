@@ -4,7 +4,7 @@
 (function initAudioImportUI() {
   'use strict';
 
-  const ASSET_VERSION = '4.4.0-fix1';
+  const ASSET_VERSION = document.documentElement.dataset.versione || 'dev';
   const STRING_NAMES = ['E', 'A', 'D', 'G'];
   const copy = {
     it: {
@@ -115,7 +115,11 @@
 
   function openImportDialog() {
     createImportDialog();
-    if (!importFrame.src) importFrame.src = `audio-import.html?v=${ASSET_VERSION}`;
+    if (!importFrame.src && !importFrame.srcdoc) {
+      const embedded = window.MANICO_AUDIO_IMPORT_SRCDOC;
+      if (embedded) importFrame.srcdoc = embedded;
+      else importFrame.src = `audio-import.html?v=${ASSET_VERSION}`;
+    }
     if (typeof importDialog.showModal === 'function') importDialog.showModal();
     else importDialog.setAttribute('open', '');
   }

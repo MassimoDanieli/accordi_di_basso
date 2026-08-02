@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" data-versione="4.0.0">
+<html lang="it" data-versione="4.4.1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -320,180 +320,408 @@ html{scroll-behavior:smooth}
 </script>
 </head>
 <body class="app">
-
 <header class="bar">
   <a class="brand" href="https://basso.massimodanieli.com/" data-tt="bar.guide">
-    <svg class="mark" viewBox="0 0 30 24" aria-hidden="true">
-      <rect x="0.5" y="2.5" width="29" height="19" rx="3" class="mk-board"/>
-      <line x1="4" y1="2.5" x2="4" y2="21.5" class="mk-nut"/>
-      <line x1="12" y1="2.5" x2="12" y2="21.5" class="mk-fret"/>
-      <line x1="20" y1="2.5" x2="20" y2="21.5" class="mk-fret"/>
-      <line x1="0.5" y1="6.5" x2="29.5" y2="6.5" class="mk-string"/>
-      <line x1="0.5" y1="11" x2="29.5" y2="11" class="mk-string"/>
-      <line x1="0.5" y1="15.5" x2="29.5" y2="15.5" class="mk-string"/>
-      <line x1="0.5" y1="20" x2="29.5" y2="20" class="mk-string"/>
-      <circle cx="16" cy="11" r="3.2" class="mk-dot"/>
-    </svg>
+    <svg class="mark" viewBox="0 0 30 24" aria-hidden="true"><rect x="0.5" y="2.5" width="29" height="19" rx="3" class="mk-board"/><line x1="4" y1="2.5" x2="4" y2="21.5" class="mk-nut"/><line x1="12" y1="2.5" x2="12" y2="21.5" class="mk-fret"/><line x1="20" y1="2.5" x2="20" y2="21.5" class="mk-fret"/><line x1="0.5" y1="6.5" x2="29.5" y2="6.5" class="mk-string"/><line x1="0.5" y1="11" x2="29.5" y2="11" class="mk-string"/><line x1="0.5" y1="15.5" x2="29.5" y2="15.5" class="mk-string"/><line x1="0.5" y1="20" x2="29.5" y2="20" class="mk-string"/><circle cx="16" cy="11" r="3.2" class="mk-dot"/></svg>
     <span class="word">Manico<b>.</b></span>
   </a>
-
-  <input type="text" id="seq" value="C-7 F7 Bbdim7 Ebdim7" spellcheck="false" autocomplete="off"
-         data-tt="bar.gridTitle" aria-label="chart">
+  <input type="text" id="seq" value="C-7 F7 Bbdim7 Ebdim7" spellcheck="false" autocomplete="off" data-tt="bar.gridTitle" aria-label="chart">
   <button class="pri" id="go" data-t="bar.show">Mostra</button>
-
-  <span class="sep"></span>
-  <button class="pri play" id="pp">&#9654;</button>
-  <span class="modes" id="modes"></span>
-  <select id="beats" class="slim" data-tt="play.meter">
-    <option value="4">4/4</option><option value="3">3/4</option><option value="2">2/4</option><option value="6">6/8</option>
-  </select>
-  <label class="tempo" data-tt="bar.tempo">
-    <input type="range" id="bpm" min="40" max="200" step="1" value="92">
-    <span class="val" id="bpmv">92</span>
-  </label>
-
-  <span class="grow"></span>
-
-  <span class="flags">
-    <button data-lang="it" title="Italiano" aria-label="Italiano"><span class="fl">🇮🇹</span></button>
-    <button data-lang="en" title="English" aria-label="English"><span class="fl">🇬🇧</span></button>
-  </span>
-  <button id="tema" class="tog">Chiaro</button>
-  <span class="ver">v4.0.0</span>
+  <span class="sep"></span><button class="pri play" id="pp">&#9654;</button><span class="modes" id="modes"></span>
+  <select id="beats" class="slim" data-tt="play.meter"><option value="4">4/4</option><option value="3">3/4</option><option value="2">2/4</option><option value="6">6/8</option></select>
+  <label class="tempo" data-tt="bar.tempo"><input type="range" id="bpm" min="40" max="200" step="1" value="92"><span class="val" id="bpmv">92</span></label>
+  <span class="grow"></span><span class="flags"><button data-lang="it" title="Italiano" aria-label="Italiano"><span class="fl">🇮🇹</span></button><button data-lang="en" title="English" aria-label="English"><span class="fl">🇬🇧</span></button></span><button id="tema" class="tog">Chiaro</button><span class="ver">v4.4.1</span>
 </header>
-
 <main class="stage">
-  <section class="left">
-    <p class="songline" id="songline" hidden></p>
-    <nav class="ribbon" id="chips"></nav>
-    <div class="board" id="board"></div>
-    <div class="zoneline">
-      <label class="mini"><span class="cap" data-t="zone.from">Zona, dal tasto</span>
-        <input type="range" id="zs" min="0" max="8" step="1" value="0"><span class="val" id="zsv">0</span></label>
-      <label class="mini"><span class="cap" data-t="zone.width">ampiezza</span>
-        <input type="range" id="zw" min="3" max="7" step="1" value="5"><span class="val" id="zwv">5</span></label>
-      <span class="zdesc" id="zdesc"></span>
-      <label class="mini"><span class="cap" data-t="loop.lab">Loop, battute</span>
-        <select id="loopda" class="slim"></select><span class="cap">–</span><select id="loopa" class="slim"></select>
-        <button id="loopx" class="slim" title="×">×</button></label>
-      <label class="mini"><span class="cap" data-t="trasp.lab">Trasp.</span>
-        <button id="trgiu" class="slim">−</button><span class="val" id="trv" title="0">0</span><button id="trsu" class="slim">+</button></label>
-      <div class="strip" id="strip" data-tt="zone.coverageTitle"></div>
-      <span class="key">
-        <span><i style="background:var(--root)"></i><span data-t="key.root">fondamentale</span></span>
-        <span><i style="background:var(--third)"></i><span data-t="key.third">terza</span></span>
-        <span><i style="background:var(--fifth)"></i><span data-t="key.fifth">quinta</span></span>
-        <span><i style="background:var(--sev)"></i><span data-t="key.sev">sesta e settima</span></span>
-        <span><i style="background:var(--ext)"></i><span data-t="key.ext">estensioni</span></span>
-      </span>
-    </div>
-  </section>
-
-  <button class="vgrip" id="vtoggle" title="">
-    <span class="vgrip-ch" aria-hidden="true">&#9656;</span>
-    <span class="vgrip-txt" data-t="v.title">Voicing</span>
-  </button>
-
-  <aside class="vpanel">
-    <div class="vhead">
-      <h2><span data-t="v.title">Voicing</span> <small id="vcount"></small></h2>
-      <div class="vrow">
-        <select id="vtype"></select>
-        <label class="mini" id="spanwrap"><span class="cap" data-t="v.span">apertura mano</span>
-          <input type="range" id="span" min="3" max="6" step="1" value="4"><span class="val" id="spanv">4</span></label>
-      </div>
-      <div class="vrow">
-        <button id="vl" data-t="v.lead">Ottimizza voice leading</button>
-        <span class="val dim" id="vlinfo"></span>
-      </div>
-      <p class="hint" id="vhint"></p>
-    </div>
-    <div class="voices" id="voices"></div>
-  </aside>
+  <section class="left"><p class="songline" id="songline" hidden></p><nav class="ribbon" id="chips"></nav><div class="board" id="board"></div><div class="zoneline">
+    <label class="mini"><span class="cap" data-t="zone.from">Zona, dal tasto</span><input type="range" id="zs" min="0" max="8" step="1" value="0"><span class="val" id="zsv">0</span></label>
+    <label class="mini"><span class="cap" data-t="zone.width">ampiezza</span><input type="range" id="zw" min="3" max="7" step="1" value="5"><span class="val" id="zwv">5</span></label><span class="zdesc" id="zdesc"></span>
+    <label class="mini"><span class="cap" data-t="loop.lab">Loop, battute</span><select id="loopda" class="slim"></select><span class="cap">–</span><select id="loopa" class="slim"></select><button id="loopx" class="slim" title="×">×</button></label>
+    <label class="mini"><span class="cap" data-t="trasp.lab">Trasp.</span><button id="trgiu" class="slim">−</button><span class="val" id="trv" title="0">0</span><button id="trsu" class="slim">+</button></label>
+    <div class="strip" id="strip" data-tt="zone.coverageTitle"></div><span class="key"><span><i style="background:var(--root)"></i><span data-t="key.root">fondamentale</span></span><span><i style="background:var(--third)"></i><span data-t="key.third">terza</span></span><span><i style="background:var(--fifth)"></i><span data-t="key.fifth">quinta</span></span><span><i style="background:var(--sev)"></i><span data-t="key.sev">sesta e settima</span></span><span><i style="background:var(--ext)"></i><span data-t="key.ext">estensioni</span></span></span>
+  </div></section>
+  <button class="vgrip" id="vtoggle" title=""><span class="vgrip-ch" aria-hidden="true">&#9656;</span><span class="vgrip-txt" data-t="v.title">Voicing</span></button>
+  <aside class="vpanel"><div class="vhead"><h2><span data-t="v.title">Voicing</span> <small id="vcount"></small></h2><div class="vrow"><select id="vtype"></select><label class="mini" id="spanwrap"><span class="cap" data-t="v.span">apertura mano</span><input type="range" id="span" min="3" max="6" step="1" value="4"><span class="val" id="spanv">4</span></label></div><div class="vrow"><button id="vl" data-t="v.lead">Ottimizza voice leading</button><span class="val dim" id="vlinfo"></span></div><p class="hint" id="vhint"></p></div><div class="voices" id="voices"></div></aside>
 </main>
+<nav class="tools"><button data-apre="dlgireal" data-t="bar.ireal" class="add">+ Aggiungi brani</button><button data-apre="dlgforme" data-t="bar.forms">Canzoniere</button><button data-apre="dlgtab" data-t="bar.tab">Tab</button><button data-apre="dlgset" data-t="bar.settings">Impostazioni</button><a href="https://basso.massimodanieli.com/" data-t="bar.guide">Guida</a></nav>
+<dialog id="dlgforme"><h2 data-t="cz.title">Canzoniere</h2><p class="hint" data-th="cz.hint"></p><input type="text" id="czq" data-tp="cz.cerca" placeholder="cerca per titolo, autore o stile…"><div id="czlist" class="czlist"></div><h3 data-t="lib.title">Forme di serie</h3><select id="lib" size="6"></select><div class="dlg-foot"><button id="czout" data-t="cz.out">Esporta backup</button><label class="btnfile"><span data-t="cz.in">Importa backup</span><input type="file" id="czin" accept=".json"></label><span class="grow"></span><button data-close data-t="close">Chiudi</button><button class="pri" id="libgo" data-t="lib.load">Carica</button></div></dialog>
+<dialog id="dlgireal"><h2 data-t="ir.title">Importa un brano</h2><p class="hint" data-th="ir.hint"></p><textarea id="ireal" spellcheck="false" placeholder="irealb://..."></textarea><div class="filerow"><input type="text" id="irtitolo" data-tp="ir.titolo" placeholder="titolo (per il testo incollato)"><input type="text" id="irautore" data-tp="ir.autore" placeholder="autore"></div><label class="filerow"><span data-t="ir.file">oppure un file MusicXML:</span><input type="file" id="irfile" accept=".musicxml,.xml,.cho,.crd,.pro,.chopro,.txt" multiple></label><select id="irlist" style="display:none;margin-top:10px"></select><button id="irtutti" class="pri" style="display:none;margin-top:10px">Salva tutti</button><p class="hint" id="irinfo"></p><div class="dlg-foot"><span class="grow"></span><button data-close data-t="close">Chiudi</button><button class="pri" id="irgo" data-t="ir.go">Importa</button></div></dialog>
+<dialog id="dlgtab" class="wide"><h2 data-t="tab.title">Tab ASCII</h2><p class="hint" data-th="tab.hint"></p><pre id="tab"></pre><div class="dlg-foot"><select id="tabmode"></select><select id="perline"><option value="4">4</option><option value="2">2</option><option value="6">6</option></select><span class="grow"></span><button data-close data-t="close">Chiudi</button><button id="dltab" data-t="tab.dl">Scarica</button><button id="cptab" data-t="tab.copy">Copia</button><button class="pri" id="mktab" data-t="tab.make">Genera</button></div></dialog>
+<dialog id="dlgset"><h2 data-t="set.title">Strumento e vista</h2><label class="field"><span data-t="set.bass">Basso</span><select id="tun"></select></label><label class="field"><span data-t="set.frets">Tasti mostrati</span><select id="nfrets"></select></label><div class="field"><span data-t="set.notes">Note sul manico</span><div class="togs"><button class="tog on" id="tlab">Gradi</button><button class="tog" id="tflip" data-t="set.flip">Inverti corde</button><button class="tog on" id="tdim" data-t="set.dim">Sfuma fuori zona</button></div></div><p class="hint" data-th="set.viewHint"></p><h2 style="margin-top:22px" data-t="play.title">Esecuzione</h2><div class="field"><span data-t="play.options">Opzioni</span><div class="togs"><button class="tog on" id="clk" data-t="play.click">Click</button><button class="tog" id="lock" data-t="play.lock">Zona fissa</button></div></div><p class="hint" data-th="play.hint"></p><p class="hint" data-th="foot"></p><div class="dlg-foot"><span class="grow"></span><button class="pri" data-close data-t="close">Chiudi</button></div></dialog>
+<script>
+window.MANICO_AUDIO_IMPORT_SRCDOC = "<!doctype html>\n<html lang=\"it\" data-versione=\"4.4.1\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<title>MP3 → Manico</title>\n<style>\n:root{color-scheme:dark;--bg:#171411;--panel:#211d19;--line:#443a32;--ink:#f5eee7;--dim:#ab9e91;--gold:#e9b04a}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0,#2b2119,transparent 42%),var(--bg);color:var(--ink);font:15px/1.45 system-ui,sans-serif;min-height:100vh}.shell{width:min(780px,calc(100% - 28px));margin:0 auto;padding:38px 0}.hero{text-align:center;margin-bottom:20px}.hero h1{font-size:clamp(32px,6vw,60px);line-height:1;margin:0 0 12px;letter-spacing:-.04em}.hero p{color:var(--dim);max-width:650px;margin:0 auto}.card{border:1px solid var(--line);border-radius:16px;background:#ffffff08;box-shadow:0 20px 60px #0005;padding:20px}.drop{padding:28px;border:1px dashed #6d5c4e;border-radius:12px;text-align:center;background:#0002}.filebtn,button,input{font:inherit}.filebtn,button{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:#302923;color:var(--ink);border-radius:9px;padding:10px 14px;cursor:pointer}.filebtn{background:var(--gold);border-color:var(--gold);color:#21180b;font-weight:800}.filebtn input{display:none}.details{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}.details .grow{flex:1}.muted{color:var(--dim)}.progress{height:7px;background:#302923;border-radius:10px;overflow:hidden;margin-top:14px}.progress i{display:block;width:0;height:100%;background:var(--gold);transition:width .12s linear}.actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px}.actions button{background:var(--gold);border-color:var(--gold);color:#21180b;font-weight:800}.actions button:disabled{opacity:.45;cursor:not-allowed}.warning{color:#d8b372;font-size:13px;margin:14px 0 0}.status{color:var(--dim);font-variant-numeric:tabular-nums}@media(max-width:600px){.shell{padding-top:18px}.card{padding:14px}.details{align-items:flex-start}}\n</style>\n</head>\n<body>\n<main class=\"shell\">\n  <section class=\"hero\">\n    <h1 data-copy=\"chooseTitle\"></h1>\n    <p data-copy=\"privacy\"></p>\n  </section>\n  <section class=\"card\">\n    <div class=\"drop\">\n      <label class=\"filebtn\"><span data-copy=\"choose\"></span><input id=\"file\" type=\"file\" accept=\"audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac\"></label>\n    </div>\n    <div class=\"details\">\n      <strong id=\"fileName\">—</strong>\n      <span id=\"duration\" class=\"muted\"></span>\n      <span class=\"grow\"></span>\n      <label><span data-copy=\"sensitivity\"></span> <input id=\"sensitivity\" type=\"range\" min=\"55\" max=\"90\" value=\"72\"></label>\n    </div>\n    <div class=\"progress\"><i id=\"progressBar\"></i></div>\n    <div class=\"actions\">\n      <button id=\"importButton\" type=\"button\" disabled data-copy=\"import\"></button>\n      <span id=\"status\" class=\"status\"></span>\n    </div>\n    <p class=\"warning\" data-copy=\"warning\"></p>\n  </section>\n</main>\n<script>\n(function initAudioTranscriber() {\n  'use strict';\n\n  const $ = id => document.getElementById(id);\n  const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];\n  const OPEN_MIDI = [40, 45, 50, 55];\n  const TARGET_RATE = 4000;\n  const copy = {\n    it: {\n      chooseTitle: 'Scegli un MP3',\n      privacy: 'Il file resta nel browser. Manico ricava attacchi, note, ritmo e posizione sul basso.',\n      choose: 'Scegli file',\n      import: 'Trascrivi e apri sul manico',\n      sensitivity: 'Sensibilità',\n      idle: 'Scegli una registrazione.',\n      decoding: 'Decodifica del file…',\n      ready: 'File pronto.',\n      running: 'Trascrizione della linea di basso…',\n      noNotes: 'Non ho trovato note affidabili. Prova ad aumentare la sensibilità.',\n      failed: 'Non riesco a leggere questo file audio.',\n      found: count => `${count} note rilevate. Apertura sul manico…`,\n      warning: 'La trascrizione è una stima: mix densi e cassa possono richiedere correzioni.'\n    },\n    en: {\n      chooseTitle: 'Choose an MP3',\n      privacy: 'The file stays in your browser. Manico extracts attacks, notes, rhythm and bass positions.',\n      choose: 'Choose file',\n      import: 'Transcribe and open on fretboard',\n      sensitivity: 'Sensitivity',\n      idle: 'Choose a recording.',\n      decoding: 'Decoding audio…',\n      ready: 'File ready.',\n      running: 'Transcribing the bass line…',\n      noNotes: 'No reliable notes were found. Try increasing sensitivity.',\n      failed: 'This audio file could not be read.',\n      found: count => `${count} notes detected. Opening the fretboard…`,\n      warning: 'The transcription is an estimate: dense mixes and kick drums may need correction.'\n    }\n  };\n\n  let language = 'it';\n  let selectedFile = null;\n  let decodedBuffer = null;\n\n  try {\n    language = localStorage.getItem('manico-lingua') === 'en' ? 'en' : 'it';\n  } catch (error) {\n    language = document.documentElement.lang === 'en' ? 'en' : 'it';\n  }\n\n  function t(key, ...args) {\n    const value = copy[language][key];\n    return typeof value === 'function' ? value(...args) : value;\n  }\n\n  function translate() {\n    document.documentElement.lang = language;\n    document.querySelectorAll('[data-copy]').forEach(element => {\n      element.textContent = t(element.dataset.copy);\n    });\n  }\n\n  function noteName(midi) {\n    const pc = ((midi % 12) + 12) % 12;\n    return `${NOTE_NAMES[pc]}${Math.floor(midi / 12) - 1}`;\n  }\n\n  function setStatus(message) {\n    $('status').textContent = message;\n  }\n\n  function setProgress(value) {\n    $('progressBar').style.width = `${Math.max(0, Math.min(100, value))}%`;\n  }\n\n  async function decodeFile(file) {\n    selectedFile = file;\n    decodedBuffer = null;\n    $('importButton').disabled = true;\n    $('fileName').textContent = file?.name || '';\n    setProgress(0);\n    setStatus(t('decoding'));\n\n    try {\n      const context = new (window.AudioContext || window.webkitAudioContext)();\n      decodedBuffer = await context.decodeAudioData((await file.arrayBuffer()).slice(0));\n      await context.close();\n      $('duration').textContent = `${Math.round(decodedBuffer.duration * 10) / 10}s`;\n      $('importButton').disabled = false;\n      setStatus(t('ready'));\n    } catch (error) {\n      selectedFile = null;\n      decodedBuffer = null;\n      setStatus(t('failed'));\n    }\n  }\n\n  function mixToMono(buffer) {\n    const output = new Float32Array(buffer.length);\n    for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {\n      const input = buffer.getChannelData(channel);\n      const weight = 1 / buffer.numberOfChannels;\n      for (let index = 0; index < input.length; index += 1) output[index] += input[index] * weight;\n    }\n    return output;\n  }\n\n  function lowPass(input, sampleRate, cutoff = 300) {\n    const output = new Float32Array(input.length);\n    const alpha = 1 - Math.exp(-2 * Math.PI * cutoff / sampleRate);\n    let state = 0;\n    for (let index = 0; index < input.length; index += 1) {\n      state += alpha * (input[index] - state);\n      output[index] = state;\n    }\n    return output;\n  }\n\n  function downsample(input, sourceRate, targetRate = TARGET_RATE) {\n    if (sourceRate <= targetRate) return { data: input, sampleRate: sourceRate };\n    const ratio = sourceRate / targetRate;\n    const length = Math.floor(input.length / ratio);\n    const output = new Float32Array(length);\n\n    for (let index = 0; index < length; index += 1) {\n      const start = Math.floor(index * ratio);\n      const end = Math.max(start + 1, Math.floor((index + 1) * ratio));\n      let sum = 0;\n      for (let source = start; source < end && source < input.length; source += 1) sum += input[source];\n      output[index] = sum / Math.max(1, end - start);\n    }\n    return { data: output, sampleRate: targetRate };\n  }\n\n  function rms(input, start, length) {\n    let sum = 0;\n    const end = Math.min(input.length, start + length);\n    for (let index = start; index < end; index += 1) {\n      const value = input[index];\n      sum += value * value;\n    }\n    return Math.sqrt(sum / Math.max(1, end - start));\n  }\n\n  function percentile(values, amount) {\n    if (!values.length) return 0;\n    const sorted = [...values].sort((a, b) => a - b);\n    return sorted[Math.max(0, Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * amount)))];\n  }\n\n  function detectOnsets(input, sampleRate, sensitivity) {\n    const hop = Math.max(1, Math.round(sampleRate * 0.01));\n    const windowSize = Math.max(hop * 2, Math.round(sampleRate * 0.03));\n    const energy = [];\n\n    for (let position = 0; position + windowSize < input.length; position += hop) {\n      energy.push(rms(input, position, windowSize));\n    }\n\n    const noise = percentile(energy, 0.35);\n    const strong = percentile(energy, 0.92);\n    const threshold = noise + (strong - noise) * (1 - sensitivity) * 0.9;\n    const minimumGap = Math.max(1, Math.round(0.07 * sampleRate / hop));\n    const onsets = [];\n    let previous = -minimumGap;\n\n    for (let index = 2; index < energy.length - 1; index += 1) {\n      const flux = energy[index] - Math.max(energy[index - 1], energy[index - 2]);\n      if (energy[index] > threshold && flux > Math.max(0.00001, threshold * 0.18) && index - previous >= minimumGap) {\n        onsets.push(index * hop / sampleRate);\n        previous = index;\n      }\n    }\n\n    if (!onsets.length || onsets[0] > 0.12) onsets.unshift(0);\n    return onsets;\n  }\n\n  function estimatePitch(input, sampleRate, startSeconds) {\n    const start = Math.max(0, Math.floor(startSeconds * sampleRate));\n    const windowSize = Math.min(input.length - start, Math.round(sampleRate * 0.18));\n    if (windowSize < Math.round(sampleRate * 0.08)) return null;\n\n    const signal = new Float32Array(windowSize);\n    let mean = 0;\n    for (let index = 0; index < windowSize; index += 1) mean += input[start + index] || 0;\n    mean /= windowSize;\n    for (let index = 0; index < windowSize; index += 1) signal[index] = (input[start + index] || 0) - mean;\n\n    const minimumLag = Math.max(2, Math.floor(sampleRate / 330));\n    const maximumLag = Math.min(Math.floor(sampleRate / 35), Math.floor(windowSize / 2));\n    let bestLag = -1;\n    let bestCorrelation = -1;\n\n    for (let lag = minimumLag; lag <= maximumLag; lag += 1) {\n      let numerator = 0;\n      let leftEnergy = 0;\n      let rightEnergy = 0;\n      for (let index = 0; index < windowSize - lag; index += 1) {\n        const left = signal[index];\n        const right = signal[index + lag];\n        numerator += left * right;\n        leftEnergy += left * left;\n        rightEnergy += right * right;\n      }\n      const denominator = Math.sqrt(leftEnergy * rightEnergy) || 1;\n      const correlation = numerator / denominator;\n      if (correlation > bestCorrelation) {\n        bestCorrelation = correlation;\n        bestLag = lag;\n      }\n    }\n\n    if (bestLag < 0 || bestCorrelation < 0.52) return null;\n    const frequency = sampleRate / bestLag;\n    let midi = Math.round(69 + 12 * Math.log2(frequency / 440));\n    while (midi < 40) midi += 12;\n    while (midi > 67) midi -= 12;\n    if (midi < 40 || midi > 67) return null;\n    return { midi, confidence: bestCorrelation };\n  }\n\n  function candidatePositions(midi) {\n    const positions = [];\n    OPEN_MIDI.forEach((open, string) => {\n      const fret = midi - open;\n      if (fret >= 0 && fret <= 12) positions.push({ string, fret });\n    });\n    return positions;\n  }\n\n  function choosePositions(events) {\n    let previous = null;\n    events.forEach(event => {\n      const candidates = candidatePositions(event.midi);\n      if (!candidates.length) {\n        event.string = null;\n        event.fret = null;\n        return;\n      }\n      candidates.sort((left, right) => {\n        const leftCost = previous\n          ? Math.abs(left.fret - previous.fret) * 2 + Math.abs(left.string - previous.string) * 3\n          : left.fret;\n        const rightCost = previous\n          ? Math.abs(right.fret - previous.fret) * 2 + Math.abs(right.string - previous.string) * 3\n          : right.fret;\n        return leftCost - rightCost;\n      });\n      event.string = candidates[0].string;\n      event.fret = candidates[0].fret;\n      previous = candidates[0];\n    });\n  }\n\n  function compactEvents(events) {\n    const output = [];\n    events.forEach(event => {\n      const previous = output[output.length - 1];\n      if (previous && previous.midi === event.midi && event.start - previous.end < 0.08) {\n        previous.end = event.end;\n        previous.confidence = Math.max(previous.confidence, event.confidence);\n      } else {\n        output.push({ ...event });\n      }\n    });\n    return output;\n  }\n\n  async function transcribe() {\n    if (!selectedFile || !decodedBuffer) return;\n    $('importButton').disabled = true;\n    setStatus(t('running'));\n    setProgress(0);\n\n    const mono = mixToMono(decodedBuffer);\n    const filtered = lowPass(mono, decodedBuffer.sampleRate, 300);\n    const reduced = downsample(filtered, decodedBuffer.sampleRate, TARGET_RATE);\n    const sensitivity = Number($('sensitivity').value) / 100;\n    const onsets = detectOnsets(reduced.data, reduced.sampleRate, sensitivity);\n    const detected = [];\n\n    for (let index = 0; index < onsets.length; index += 1) {\n      const start = onsets[index];\n      const next = index + 1 < onsets.length ? onsets[index + 1] : Math.min(decodedBuffer.duration, start + 0.8);\n      const pitch = estimatePitch(reduced.data, reduced.sampleRate, start + 0.025);\n      if (pitch) {\n        detected.push({\n          start,\n          end: Math.max(start + 0.06, next),\n          midi: pitch.midi,\n          note: noteName(pitch.midi),\n          confidence: pitch.confidence,\n          chord: '—'\n        });\n      }\n      setProgress((index + 1) / onsets.length * 100);\n      if (index % 6 === 0) await new Promise(resolve => setTimeout(resolve, 0));\n    }\n\n    const events = compactEvents(detected).filter(event => event.confidence >= 0.52);\n    for (let index = 0; index < events.length; index += 1) {\n      events[index].end = index + 1 < events.length\n        ? Math.max(events[index].start + 0.06, events[index + 1].start)\n        : Math.min(decodedBuffer.duration, Math.max(events[index].start + 0.2, events[index].end));\n    }\n    choosePositions(events);\n\n    if (!events.length) {\n      setStatus(t('noNotes'));\n      $('importButton').disabled = false;\n      return;\n    }\n\n    setStatus(t('found', events.length));\n    parent.postMessage({\n      type: 'manico-bassline',\n      title: selectedFile.name.replace(/\\.[^.]+$/, ''),\n      file: selectedFile,\n      events\n    }, location.origin);\n    $('importButton').disabled = false;\n  }\n\n  $('file').addEventListener('change', () => decodeFile($('file').files[0]));\n  $('importButton').addEventListener('click', transcribe);\n  translate();\n  setStatus(t('idle'));\n})();\n\n<\/script>\n</body>\n</html>\n";
+</script>
+<script>
+// Dedicated MP3 import tab. The iframe transcribes the bass line and sends
+// the original File plus timed note events back to the main fretboard.
 
-<nav class="tools">
-  <button data-apre="dlgireal" data-t="bar.ireal" class="add">+ Aggiungi brani</button>
-  <button data-apre="dlgforme" data-t="bar.forms">Canzoniere</button>
-  <button data-apre="dlgtab" data-t="bar.tab">Tab</button>
-  <button data-apre="dlgset" data-t="bar.settings">Impostazioni</button>
-  <a href="https://basso.massimodanieli.com/" data-t="bar.guide">Guida</a>
-</nav>
+(function initAudioImportUI() {
+  'use strict';
 
-<dialog id="dlgforme">
-  <h2 data-t="cz.title">Canzoniere</h2>
-  <p class="hint" data-th="cz.hint"></p>
-  <input type="text" id="czq" data-tp="cz.cerca" placeholder="cerca per titolo, autore o stile…">
-  <div id="czlist" class="czlist"></div>
-  <h3 data-t="lib.title">Forme di serie</h3>
-  <select id="lib" size="6"></select>
-  <div class="dlg-foot">
-    <button id="czout" data-t="cz.out">Esporta backup</button>
-    <label class="btnfile"><span data-t="cz.in">Importa backup</span>
-      <input type="file" id="czin" accept=".json"></label>
-    <span class="grow"></span>
-    <button data-close data-t="close">Chiudi</button>
-    <button class="pri" id="libgo" data-t="lib.load">Carica</button></div>
-</dialog>
+  const ASSET_VERSION = document.documentElement.dataset.versione || 'dev';
+  const STRING_NAMES = ['E', 'A', 'D', 'G'];
+  const copy = {
+    it: {
+      tab: 'Importa MP3',
+      title: 'Importa MP3',
+      hint: 'Scegli un file, trascrivi la linea di basso e torna sul manico per suonarla.',
+      close: 'Chiudi',
+      line: 'Linea di basso importata',
+      play: '▶ Riproduci',
+      pause: '❚❚ Pausa',
+      exit: 'Esci dalla linea',
+      note: 'Nota',
+      chord: 'Accordo indicativo',
+      transferError: 'Non riesco a trasferire l’audio sul manico. Seleziona di nuovo il file.'
+    },
+    en: {
+      tab: 'Import MP3',
+      title: 'Import MP3',
+      hint: 'Choose a file, transcribe the bass line, then return to the fretboard to play it.',
+      close: 'Close',
+      line: 'Imported bass line',
+      play: '▶ Play',
+      pause: '❚❚ Pause',
+      exit: 'Exit bass line',
+      note: 'Note',
+      chord: 'Suggested chord',
+      transferError: 'The audio could not be transferred to the fretboard. Choose the file again.'
+    }
+  };
 
-<dialog id="dlgireal">
-  <h2 data-t="ir.title">Importa un brano</h2>
-  <p class="hint" data-th="ir.hint"></p>
-  <textarea id="ireal" spellcheck="false" placeholder="irealb://..."></textarea>
-  <div class="filerow">
-    <input type="text" id="irtitolo" data-tp="ir.titolo" placeholder="titolo (per il testo incollato)">
-    <input type="text" id="irautore" data-tp="ir.autore" placeholder="autore">
-  </div>
-  <label class="filerow"><span data-t="ir.file">oppure un file MusicXML:</span>
-    <input type="file" id="irfile" accept=".musicxml,.xml,.cho,.crd,.pro,.chopro,.txt" multiple></label>
-  <select id="irlist" style="display:none;margin-top:10px"></select>
-  <button id="irtutti" class="pri" style="display:none;margin-top:10px">Salva tutti</button>
-  <p class="hint" id="irinfo"></p>
-  <div class="dlg-foot"><span class="grow"></span>
-    <button data-close data-t="close">Chiudi</button>
-    <button class="pri" id="irgo" data-t="ir.go">Importa</button></div>
-</dialog>
+  let importDialog = null;
+  let importFrame = null;
+  let importedAudio = null;
+  let importedUrl = null;
+  let importedEvents = [];
+  let player = null;
+  let overlay = null;
+  let animationFrame = 0;
+  let activeIndex = -1;
+  let originalBoardPosition = '';
+  let originalBoardOverflow = '';
 
-<dialog id="dlgtab" class="wide">
-  <h2 data-t="tab.title">Tab ASCII</h2>
-  <p class="hint" data-th="tab.hint"></p>
-  <pre id="tab"></pre>
-  <div class="dlg-foot">
-    <select id="tabmode"></select>
-    <select id="perline"><option value="4">4</option><option value="2">2</option><option value="6">6</option></select>
-    <span class="grow"></span>
-    <button data-close data-t="close">Chiudi</button>
-    <button id="dltab" data-t="tab.dl">Scarica</button>
-    <button id="cptab" data-t="tab.copy">Copia</button>
-    <button class="pri" id="mktab" data-t="tab.make">Genera</button>
-  </div>
-</dialog>
+  function language() {
+    try {
+      return localStorage.getItem('manico-lingua') === 'en' ? 'en' : 'it';
+    } catch (error) {
+      return document.documentElement.lang === 'en' ? 'en' : 'it';
+    }
+  }
 
-<dialog id="dlgset">
-  <h2 data-t="set.title">Strumento e vista</h2>
-  <label class="field"><span data-t="set.bass">Basso</span><select id="tun"></select></label>
-  <label class="field"><span data-t="set.frets">Tasti mostrati</span><select id="nfrets"></select></label>
-  <div class="field"><span data-t="set.notes">Note sul manico</span>
-    <div class="togs">
-      <button class="tog on" id="tlab">Gradi</button>
-      <button class="tog" id="tflip" data-t="set.flip">Inverti corde</button>
-      <button class="tog on" id="tdim" data-t="set.dim">Sfuma fuori zona</button>
-    </div>
-  </div>
-  <p class="hint" data-th="set.viewHint"></p>
+  function strings() {
+    return copy[language()];
+  }
 
-  <h2 style="margin-top:22px" data-t="play.title">Esecuzione</h2>
-  <div class="field"><span data-t="play.options">Opzioni</span>
-    <div class="togs">
-      <button class="tog on" id="clk" data-t="play.click">Click</button>
-      <button class="tog" id="lock" data-t="play.lock">Zona fissa</button>
-    </div>
-  </div>
-  <p class="hint" data-th="play.hint"></p>
-  <p class="hint" data-th="foot"></p>
-  <div class="dlg-foot"><span class="grow"></span><button class="pri" data-close data-t="close">Chiudi</button></div>
-</dialog>
+  function formatTime(seconds) {
+    const value = Number.isFinite(seconds) ? seconds : 0;
+    return `${Math.floor(value / 60)}:${String(Math.floor(value % 60)).padStart(2, '0')}`;
+  }
 
+  function translate() {
+    const c = strings();
+    const openButton = document.getElementById('mp3-import-tab');
+    const title = document.getElementById('mp3-dialog-title');
+    const hint = document.getElementById('mp3-dialog-hint');
+    const closeButton = document.getElementById('mp3-dialog-close');
+    if (openButton) openButton.textContent = c.tab;
+    if (title) title.textContent = c.title;
+    if (hint) hint.textContent = c.hint;
+    if (closeButton) closeButton.textContent = c.close;
+    if (player) {
+      player.querySelector('[data-role="title"]').textContent = c.line;
+      player.querySelector('[data-role="exit"]').textContent = c.exit;
+      updatePlayButton();
+    }
+  }
+
+  function createImportDialog() {
+    if (importDialog) return;
+
+    importDialog = document.createElement('dialog');
+    importDialog.id = 'dlgmp3';
+    importDialog.className = 'wide';
+    importDialog.style.cssText = [
+      'width:min(1180px,96vw)',
+      'max-width:96vw',
+      'height:min(900px,92vh)',
+      'max-height:92vh',
+      'padding:0',
+      'overflow:hidden'
+    ].join(';');
+    importDialog.innerHTML = `
+      <div style="height:100%;display:flex;flex-direction:column">
+        <header style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-bottom:1px solid var(--line)">
+          <div style="min-width:0;flex:1">
+            <h2 id="mp3-dialog-title" style="margin:0 0 3px"></h2>
+            <p id="mp3-dialog-hint" class="hint" style="margin:0"></p>
+          </div>
+          <button type="button" id="mp3-dialog-close"></button>
+        </header>
+        <iframe id="mp3-import-frame" title="MP3 bass-line import" style="display:block;width:100%;flex:1;border:0;background:#171411"></iframe>
+      </div>`;
+    document.body.appendChild(importDialog);
+
+    importFrame = importDialog.querySelector('#mp3-import-frame');
+    importDialog.querySelector('#mp3-dialog-close').onclick = () => importDialog.close();
+    translate();
+  }
+
+  function openImportDialog() {
+    createImportDialog();
+    if (!importFrame.src && !importFrame.srcdoc) {
+      const embedded = window.MANICO_AUDIO_IMPORT_SRCDOC;
+      if (embedded) importFrame.srcdoc = embedded;
+      else importFrame.src = `audio-import.html
+    }
+    if (typeof importDialog.showModal === 'function') importDialog.showModal();
+    else importDialog.setAttribute('open', '');
+  }
+
+  function stopImportedLine() {
+    cancelAnimationFrame(animationFrame);
+    if (importedAudio) {
+      importedAudio.pause();
+      importedAudio.removeAttribute('src');
+      importedAudio.load();
+    }
+    if (importedUrl) URL.revokeObjectURL(importedUrl);
+
+    importedAudio = null;
+    importedUrl = null;
+    importedEvents = [];
+    activeIndex = -1;
+    player?.remove();
+    overlay?.remove();
+    player = null;
+    overlay = null;
+
+    const board = document.getElementById('board');
+    if (board) {
+      board.style.position = originalBoardPosition;
+      board.style.overflow = originalBoardOverflow;
+    }
+    const songline = document.getElementById('songline');
+    if (songline) songline.hidden = true;
+  }
+
+  function ensureOverlay() {
+    const board = document.getElementById('board');
+    if (!board) return null;
+    if (overlay?.isConnected && overlay.parentElement === board) return overlay;
+
+    originalBoardPosition = board.style.position;
+    originalBoardOverflow = board.style.overflow;
+    board.style.position = 'relative';
+    board.style.overflow = 'hidden';
+
+    overlay = document.createElement('div');
+    overlay.id = 'bassline-board-overlay';
+    overlay.style.cssText = [
+      'position:absolute',
+      'inset:0',
+      'z-index:100',
+      'display:grid',
+      'grid-template-columns:42px repeat(13,minmax(0,1fr))',
+      'grid-template-rows:repeat(4,minmax(0,1fr))',
+      'pointer-events:none',
+      'background:linear-gradient(#5b3824,#3f271a)'
+    ].join(';');
+    board.appendChild(overlay);
+    return overlay;
+  }
+
+  function drawFretboard(event) {
+    const layer = ensureOverlay();
+    if (!layer) return;
+    layer.innerHTML = '';
+
+    for (let stringIndex = 0; stringIndex < 4; stringIndex += 1) {
+      const label = document.createElement('div');
+      label.textContent = STRING_NAMES[stringIndex];
+      label.style.cssText = 'display:grid;place-items:center;background:#171411;border-right:1px solid #685342;font-weight:700';
+      layer.appendChild(label);
+
+      for (let fret = 0; fret <= 12; fret += 1) {
+        const cell = document.createElement('div');
+        cell.style.cssText = 'position:relative;border-right:1px solid #aa806277;border-bottom:1px solid #dbc4ae55';
+        if (event && event.string === stringIndex && event.fret === fret) {
+          const dot = document.createElement('span');
+          dot.textContent = event.note || '';
+          dot.style.cssText = [
+            'position:absolute',
+            'left:50%',
+            'top:50%',
+            'transform:translate(-50%,-50%)',
+            'width:38px',
+            'height:38px',
+            'border-radius:50%',
+            'display:grid',
+            'place-items:center',
+            'background:var(--root)',
+            'color:#181008',
+            'font-weight:900',
+            'box-shadow:0 0 0 7px rgba(240,199,94,.22),0 5px 18px rgba(0,0,0,.65)'
+          ].join(';');
+          cell.appendChild(dot);
+        }
+        layer.appendChild(cell);
+      }
+    }
+  }
+
+  function updatePlayButton() {
+    if (!player) return;
+    player.querySelector('[data-role="play"]').textContent = importedAudio && !importedAudio.paused
+      ? strings().pause
+      : strings().play;
+  }
+
+  function updateImportedPlayback() {
+    cancelAnimationFrame(animationFrame);
+
+    const tick = () => {
+      if (!player || !importedAudio) return;
+      ensureOverlay();
+
+      const currentTime = importedAudio.currentTime || 0;
+      const duration = importedAudio.duration || 0;
+      player.querySelector('[data-role="seek"]').value = duration ? currentTime / duration * 1000 : 0;
+      player.querySelector('[data-role="time"]').textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+      updatePlayButton();
+
+      let index = importedEvents.findIndex(event => currentTime >= event.start && currentTime < event.end);
+      if (index < 0 && importedEvents.length) {
+        index = Math.max(0, importedEvents.findLastIndex(event => event.start <= currentTime));
+      }
+      if (index !== activeIndex) {
+        activeIndex = index;
+        const event = importedEvents[index] || null;
+        drawFretboard(event);
+
+        const songline = document.getElementById('songline');
+        if (songline && event) {
+          const c = strings();
+          const position = Number.isInteger(event.string) && Number.isInteger(event.fret)
+            ? `${STRING_NAMES[event.string]} · ${event.fret}`
+            : '—';
+          songline.hidden = false;
+          songline.textContent = `${c.note}: ${event.note || '—'} · ${position} · ${c.chord}: ${event.chord || '—'}`;
+        }
+      }
+
+      animationFrame = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+
+  function buildPlayer(title) {
+    const board = document.getElementById('board');
+    const left = board?.closest('.left');
+    if (!board || !left) return;
+
+    player = document.createElement('section');
+    player.id = 'bassline-player';
+    player.style.cssText = 'margin:0 0 12px;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);display:flex;gap:10px;align-items:center;flex-wrap:wrap';
+    player.innerHTML = `
+      <div style="min-width:180px;flex:0 1 auto"><strong data-role="title"></strong><div class="hint">${title || 'MP3'}</div></div>
+      <button type="button" class="pri" data-role="play"></button>
+      <input type="range" data-role="seek" min="0" max="1000" value="0" style="min-width:180px;flex:1;accent-color:var(--root)">
+      <span class="val" data-role="time">0:00 / 0:00</span>
+      <button type="button" data-role="exit"></button>`;
+    left.insertBefore(player, board);
+
+    player.querySelector('[data-role="play"]').onclick = async () => {
+      if (!importedAudio) return;
+      try {
+        if (importedAudio.paused) await importedAudio.play();
+        else importedAudio.pause();
+      } catch (error) {
+        console.error('MP3 playback failed', error);
+      }
+      updatePlayButton();
+    };
+    player.querySelector('[data-role="seek"]').oninput = event => {
+      if (importedAudio?.duration) {
+        importedAudio.currentTime = Number(event.target.value) / 1000 * importedAudio.duration;
+      }
+    };
+    player.querySelector('[data-role="exit"]').onclick = stopImportedLine;
+
+    translate();
+    drawFretboard(null);
+    updateImportedPlayback();
+  }
+
+  function openOnFretboard(data) {
+    stopImportedLine();
+
+    const file = data.file;
+    const validFile = file && typeof file === 'object' && typeof file.arrayBuffer === 'function';
+    const validEvents = Array.isArray(data.events) && data.events.length > 0;
+    if (!validFile || !validEvents) {
+      const info = document.getElementById('irinfo');
+      if (info) info.textContent = strings().transferError;
+      return;
+    }
+
+    importedEvents = data.events
+      .filter(event => Number.isFinite(event.start) && Number.isFinite(event.end))
+      .map(event => ({
+        start: Number(event.start),
+        end: Number(event.end),
+        midi: Number(event.midi),
+        note: String(event.note || ''),
+        string: Number.isInteger(event.string) ? event.string : null,
+        fret: Number.isInteger(event.fret) ? event.fret : null,
+        chord: String(event.chord || '—')
+      }));
+
+    importedUrl = URL.createObjectURL(file);
+    importedAudio = new Audio(importedUrl);
+    importedAudio.preload = 'auto';
+    importedAudio.addEventListener('ended', () => {
+      importedAudio.currentTime = 0;
+      activeIndex = -1;
+      drawFretboard(importedEvents[0] || null);
+      updatePlayButton();
+    });
+
+    if (importDialog?.open) importDialog.close();
+    buildPlayer(data.title);
+  }
+
+  function mount() {
+    const tools = document.querySelector('.tools');
+    if (!tools || document.getElementById('mp3-import-tab')) return;
+
+    const button = document.createElement('button');
+    button.id = 'mp3-import-tab';
+    button.type = 'button';
+    button.className = 'add';
+    button.onclick = openImportDialog;
+
+    const addSongs = tools.querySelector('[data-apre="dlgireal"]');
+    if (addSongs) addSongs.insertAdjacentElement('afterend', button);
+    else tools.prepend(button);
+
+    window.addEventListener('message', event => {
+      if (event.origin !== location.origin || event.source !== importFrame?.contentWindow) return;
+      if (event.data?.type !== 'manico-bassline') return;
+      openOnFretboard(event.data);
+    });
+
+    document.addEventListener('click', event => {
+      if (event.target?.closest?.('[data-lang]')) setTimeout(translate, 0);
+    });
+    translate();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
+  else mount();
+})();
+
+</script>
 <script>
 (function () {
 
@@ -1514,8 +1742,7 @@ __mod.testo = (function () {
   function daLatina(tok) {
     const R = '(?:DO|RE|MI|FA|SOL|LA|SI|Do|Re|Mi|Fa|Sol|La|Si)';
     const m = tok.match(new RegExp('^(' + R + ')([#b]?)([^/]*?)(/' + R + '[#b]?)?
-</body>
-</html>
+</body></html>
 ));
     if (!m) return tok;
     let suff = m[3] || '';
@@ -1524,8 +1751,7 @@ __mod.testo = (function () {
     let basso = '';
     if (m[4]) {
       const b = m[4].slice(1).match(new RegExp('^(' + R + ')([#b]?)
-</body>
-</html>
+</body></html>
 ));
       basso = '/' + LATINA[b[1].toUpperCase()] + (b[2] || '');
     }
@@ -1725,9 +1951,12 @@ __mod.canzoniere = (function () {
       if (r) { r.pref = p; memoria.set(id, r); }
       return;
     }
-    const st = db.transaction(STORE, 'readwrite').objectStore(STORE);
-    const r = await att(st.get(id));
-    if (r) { r.pref = p; await att(st.put(r)); }
+    const readStore = db.transaction(STORE, 'readonly').objectStore(STORE);
+    const r = await att(readStore.get(id));
+    if (!r) return;
+    r.pref = p;
+    const writeStore = db.transaction(STORE, 'readwrite').objectStore(STORE);
+    await att(writeStore.put(r));
   }
 
   /** Filtro di ricerca su titolo, compositore e stile. */
@@ -3205,7 +3434,7 @@ __mod.app = (function () {
       CZ.pref(state.songId, {
         bpm: state.bpm, beats: state.beats, mode: state.playMode,
         tuning: state.tuning, zoneFrom: state.zoneFrom, zw: +$('zw').value,
-        lock: state.lock, trasp: state.trasp || 0,
+        lock: state.lockZone, trasp: state.trasp || 0,
         loop: state.loop ? { ...state.loop } : null, vtype: state.vtype
       });
     }, 700);
@@ -3221,8 +3450,17 @@ __mod.app = (function () {
       state.playMode = p.mode;
       $('modes').querySelectorAll('.seg').forEach(x => x.classList.toggle('on', x.dataset.mode === p.mode));
     }
-    if (p.zw) { $('zw').value = p.zw; $('zwv').textContent = p.zw; }
-    if (typeof p.zoneFrom === 'number') { state.lock = !!p.lock; setZone(p.zoneFrom); $('zs').value = p.zoneFrom; }
+    if (p.zw) {
+      state.zoneWidth = +p.zw;
+      $('zw').value = String(state.zoneWidth);
+      $('zwv').textContent = t('zone.frets', state.zoneWidth);
+      $('zs').max = state.frets - state.zoneWidth + 1;
+    }
+    if (typeof p.zoneFrom === 'number') {
+      setLock(!!p.lock);
+      const maxFrom = Math.max(0, state.frets - state.zoneWidth + 1);
+      setZone(Math.min(Math.max(0, p.zoneFrom), maxFrom));
+    }
     if (p.trasp) {
       const testo = $('seq').value.split(/(\s+|,)/).map(tok =>
         /^[A-G]/.test(tok) ? transposeSymbol(tok, p.trasp) : tok).join('');
@@ -3337,5 +3575,4 @@ __mod.app = (function () {
 
 })();
 </script>
-</body>
-</html>
+</body></html>
