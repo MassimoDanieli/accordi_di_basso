@@ -1,257 +1,360 @@
-// Importazione MP3: la trascrizione avviene a schermo intero e la linea
-// risultante viene riprodotta direttamente sul manico principale.
+// Dedicated MP3 import tab. The iframe transcribes the bass line and sends
+// the original File plus timed note events back to the main fretboard.
 
 (function initAudioImportUI() {
-  const VERSION = '4.4.0';
+  'use strict';
+
+  const ASSET_VERSION = '4.4.0-fix1';
   const STRING_NAMES = ['E', 'A', 'D', 'G'];
-
-  function language() {
-    try { return localStorage.getItem('manico-lingua') === 'en' ? 'en' : 'it'; }
-    catch (e) { return document.documentElement.lang === 'en' ? 'en' : 'it'; }
-  }
-
   const copy = {
     it: {
-      title: 'Importa MP3 e suona la linea sul manico',
-      hint: 'Trascrivi la parte di basso. Al termine la registrazione e le note rilevate si aprono direttamente sul manico principale.',
-      open: 'Importa MP3',
+      tab: 'Importa MP3',
+      title: 'Importa MP3',
+      hint: 'Scegli un file, trascrivi la linea di basso e torna sul manico per suonarla.',
       close: 'Chiudi',
       line: 'Linea di basso importata',
       play: '▶ Riproduci',
       pause: '❚❚ Pausa',
-      stop: 'Esci dalla linea',
+      exit: 'Esci dalla linea',
       note: 'Nota',
-      chord: 'Accordo indicativo'
+      chord: 'Accordo indicativo',
+      transferError: 'Non riesco a trasferire l’audio sul manico. Seleziona di nuovo il file.'
     },
     en: {
-      title: 'Import MP3 and play the line on the fretboard',
-      hint: 'Transcribe the bass part. When ready, the recording and detected notes open directly on the main fretboard.',
-      open: 'Import MP3',
+      tab: 'Import MP3',
+      title: 'Import MP3',
+      hint: 'Choose a file, transcribe the bass line, then return to the fretboard to play it.',
       close: 'Close',
       line: 'Imported bass line',
       play: '▶ Play',
       pause: '❚❚ Pause',
-      stop: 'Exit bass line',
+      exit: 'Exit bass line',
       note: 'Note',
-      chord: 'Suggested chord'
+      chord: 'Suggested chord',
+      transferError: 'The audio could not be transferred to the fretboard. Choose the file again.'
     }
   };
 
-  let frame;
-  let fullScreen;
-  let events = [];
+  let importDialog = null;
+  let importFrame = null;
+  let importedAudio = null;
+  let importedUrl = null;
+  let importedEvents = [];
   let player = null;
-  let boardOverlay = null;
-  let raf = 0;
+  let overlay = null;
+  let animationFrame = 0;
   let activeIndex = -1;
-  let originalBoardVisibility = '';
+  let originalBoardPosition = '';
+  let originalBoardOverflow = '';
 
-  function childAudio() {
-    try { return frame && frame.contentWindow.document.getElementById('audio'); }
-    catch (e) { return null; }
+  function language() {
+    try {
+      return localStorage.getItem('manico-lingua') === 'en' ? 'en' : 'it';
+    } catch (error) {
+      return document.documentElement.lang === 'en' ? 'en' : 'it';
+    }
+  }
+
+  function strings() {
+    return copy[language()];
   }
 
   function formatTime(seconds) {
-    seconds = Number.isFinite(seconds) ? seconds : 0;
-    return Math.floor(seconds / 60) + ':' + String(Math.floor(seconds % 60)).padStart(2, '0');
-  }
-
-  function createFullScreenImporter() {
-    fullScreen = document.createElement('div');
-    fullScreen.id = 'mp3-fullscreen';
-    fullScreen.hidden = true;
-    fullScreen.style.cssText = [
-      'position:fixed', 'inset:0', 'z-index:10000', 'background:var(--bg,#131110)',
-      'display:flex', 'flex-direction:column'
-    ].join(';');
-
-    const top = document.createElement('div');
-    top.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel,#1d1a18)';
-    top.innerHTML = '<strong style="font-size:18px">MP3 → Manico</strong><span style="flex:1"></span><button type="button" id="mp3fullclose"></button>';
-
-    frame = document.createElement('iframe');
-    frame.id = 'iraudioframe';
-    frame.title = 'MP3 bass-line transcription';
-    frame.style.cssText = 'display:block;width:100%;height:100%;flex:1;border:0;background:#171411';
-    frame.src = `audio-import.html?v=${VERSION}`;
-
-    fullScreen.append(top, frame);
-    document.body.appendChild(fullScreen);
-    top.querySelector('#mp3fullclose').onclick = closeImporter;
-    translate();
-  }
-
-  function openImporter() {
-    if (!fullScreen) createFullScreenImporter();
-    fullScreen.hidden = false;
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeImporter() {
-    if (!fullScreen) return;
-    fullScreen.hidden = true;
-    document.body.style.overflow = '';
+    const value = Number.isFinite(seconds) ? seconds : 0;
+    return `${Math.floor(value / 60)}:${String(Math.floor(value % 60)).padStart(2, '0')}`;
   }
 
   function translate() {
-    const c = copy[language()];
-    document.querySelectorAll('[data-audio-copy]').forEach(el => {
-      el.textContent = c[el.dataset.audioCopy] || '';
-    });
-    const close = document.getElementById('mp3fullclose');
-    if (close) close.textContent = c.close;
+    const c = strings();
+    const openButton = document.getElementById('mp3-import-tab');
+    const title = document.getElementById('mp3-dialog-title');
+    const hint = document.getElementById('mp3-dialog-hint');
+    const closeButton = document.getElementById('mp3-dialog-close');
+    if (openButton) openButton.textContent = c.tab;
+    if (title) title.textContent = c.title;
+    if (hint) hint.textContent = c.hint;
+    if (closeButton) closeButton.textContent = c.close;
     if (player) {
       player.querySelector('[data-role="title"]').textContent = c.line;
-      player.querySelector('[data-role="stop"]').textContent = c.stop;
-      updateTransportText();
+      player.querySelector('[data-role="exit"]').textContent = c.exit;
+      updatePlayButton();
     }
   }
 
-  function buildDirectPlayer(title) {
-    stopDirectMode();
-    const c = copy[language()];
-    const board = document.getElementById('board');
-    const left = board && board.closest('.left');
-    if (!board || !left) return;
+  function createImportDialog() {
+    if (importDialog) return;
 
-    player = document.createElement('section');
-    player.id = 'bassline-player';
-    player.style.cssText = 'margin:0 0 12px;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);display:grid;grid-template-columns:auto auto 1fr auto;gap:10px;align-items:center';
-    player.innerHTML = `
-      <div><strong data-role="title">${c.line}</strong><div class="hint">${title || 'MP3'}</div></div>
-      <button type="button" class="pri" data-role="play">${c.play}</button>
-      <input data-role="seek" type="range" min="0" max="1000" value="0" style="width:100%;accent-color:var(--root)">
-      <div style="display:flex;align-items:center;gap:8px"><span data-role="time" class="val">0:00 / 0:00</span><button type="button" data-role="stop">${c.stop}</button></div>`;
-    left.insertBefore(player, board);
+    importDialog = document.createElement('dialog');
+    importDialog.id = 'dlgmp3';
+    importDialog.className = 'wide';
+    importDialog.style.cssText = [
+      'width:min(1180px,96vw)',
+      'max-width:96vw',
+      'height:min(900px,92vh)',
+      'max-height:92vh',
+      'padding:0',
+      'overflow:hidden'
+    ].join(';');
+    importDialog.innerHTML = `
+      <div style="height:100%;display:flex;flex-direction:column">
+        <header style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-bottom:1px solid var(--line)">
+          <div style="min-width:0;flex:1">
+            <h2 id="mp3-dialog-title" style="margin:0 0 3px"></h2>
+            <p id="mp3-dialog-hint" class="hint" style="margin:0"></p>
+          </div>
+          <button type="button" id="mp3-dialog-close"></button>
+        </header>
+        <iframe id="mp3-import-frame" title="MP3 bass-line import" style="display:block;width:100%;flex:1;border:0;background:#171411"></iframe>
+      </div>`;
+    document.body.appendChild(importDialog);
 
-    player.querySelector('[data-role="play"]').onclick = () => {
-      const audio = childAudio();
-      if (!audio) return;
-      if (audio.paused) audio.play(); else audio.pause();
-      updateTransportText();
-    };
-    player.querySelector('[data-role="seek"]').oninput = e => {
-      const audio = childAudio();
-      if (audio && audio.duration) audio.currentTime = Number(e.target.value) / 1000 * audio.duration;
-    };
-    player.querySelector('[data-role="stop"]').onclick = stopDirectMode;
-
-    originalBoardVisibility = board.style.visibility;
-    board.style.visibility = 'hidden';
-    board.style.position = 'relative';
-
-    boardOverlay = document.createElement('div');
-    boardOverlay.id = 'bassline-board';
-    boardOverlay.style.cssText = 'position:absolute;inset:0;visibility:visible;display:grid;grid-template-columns:42px repeat(13,1fr);grid-template-rows:repeat(4,1fr);overflow:hidden;border-radius:inherit;background:linear-gradient(#5b3824,#3f271a);z-index:4';
-    board.parentElement.style.position = 'relative';
-    board.parentElement.appendChild(boardOverlay);
-    renderFretboard(null);
-    tickDirectMode();
+    importFrame = importDialog.querySelector('#mp3-import-frame');
+    importDialog.querySelector('#mp3-dialog-close').onclick = () => importDialog.close();
+    translate();
   }
 
-  function renderFretboard(event) {
-    if (!boardOverlay) return;
-    boardOverlay.innerHTML = '';
-    for (let string = 0; string < 4; string++) {
-      const label = document.createElement('div');
-      label.textContent = STRING_NAMES[string];
-      label.style.cssText = 'display:grid;place-items:center;background:#171411;border-right:1px solid #685342;font-weight:700';
-      boardOverlay.appendChild(label);
-      for (let fret = 0; fret <= 12; fret++) {
-        const cell = document.createElement('div');
-        cell.style.cssText = 'position:relative;border-right:1px solid #aa806277;border-bottom:1px solid #dbc4ae55';
-        if (event && event.string === string && event.fret === fret) {
-          const dot = document.createElement('div');
-          dot.textContent = event.note;
-          dot.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--root);color:#1b1308;font-weight:900;box-shadow:0 0 0 6px color-mix(in srgb,var(--root) 25%,transparent),0 5px 18px #0009';
-          cell.appendChild(dot);
-        }
-        boardOverlay.appendChild(cell);
-      }
+  function openImportDialog() {
+    createImportDialog();
+    if (!importFrame.src) importFrame.src = `audio-import.html?v=${ASSET_VERSION}`;
+    if (typeof importDialog.showModal === 'function') importDialog.showModal();
+    else importDialog.setAttribute('open', '');
+  }
+
+  function stopImportedLine() {
+    cancelAnimationFrame(animationFrame);
+    if (importedAudio) {
+      importedAudio.pause();
+      importedAudio.removeAttribute('src');
+      importedAudio.load();
     }
-  }
+    if (importedUrl) URL.revokeObjectURL(importedUrl);
 
-  function updateTransportText() {
-    if (!player) return;
-    const audio = childAudio();
-    const button = player.querySelector('[data-role="play"]');
-    const c = copy[language()];
-    button.textContent = audio && !audio.paused ? c.pause : c.play;
-  }
-
-  function tickDirectMode() {
-    cancelAnimationFrame(raf);
-    const loop = () => {
-      if (!player) return;
-      const audio = childAudio();
-      if (audio) {
-        const duration = audio.duration || 0;
-        const time = audio.currentTime || 0;
-        player.querySelector('[data-role="seek"]').value = duration ? time / duration * 1000 : 0;
-        player.querySelector('[data-role="time"]').textContent = `${formatTime(time)} / ${formatTime(duration)}`;
-        updateTransportText();
-        let index = events.findIndex(e => time >= e.start && time < e.end);
-        if (index < 0 && events.length) index = Math.max(0, events.findLastIndex(e => e.start <= time));
-        if (index !== activeIndex) {
-          activeIndex = index;
-          renderFretboard(events[index] || null);
-          const songline = document.getElementById('songline');
-          if (songline && events[index]) {
-            const c = copy[language()];
-            songline.hidden = false;
-            songline.textContent = `${c.note}: ${events[index].note} · ${STRING_NAMES[events[index].string] || '—'} ${events[index].fret ?? '—'} · ${c.chord}: ${events[index].chord || '—'}`;
-          }
-        }
-      }
-      raf = requestAnimationFrame(loop);
-    };
-    loop();
-  }
-
-  function stopDirectMode() {
-    cancelAnimationFrame(raf);
-    const audio = childAudio();
-    if (audio) audio.pause();
-    if (player) player.remove();
-    if (boardOverlay) boardOverlay.remove();
-    player = null;
-    boardOverlay = null;
+    importedAudio = null;
+    importedUrl = null;
+    importedEvents = [];
     activeIndex = -1;
+    player?.remove();
+    overlay?.remove();
+    player = null;
+    overlay = null;
+
     const board = document.getElementById('board');
-    if (board) board.style.visibility = originalBoardVisibility;
+    if (board) {
+      board.style.position = originalBoardPosition;
+      board.style.overflow = originalBoardOverflow;
+    }
     const songline = document.getElementById('songline');
     if (songline) songline.hidden = true;
   }
 
-  function mount() {
-    const dialog = document.getElementById('dlgireal');
-    if (!dialog || document.getElementById('iraudio')) return;
+  function ensureOverlay() {
+    const board = document.getElementById('board');
+    if (!board) return null;
+    if (overlay?.isConnected && overlay.parentElement === board) return overlay;
 
-    const panel = document.createElement('section');
-    panel.id = 'iraudio';
-    panel.style.cssText = 'margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:10px';
-    panel.innerHTML = `
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <div style="flex:1;min-width:220px">
-          <h3 data-audio-copy="title" style="margin:0 0 4px"></h3>
-          <p data-audio-copy="hint" class="hint" style="margin:0"></p>
-        </div>
-        <button type="button" id="iraudiotoggle" class="pri" data-audio-copy="open"></button>
-      </div>`;
-    const foot = dialog.querySelector('.dlg-foot');
-    dialog.insertBefore(panel, foot || null);
-    document.getElementById('iraudiotoggle').onclick = openImporter;
+    originalBoardPosition = board.style.position;
+    originalBoardOverflow = board.style.overflow;
+    board.style.position = 'relative';
+    board.style.overflow = 'hidden';
 
-    window.addEventListener('message', e => {
-      if (e.origin !== location.origin || !e.data || e.data.type !== 'manico-bassline') return;
-      events = Array.isArray(e.data.events) ? e.data.events : [];
-      closeImporter();
-      if (dialog.open) dialog.close();
-      buildDirectPlayer(e.data.title);
+    overlay = document.createElement('div');
+    overlay.id = 'bassline-board-overlay';
+    overlay.style.cssText = [
+      'position:absolute',
+      'inset:0',
+      'z-index:100',
+      'display:grid',
+      'grid-template-columns:42px repeat(13,minmax(0,1fr))',
+      'grid-template-rows:repeat(4,minmax(0,1fr))',
+      'pointer-events:none',
+      'background:linear-gradient(#5b3824,#3f271a)'
+    ].join(';');
+    board.appendChild(overlay);
+    return overlay;
+  }
+
+  function drawFretboard(event) {
+    const layer = ensureOverlay();
+    if (!layer) return;
+    layer.innerHTML = '';
+
+    for (let stringIndex = 0; stringIndex < 4; stringIndex += 1) {
+      const label = document.createElement('div');
+      label.textContent = STRING_NAMES[stringIndex];
+      label.style.cssText = 'display:grid;place-items:center;background:#171411;border-right:1px solid #685342;font-weight:700';
+      layer.appendChild(label);
+
+      for (let fret = 0; fret <= 12; fret += 1) {
+        const cell = document.createElement('div');
+        cell.style.cssText = 'position:relative;border-right:1px solid #aa806277;border-bottom:1px solid #dbc4ae55';
+        if (event && event.string === stringIndex && event.fret === fret) {
+          const dot = document.createElement('span');
+          dot.textContent = event.note || '';
+          dot.style.cssText = [
+            'position:absolute',
+            'left:50%',
+            'top:50%',
+            'transform:translate(-50%,-50%)',
+            'width:38px',
+            'height:38px',
+            'border-radius:50%',
+            'display:grid',
+            'place-items:center',
+            'background:var(--root)',
+            'color:#181008',
+            'font-weight:900',
+            'box-shadow:0 0 0 7px rgba(240,199,94,.22),0 5px 18px rgba(0,0,0,.65)'
+          ].join(';');
+          cell.appendChild(dot);
+        }
+        layer.appendChild(cell);
+      }
+    }
+  }
+
+  function updatePlayButton() {
+    if (!player) return;
+    player.querySelector('[data-role="play"]').textContent = importedAudio && !importedAudio.paused
+      ? strings().pause
+      : strings().play;
+  }
+
+  function updateImportedPlayback() {
+    cancelAnimationFrame(animationFrame);
+
+    const tick = () => {
+      if (!player || !importedAudio) return;
+      ensureOverlay();
+
+      const currentTime = importedAudio.currentTime || 0;
+      const duration = importedAudio.duration || 0;
+      player.querySelector('[data-role="seek"]').value = duration ? currentTime / duration * 1000 : 0;
+      player.querySelector('[data-role="time"]').textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+      updatePlayButton();
+
+      let index = importedEvents.findIndex(event => currentTime >= event.start && currentTime < event.end);
+      if (index < 0 && importedEvents.length) {
+        index = Math.max(0, importedEvents.findLastIndex(event => event.start <= currentTime));
+      }
+      if (index !== activeIndex) {
+        activeIndex = index;
+        const event = importedEvents[index] || null;
+        drawFretboard(event);
+
+        const songline = document.getElementById('songline');
+        if (songline && event) {
+          const c = strings();
+          const position = Number.isInteger(event.string) && Number.isInteger(event.fret)
+            ? `${STRING_NAMES[event.string]} · ${event.fret}`
+            : '—';
+          songline.hidden = false;
+          songline.textContent = `${c.note}: ${event.note || '—'} · ${position} · ${c.chord}: ${event.chord || '—'}`;
+        }
+      }
+
+      animationFrame = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+
+  function buildPlayer(title) {
+    const board = document.getElementById('board');
+    const left = board?.closest('.left');
+    if (!board || !left) return;
+
+    player = document.createElement('section');
+    player.id = 'bassline-player';
+    player.style.cssText = 'margin:0 0 12px;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);display:flex;gap:10px;align-items:center;flex-wrap:wrap';
+    player.innerHTML = `
+      <div style="min-width:180px;flex:0 1 auto"><strong data-role="title"></strong><div class="hint">${title || 'MP3'}</div></div>
+      <button type="button" class="pri" data-role="play"></button>
+      <input type="range" data-role="seek" min="0" max="1000" value="0" style="min-width:180px;flex:1;accent-color:var(--root)">
+      <span class="val" data-role="time">0:00 / 0:00</span>
+      <button type="button" data-role="exit"></button>`;
+    left.insertBefore(player, board);
+
+    player.querySelector('[data-role="play"]').onclick = async () => {
+      if (!importedAudio) return;
+      try {
+        if (importedAudio.paused) await importedAudio.play();
+        else importedAudio.pause();
+      } catch (error) {
+        console.error('MP3 playback failed', error);
+      }
+      updatePlayButton();
+    };
+    player.querySelector('[data-role="seek"]').oninput = event => {
+      if (importedAudio?.duration) {
+        importedAudio.currentTime = Number(event.target.value) / 1000 * importedAudio.duration;
+      }
+    };
+    player.querySelector('[data-role="exit"]').onclick = stopImportedLine;
+
+    translate();
+    drawFretboard(null);
+    updateImportedPlayback();
+  }
+
+  function openOnFretboard(data) {
+    stopImportedLine();
+
+    const file = data.file;
+    const validFile = file && typeof file === 'object' && typeof file.arrayBuffer === 'function';
+    const validEvents = Array.isArray(data.events) && data.events.length > 0;
+    if (!validFile || !validEvents) {
+      const info = document.getElementById('irinfo');
+      if (info) info.textContent = strings().transferError;
+      return;
+    }
+
+    importedEvents = data.events
+      .filter(event => Number.isFinite(event.start) && Number.isFinite(event.end))
+      .map(event => ({
+        start: Number(event.start),
+        end: Number(event.end),
+        midi: Number(event.midi),
+        note: String(event.note || ''),
+        string: Number.isInteger(event.string) ? event.string : null,
+        fret: Number.isInteger(event.fret) ? event.fret : null,
+        chord: String(event.chord || '—')
+      }));
+
+    importedUrl = URL.createObjectURL(file);
+    importedAudio = new Audio(importedUrl);
+    importedAudio.preload = 'auto';
+    importedAudio.addEventListener('ended', () => {
+      importedAudio.currentTime = 0;
+      activeIndex = -1;
+      drawFretboard(importedEvents[0] || null);
+      updatePlayButton();
     });
 
-    document.addEventListener('click', e => {
-      if (e.target && e.target.closest && e.target.closest('[data-lang]')) setTimeout(translate, 0);
+    if (importDialog?.open) importDialog.close();
+    buildPlayer(data.title);
+  }
+
+  function mount() {
+    const tools = document.querySelector('.tools');
+    if (!tools || document.getElementById('mp3-import-tab')) return;
+
+    const button = document.createElement('button');
+    button.id = 'mp3-import-tab';
+    button.type = 'button';
+    button.className = 'add';
+    button.onclick = openImportDialog;
+
+    const addSongs = tools.querySelector('[data-apre="dlgireal"]');
+    if (addSongs) addSongs.insertAdjacentElement('afterend', button);
+    else tools.prepend(button);
+
+    window.addEventListener('message', event => {
+      if (event.origin !== location.origin || event.source !== importFrame?.contentWindow) return;
+      if (event.data?.type !== 'manico-bassline') return;
+      openOnFretboard(event.data);
+    });
+
+    document.addEventListener('click', event => {
+      if (event.target?.closest?.('[data-lang]')) setTimeout(translate, 0);
     });
     translate();
   }
