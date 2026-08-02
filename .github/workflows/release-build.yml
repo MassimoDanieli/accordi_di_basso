@@ -1,0 +1,40 @@
+name: Release build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'app.html'
+      - 'index.html'
+      - 'index.en.html'
+      - 'src/**'
+      - 'assets/styles.css'
+      - 'tools/build.js'
+      - 'tools/release.js'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+      - run: npm run release
+      - name: Commit generated release files
+        run: |
+          if git diff --quiet; then
+            echo "Release files already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.html index.html index.en.html assets/app.bundle.js dist/manico.html
+          git commit -m "Release $(node -p \"require('./package.json').version\") artifacts"
+          git push
