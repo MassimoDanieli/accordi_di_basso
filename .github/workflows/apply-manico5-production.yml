@@ -46,28 +46,35 @@ jobs:
           9bb4ac2e02a627d49258cc385d47aa61b471ac8f5fa3b72161a5a7961104a70b  .manico5-fix-04-0
           f41085eaa7efacf108f891fce7a94b8120d8cc05633367e487727690fb98dc14  .manico5-fix-04-1
           2718e311c482be17ce4897ccb836f9736f06f661fb569b20690ee839108355f1  .manico5-fix-04-2
-          1e83ccc05c4c01113f07e9ab88882609f4e449344237736f53bb152098cd8241  .manico5-fix-04-3
+          3722fa6959aeba8834986b87c6ada43b740b2ba7f507e9dd83e0eec6c50918c9  .manico5-fix-04-3-0
+          cd30faeb32ffa757f3f757280235f4a7f18c85d4ac2b67036b355916040ea03b  .manico5-fix-04-3-1
+          cec2697cafded15be1b36797444ecab9d3ad5c3afe1bf9bea8777281eaf21757  .manico5-fix-04-3-2
           86562994308fedfa7dddd04bfbd847306394b636bf3d45a2c0adcbbf2cb0c500  .manico5-part-05
           EOF
-
           sha256sum --check /tmp/manico5-fragments.sha256
 
           test "$(wc -c < .manico5-part-00)" -eq 12000
+          test "$(wc -c < .manico5-part-03)" -eq 12000
+          test "$(wc -c < .manico5-part-05)" -eq 10336
+
           for fragment in \
             .manico5-fix-01-0 .manico5-fix-01-1 .manico5-fix-01-2 .manico5-fix-01-3 \
             .manico5-fix-02-0 .manico5-fix-02-1 .manico5-fix-02-2 .manico5-fix-02-3 \
-            .manico5-fix-04-0 .manico5-fix-04-1 .manico5-fix-04-2 .manico5-fix-04-3; do
+            .manico5-fix-04-0 .manico5-fix-04-1 .manico5-fix-04-2; do
             test "$(wc -c < "$fragment")" -eq 3000
           done
-          test "$(wc -c < .manico5-part-03)" -eq 12000
-          test "$(wc -c < .manico5-part-05)" -eq 10336
+          for fragment in \
+            .manico5-fix-04-3-0 .manico5-fix-04-3-1 .manico5-fix-04-3-2; do
+            test "$(wc -c < "$fragment")" -eq 1000
+          done
 
           cat \
             .manico5-part-00 \
             .manico5-fix-01-0 .manico5-fix-01-1 .manico5-fix-01-2 .manico5-fix-01-3 \
             .manico5-fix-02-0 .manico5-fix-02-1 .manico5-fix-02-2 .manico5-fix-02-3 \
             .manico5-part-03 \
-            .manico5-fix-04-0 .manico5-fix-04-1 .manico5-fix-04-2 .manico5-fix-04-3 \
+            .manico5-fix-04-0 .manico5-fix-04-1 .manico5-fix-04-2 \
+            .manico5-fix-04-3-0 .manico5-fix-04-3-1 .manico5-fix-04-3-2 \
             .manico5-part-05 \
             > /tmp/manico5-production.tar.gz.b64
 
