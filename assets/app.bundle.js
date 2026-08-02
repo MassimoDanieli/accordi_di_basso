@@ -1289,6 +1289,10 @@ __mod.i18n = (function () {
       'cz.in': 'Importa backup',
       'cz.fatti': n => `${n} brani ripristinati dal backup.`,
       'cz.salvato': 'salvato nel canzoniere',
+      'cz.trovati': n => `${n} brani nel link.`,
+      'cz.tutti': n => `Salva tutti (${n})`,
+      'cz.massa': (n, tot) => `${n} brani salvati nel canzoniere (${tot} in tutto).`,
+      'cz.tanti': n => `${n} brani \u2014 affina la ricerca per vederli tutti.`,
       'ir.title': 'Importa un brano',
       'ir.hint': 'Incolla un link <code>irealb://</code> preso dal tasto Condividi di iReal Pro, oppure carica un file <code>.musicxml</code> (iReal, MuseScore). La forma viene srotolata come si suona: ritornelli, finali, segno, coda, da capo. Tutto avviene nel browser: non esce niente dalla pagina.',
       'ir.file': 'oppure un file MusicXML:',
@@ -1396,6 +1400,10 @@ __mod.i18n = (function () {
       'cz.in': 'Import backup',
       'cz.fatti': n => `${n} songs restored from backup.`,
       'cz.salvato': 'saved to the songbook',
+      'cz.trovati': n => `${n} songs in the link.`,
+      'cz.tutti': n => `Save all (${n})`,
+      'cz.massa': (n, tot) => `${n} songs saved to the songbook (${tot} total).`,
+      'cz.tanti': n => `${n} songs \u2014 narrow the search to see them all.`,
       'ir.title': 'Import a song',
       'ir.hint': 'Paste an <code>irealb://</code> link from iReal Pro\u2019s Share button, or load a <code>.musicxml</code> file (iReal, MuseScore). The form is unrolled as played: repeats, endings, segno, coda, da capo. Everything happens in the browser: nothing leaves the page.',
       'ir.file': 'or a MusicXML file:',
@@ -2292,6 +2300,7 @@ __mod.app = (function () {
       });
     };
     $('irlist').onchange = e => loadSong(+e.target.value);
+    $('irtutti').onclick = () => salvaTutti();
 
     $('czq').oninput = () => renderCanzoniere();
     $('czlist').addEventListener('click', e => {
@@ -2402,16 +2411,39 @@ __mod.app = (function () {
   }
 
   function presentaBrani(songs) {
-    const info = $('irinfo'), list = $('irlist');
+    const info = $('irinfo'), list = $('irlist'), tutti = $('irtutti');
     if (!songs.length) {
-      list.style.display = 'none';
+      list.style.display = 'none'; tutti.style.display = 'none';
       info.innerHTML = `<span class="err">${t('ir.bad')}</span>`;
       return;
     }
     state.songs = songs;
     list.style.display = songs.length > 1 ? '' : 'none';
     list.innerHTML = songs.map((s, i) => `<option value="${i}">${s.title}${s.composer ? ' \u2014 ' + s.composer : ''}</option>`).join('');
-    loadSong(0);
+    // Una playlist: prima l'offerta di salvare tutto, il caricamento resta a un clic.
+    if (songs.length > 1) {
+      tutti.style.display = '';
+      tutti.textContent = t('cz.tutti', songs.length);
+      info.textContent = t('cz.trovati', songs.length);
+    } else {
+      tutti.style.display = 'none';
+      loadSong(0);
+    }
+  }
+
+  /** Il gran gesto: tutta la playlist nel canzoniere, in un colpo. */
+  async function salvaTutti() {
+    const b = $('irtutti');
+    b.disabled = true;
+    let n = 0;
+    for (const song of state.songs) {
+      if (await CZ.salva(song)) n++;
+    }
+    b.disabled = false;
+    b.style.display = 'none';
+    const tot = (await CZ.tutti()).length;
+    $('irinfo').textContent = t('cz.massa', n, tot);
+    renderCanzoniere();
   }
 
   function loadSong(k) {
@@ -2450,7 +2482,9 @@ __mod.app = (function () {
       const filtrati = CZ.cerca(list, $('czq').value);
       if (!list.length) { box.innerHTML = `<div class="czvoce"><span class="tit hint">${t('cz.vuoto')}</span></div>`; return; }
       if (!filtrati.length) { box.innerHTML = `<div class="czvoce"><span class="tit hint">${t('cz.niente')}</span></div>`; return; }
-      box.innerHTML = filtrati.map(sng =>
+      const troppi = filtrati.length > 60;
+      const mostra = troppi ? filtrati.slice(0, 60) : filtrati;
+      box.innerHTML = (troppi ? `<div class="czvoce"><span class="tit hint">${t('cz.tanti', filtrati.length)}</span></div>` : '') + mostra.map(sng =>
         `<div class="czvoce" data-id="${sng.id}">
           <span class="tit"><b>${sng.title}</b>${sng.composer ? ' \u2014 ' + sng.composer : ''}</span>
           <span class="meta">${[sng.stile, sng.bpm ? sng.bpm + ' bpm' : '', t('cz.batt', sng.bars.length)].filter(Boolean).join(' \u00b7 ')}</span>

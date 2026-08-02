@@ -61,7 +61,9 @@ brano, portati battuta per battuta. Tempo e metro del brano vengono applicati da
 soli. Il lettore e' verificato con un metodo a oracolo: gli stessi brani nei due
 formati, confrontati misura per misura (283 misure identiche su cinque standard di
 prova), piu' una batteria di test sintetici, uno per ogni gettone del formato.
-Tutto avviene nel browser: nulla esce dalla pagina. I brani importati entrano da
+Tutto avviene nel browser: nulla esce dalla pagina. Le playlist si salvano in blocco
+nel canzoniere con un bottone (provato con le raccolte essenziali di iReal da
+centinaia di brani). I brani singoli entrano da
 soli nel canzoniere, salvato sul dispositivo (IndexedDB) e consultabile per titolo,
 autore o stile, con backup JSON in uscita e in entrata. Niente server: le carte
 restano tue.

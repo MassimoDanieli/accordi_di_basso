@@ -819,6 +819,7 @@ function init() {
     });
   };
   $('irlist').onchange = e => loadSong(+e.target.value);
+  $('irtutti').onclick = () => salvaTutti();
 
   $('czq').oninput = () => renderCanzoniere();
   $('czlist').addEventListener('click', e => {
@@ -929,16 +930,39 @@ function setSongTitle(title, composer) {
 }
 
 function presentaBrani(songs) {
-  const info = $('irinfo'), list = $('irlist');
+  const info = $('irinfo'), list = $('irlist'), tutti = $('irtutti');
   if (!songs.length) {
-    list.style.display = 'none';
+    list.style.display = 'none'; tutti.style.display = 'none';
     info.innerHTML = `<span class="err">${t('ir.bad')}</span>`;
     return;
   }
   state.songs = songs;
   list.style.display = songs.length > 1 ? '' : 'none';
   list.innerHTML = songs.map((s, i) => `<option value="${i}">${s.title}${s.composer ? ' \u2014 ' + s.composer : ''}</option>`).join('');
-  loadSong(0);
+  // Una playlist: prima l'offerta di salvare tutto, il caricamento resta a un clic.
+  if (songs.length > 1) {
+    tutti.style.display = '';
+    tutti.textContent = t('cz.tutti', songs.length);
+    info.textContent = t('cz.trovati', songs.length);
+  } else {
+    tutti.style.display = 'none';
+    loadSong(0);
+  }
+}
+
+/** Il gran gesto: tutta la playlist nel canzoniere, in un colpo. */
+async function salvaTutti() {
+  const b = $('irtutti');
+  b.disabled = true;
+  let n = 0;
+  for (const song of state.songs) {
+    if (await CZ.salva(song)) n++;
+  }
+  b.disabled = false;
+  b.style.display = 'none';
+  const tot = (await CZ.tutti()).length;
+  $('irinfo').textContent = t('cz.massa', n, tot);
+  renderCanzoniere();
 }
 
 function loadSong(k) {
@@ -977,7 +1001,9 @@ function renderCanzoniere() {
     const filtrati = CZ.cerca(list, $('czq').value);
     if (!list.length) { box.innerHTML = `<div class="czvoce"><span class="tit hint">${t('cz.vuoto')}</span></div>`; return; }
     if (!filtrati.length) { box.innerHTML = `<div class="czvoce"><span class="tit hint">${t('cz.niente')}</span></div>`; return; }
-    box.innerHTML = filtrati.map(sng =>
+    const troppi = filtrati.length > 60;
+    const mostra = troppi ? filtrati.slice(0, 60) : filtrati;
+    box.innerHTML = (troppi ? `<div class="czvoce"><span class="tit hint">${t('cz.tanti', filtrati.length)}</span></div>` : '') + mostra.map(sng =>
       `<div class="czvoce" data-id="${sng.id}">
         <span class="tit"><b>${sng.title}</b>${sng.composer ? ' \u2014 ' + sng.composer : ''}</span>
         <span class="meta">${[sng.stile, sng.bpm ? sng.bpm + ' bpm' : '', t('cz.batt', sng.bars.length)].filter(Boolean).join(' \u00b7 ')}</span>

@@ -3,6 +3,16 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [3.4.0] — 2026-08-02
+
+### Aggiunto
+- Salvataggio di massa: un link di playlist mostra quanti brani contiene e il
+  bottone "Salva tutti" li mette nel canzoniere in un colpo — pensato per le
+  raccolte essenziali di iReal (Jazz 1460, Pop, Blues, Brazilian…). Il menu
+  resta per caricarne uno subito.
+- La lista del canzoniere mostra fino a sessanta voci e invita ad affinare la
+  ricerca oltre quella soglia: con millequattrocento brani la ricerca e' la via.
+
 ## [3.3.4] — 2026-08-02
 
 ### Corretto

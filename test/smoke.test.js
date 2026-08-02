@@ -188,6 +188,17 @@ await (async () => {
   console.log('  ok  canzoniere: salva, cerca, backup andata e ritorno');
 })();
 
+// --- playlist: piu' brani nello stesso link
+check('lettore iReal: playlist a tre brani', () => {
+  const uno = 'Uno=A=Swing=C=n=T44C^7 |F7 Z';
+  const due = 'Due=B=Bossa=F=n=T44F^7 |Bb7 Z';
+  const tre = 'Tre=C=Blues=G=n=T44G7 |C7 Z';
+  const songs = IReal.parse('irealbook://' + [uno, due, tre].join('==='));
+  assert.equal(songs.length, 3);
+  assert.deepEqual(songs.map(x => x.title), ['Uno', 'Due', 'Tre']);
+  assert.equal(IReal.toGrid(songs[1]), 'F^7 Bb7');
+});
+
 // --- link irealb reale (Autumn Leaves), regressione sul de-offuscamento
 check('lettore iReal su link reale (Autumn Leaves)', () => {
   const url = 'irealb://Autumn%20Leaves=Kosma%20Joseph==Medium%20Swing=G%2D==1r34LbKcu7QyX314C%2D7XyX7hA%7CQyX7%5EbE%7CyQX7%5EbB%7CQyX7F%7CQyQ%7CD7b4T%7BA%2AQyX7%2DyQKclcKQyX6%2DG%7CQyX317bD%7CQyX7hA%5BB%2A%7D%20%20l%20LZCX6%2DG%7CL7bG%20Q%7CBb%5EyX31b7D%7CQyX7hAC%5B%2A%5DQyX7%5EbE%7CQyX7Q%7CG%2D7yX7F%7CZF%2D7%20E7LZAh7XyQ%7CD7b13XyQ%7CG%2D6XyQKcl%20%20Z=Jazz%2DMedium%20Swing=85=0';
