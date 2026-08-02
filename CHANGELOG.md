@@ -3,6 +3,17 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [3.5.0] — 2026-08-02
+
+### Aggiunto
+- Il repertorio moderno entra dall'incolla-testo (src/testo.js): nel campo della
+  finestra "+ Aggiungi brani" si puo' incollare, oltre ai link iReal, il testo con
+  gli accordi sopra le parole (il formato dei siti di accordi) oppure ChordPro.
+  Le righe di soli accordi vengono pescate fra le parole; le stanghette dividono
+  le battute quando ci sono, altrimenti un accordo vale una battuta, e la griglia
+  resta modificabile a mano. Testo nudo: prima riga titolo, seconda autore.
+  ChordPro: direttive title/artist/tempo lette e applicate.
+
 ## [3.4.0] — 2026-08-02
 
 ### Aggiunto

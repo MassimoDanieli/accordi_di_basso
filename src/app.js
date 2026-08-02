@@ -8,6 +8,7 @@ import * as Tab from './tab.js';
 import * as IReal from './ireal.js';
 import * as MusicXML from './musicxml.js';
 import * as CZ from './canzoniere.js';
+import * as Testo from './testo.js';
 import { LIBRARY } from './library.js';
 import { initTheme, refreshThemeLabel } from './theme.js';
 import { t, initLang, applyStatic, lang } from './i18n.js';
@@ -807,6 +808,10 @@ function init() {
     if (!raw) { $('irinfo').innerHTML = `<span class="err">${t('ir.empty')}</span>`; return; }
     let songs = [];
     try { songs = IReal.parse(raw); } catch (e) { songs = []; }
+    // Non era un link iReal: forse e' testo con gli accordi, o ChordPro.
+    if (!songs.length && !/^irealb/i.test(raw)) {
+      try { songs = Testo.parse(raw); } catch (e) { songs = []; }
+    }
     presentaBrani(songs);
   };
   $('irfile').onchange = e => {

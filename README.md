@@ -61,7 +61,11 @@ brano, portati battuta per battuta. Tempo e metro del brano vengono applicati da
 soli. Il lettore e' verificato con un metodo a oracolo: gli stessi brani nei due
 formati, confrontati misura per misura (283 misure identiche su cinque standard di
 prova), piu' una batteria di test sintetici, uno per ogni gettone del formato.
-Tutto avviene nel browser: nulla esce dalla pagina. Le playlist si salvano in blocco
+Per il repertorio moderno c'e' l'incolla-testo: accordi sopra
+le parole (il formato dei siti di accordi) o ChordPro, con le righe di soli
+accordi pescate fra le parole, le stanghette a dividere le battute quando ci
+sono, e la griglia sempre modificabile a mano. Tutto avviene nel browser: nulla
+esce dalla pagina. Le playlist si salvano in blocco
 nel canzoniere con un bottone (provato con le raccolte essenziali di iReal da
 centinaia di brani). I brani singoli entrano da
 soli nel canzoniere, salvato sul dispositivo (IndexedDB) e consultabile per titolo,

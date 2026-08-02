@@ -6,6 +6,7 @@ import * as IReal from '../src/ireal.js';
 import * as F from '../src/forma.js';
 import * as MusicXML from '../src/musicxml.js';
 import * as CZ from '../src/canzoniere.js';
+import * as Testo from '../src/testo.js';
 
 const open = TUNINGS['4'].open;
 let failed = 0;
@@ -187,6 +188,30 @@ await (async () => {
   assert.equal(await CZ.salva({ title: 'senza battute', bars: [] }), null, 'niente brani vuoti');
   console.log('  ok  canzoniere: salva, cerca, backup andata e ritorno');
 })();
+
+// --- testo con gli accordi sopra le parole, e ChordPro
+check('lettore testo: accordi sopra le parole', () => {
+  const t = ['Titolo Prova', 'Autore Prova', '', '[Intro]', '| Am | G |', '',
+    'Am        G', 'parole della strofa', 'F         E7', 'altre parole'].join('\n');
+  const s0 = Testo.parse(t)[0];
+  assert.equal(s0.title, 'Titolo Prova');
+  assert.equal(s0.composer, 'Autore Prova');
+  assert.equal(s0.bars.map(b => b.accordi.join(',')).join(' '), 'Am G Am G F E7');
+});
+
+check('lettore testo: ChordPro con direttive', () => {
+  const t = ['{title: Pezzo Moderno}', '{artist: Chi Scrive}', '{tempo: 96}',
+    '[Am]la [G]riga [F]cantata [E]qui'].join('\n');
+  const s0 = Testo.parse(t)[0];
+  assert.equal(s0.title, 'Pezzo Moderno');
+  assert.equal(s0.composer, 'Chi Scrive');
+  assert.equal(s0.bpm, 96);
+  assert.equal(s0.bars.length, 4);
+});
+
+check('lettore testo: le parole da sole non bastano', () => {
+  assert.equal(Testo.parse('solo parole\nsenza nessun accordo\nqui dentro').length, 0);
+});
 
 // --- playlist: piu' brani nello stesso link
 check('lettore iReal: playlist a tre brani', () => {
