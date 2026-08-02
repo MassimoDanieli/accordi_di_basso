@@ -176,8 +176,11 @@ function fitBoard() {
   const ratio = vb[2] / vb[3];
   const w = Math.max(0, box.clientWidth - 24);
   const h = Math.max(0, box.clientHeight - 16);
-  const larghezza = h > 40 ? Math.min(w, h * ratio) : w;
-  svg.style.width = Math.max(larghezza, 480) + 'px';
+  // La larghezza comanda: il manico si legge in orizzontale. L'altezza puo'
+  // limitare, ma mai sotto i 720px: meglio due dita di scorrimento verticale
+  // che i tasti strizzati.
+  const tetto = h > 40 ? Math.max(h * ratio, 720) : Infinity;
+  svg.style.width = Math.max(Math.min(w, tetto), 480) + 'px';
   svg.style.height = 'auto';
 }
 
@@ -879,6 +882,7 @@ function init() {
   });
 
   window.addEventListener('resize', fitBoard);
+requestAnimationFrame(() => requestAnimationFrame(fitBoard));
   document.addEventListener('keydown', e => {
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
     if (document.querySelector('dialog[open]')) return;

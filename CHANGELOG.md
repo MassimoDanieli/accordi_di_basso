@@ -3,6 +3,16 @@
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/)
 e il versionamento è [semantico](https://semver.org/lang/it/).
 
+## [3.3.2] — 2026-08-02
+
+### Corretto
+- Il manico poteva ancora uscire piccolo: il ridimensionamento limitava la
+  larghezza in base all'altezza del riquadro, e bastava una finestra bassa o le
+  barre del browser a strizzare i tasti. Ora la larghezza comanda e il limite da
+  altezza non scende mai sotto i 720px: al peggio il manico scorre di poco in
+  verticale, ma i tasti restano larghi. Aggiunta una seconda misurazione a
+  layout assestato dopo il caricamento.
+
 ## [3.3.1] — 2026-08-02
 
 ### Corretto
