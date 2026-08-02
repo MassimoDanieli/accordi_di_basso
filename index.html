@@ -1,215 +1,140 @@
-<!DOCTYPE html>
-<html lang="it" data-versione="4.4.1">
+<!doctype html>
+<html lang="it" data-versione="5.0.0">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Manico — guida all'uso</title>
-<meta name="description" content="Come usare Manico: griglia di accordi, zone del manico, tipi di voicing, voice leading, tab ASCII e importazione da iReal Pro.">
-<meta name="theme-color" content="#131110">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,600..700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=4.4.1">
-<script>
-  // Applicato subito, prima del disegno, per non far lampeggiare la pagina.
-  (function () {
-    var t = 'scuro';
-    try { var v = localStorage.getItem('manico-tema'); if (v === 'chiaro' || v === 'scuro') t = v; else
-      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'scuro' : 'chiaro';
-    } catch (e) {}
-    document.documentElement.setAttribute('data-tema', t);
-  })();
-</script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#11100e">
+<meta name="description" content="Importa una registrazione, trascrivi la linea di basso e studiala sul manico.">
+<title>Manico · Bass Transcriber</title>
+<link rel="stylesheet" href="assets/styles.css?v=5.0.0">
 </head>
 <body>
-<div class="doc">
+<div class="app-shell">
+<header class="topbar">
+  <button class="brand" id="homeButton" type="button" aria-label="Manico home">
+    <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <span>Manico<b>.</b></span>
+  </button>
+  <span class="product" data-i18n="product">Bass Transcriber</span>
+  <span class="grow"></span>
+  <span class="language-switch" aria-label="Language">
+    <button id="langIt" type="button">IT</button><button id="langEn" type="button">EN</button>
+  </span>
+  <button class="primary compact" id="importTop" type="button" data-i18n="import">Importa audio</button>
+</header>
 
-  <div class="doc-bar">
-    <span class="brand">
-      <svg class="mark" viewBox="0 0 30 24" aria-hidden="true">
-        <rect x="0.5" y="2.5" width="29" height="19" rx="3" class="mk-board"/>
-        <line x1="4" y1="2.5" x2="4" y2="21.5" class="mk-nut"/>
-        <line x1="12" y1="2.5" x2="12" y2="21.5" class="mk-fret"/>
-        <line x1="20" y1="2.5" x2="20" y2="21.5" class="mk-fret"/>
-        <line x1="0.5" y1="6.5" x2="29.5" y2="6.5" class="mk-string"/>
-        <line x1="0.5" y1="11" x2="29.5" y2="11" class="mk-string"/>
-        <line x1="0.5" y1="15.5" x2="29.5" y2="15.5" class="mk-string"/>
-        <line x1="0.5" y1="20" x2="29.5" y2="20" class="mk-string"/>
-        <circle cx="16" cy="11" r="3.2" class="mk-dot"/>
-      </svg>
-      <span class="word">Manico<b>.</b></span>
-    </span>
+<main id="homeView" class="view home-view">
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow" data-i18n="eyebrow">Dal brano alle dita</div>
+      <h1 data-i18n="heroTitle">Ascolta. Trascrivi. Suona.</h1>
+      <p data-i18n="heroText">Importa una registrazione, ricava la linea di basso e studiala sul manico.</p>
+      <div class="hero-points">
+        <span>● <b data-i18n="privacy">Nessun upload. Tutto avviene nel browser.</b></span>
+        <span id="storageLabel"></span>
+      </div>
+    </div>
+    <div class="import-card">
+      <div id="dropzone" class="dropzone">
+        <div class="drop-content">
+          <div class="drop-icon" aria-hidden="true">♩</div>
+          <h2 data-i18n="dropTitle">Porta qui il tuo brano</h2>
+          <p data-i18n="dropText">MP3, WAV, M4A, AAC, OGG o FLAC</p>
+          <button class="primary" id="chooseFile" type="button" data-i18n="choose">Scegli un file</button>
+          <input id="fileInput" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac" hidden>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="library-section">
+    <header class="section-head"><div><h2 data-i18n="yourTracks">I tuoi brani</h2><p data-i18n="yourTracksHint">Riapri una trascrizione e continua da dove eri rimasto.</p></div></header>
+    <div id="trackList" class="track-grid"></div>
+  </section>
+
+  <section class="library-section">
+    <header class="section-head"><div><h2 data-i18n="examples">Esercizi inclusi</h2><p data-i18n="examplesHint">Linee essenziali pronte per provare il flusso.</p></div></header>
+    <div id="demoList" class="track-grid"></div>
+  </section>
+  <footer class="home-footer"><span id="versionLabel">Versione 5.0.0</span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
+</main>
+
+<main id="studioView" class="view studio-view" hidden>
+  <header class="studio-head">
+    <button class="ghost icon-only" id="backHome" type="button" title="Library">←</button>
+    <div class="studio-title">
+      <input id="trackTitle" type="text" aria-label="Track title" data-i18n-placeholder="rename">
+      <p id="trackMeta"></p>
+    </div>
+    <span id="savedLabel" class="status-pill" data-i18n="saved">Salvato sul dispositivo</span>
     <span class="grow"></span>
-    <span class="flags">
-      <button data-lang="it" class="on" onclick="location.href='index.html'" title="Italiano">🇮🇹</button>
-      <button data-lang="en" onclick="location.href='index.en.html'" title="English">🇬🇧</button>
-    </span>
-    <span class="ver">v4.4.1</span>
-    <button id="tema" class="tog">Chiaro</button>
-    <a class="cta" href="app.html">Apri lo strumento &rarr;</a>
+    <span class="keyboard-hint" data-i18n="keys">Spazio: play/pausa · frecce: nota precedente/successiva</span>
+  </header>
+
+  <div class="studio-grid">
+    <section class="main-stage">
+      <div class="transport">
+        <button id="playButton" class="play-button" type="button" title="Play">▶</button>
+        <input id="seek" class="seek" type="range" min="0" max="1000" value="0" aria-label="Position">
+        <span id="clock" class="clock">0:00 / 0:00</span>
+        <label class="inline-control"><span data-i18n="speed">Velocità</span><select id="speedSelect"></select></label>
+      </div>
+      <div id="phraseStrip" class="phrase-strip" aria-label="Transcribed notes"></div>
+      <div class="board-area"><svg id="fretboard" viewBox="0 0 1200 390" role="img" aria-label="Bass fretboard"></svg></div>
+      <div class="board-legend">
+        <span><i class="legend-dot past"></i><span data-i18n="previous">precedente</span></span>
+        <span><i class="legend-dot current"></i><span data-i18n="current">adesso</span></span>
+        <span><i class="legend-dot future"></i><span data-i18n="upcoming">in arrivo</span></span>
+      </div>
+    </section>
+
+    <aside class="side-panel">
+      <section class="panel-section now-section">
+        <h2 data-i18n="now">Adesso</h2>
+        <div class="now-card"><div id="nowNote" class="now-note">—</div><div id="nowPosition" class="now-position">—</div><div id="confidenceLabel" class="confidence"></div></div>
+      </section>
+      <section class="panel-section">
+        <h2 data-i18n="nextNotes">Prossime note</h2>
+        <div id="nextList" class="next-list"></div>
+      </section>
+      <section class="panel-section">
+        <h2 data-i18n="study">Studio</h2>
+        <div class="settings-grid">
+          <label><span data-i18n="tuning">Accordatura</span><select id="tuningSelect"></select></label>
+          <label><span data-i18n="frets">Tasti</span><select id="fretsSelect"></select></label>
+          <label><span data-i18n="lookahead">Note in anticipo</span><select id="lookaheadSelect"></select></label>
+        </div>
+        <div class="loop-block"><div class="loop-title"><span data-i18n="loop">Loop</span><b id="loopLabel">nessun loop</b></div><div class="button-row"><button id="setLoopA" type="button" data-i18n="setA">Imposta A</button><button id="setLoopB" type="button" data-i18n="setB">Imposta B</button><button id="clearLoop" type="button" data-i18n="clearLoop">Azzera</button></div></div>
+      </section>
+      <section class="panel-section">
+        <h2 data-i18n="correction">Correggi la nota</h2>
+        <select id="noteSelect" class="note-select" aria-label="Note"></select>
+        <div class="button-row edit-row"><button id="noteDown" type="button" data-i18n="semitoneDown">− semitono</button><button id="noteUp" type="button" data-i18n="semitoneUp">+ semitono</button></div>
+        <div class="button-row edit-row"><button id="splitNote" type="button" data-i18n="splitNote">Dividi nota</button><button id="deleteNote" class="danger" type="button" data-i18n="deleteNote">Elimina nota</button></div>
+      </section>
+      <section class="panel-section">
+        <h2 data-i18n="export">Esporta</h2>
+        <div class="button-row"><button id="exportTab" type="button" data-i18n="exportTab">Scarica TAB</button><button id="exportProject" type="button" data-i18n="exportProject">Scarica progetto</button></div>
+      </section>
+    </aside>
   </div>
+</main>
 
-  <h1>Voicing e posizioni sul manico del basso</h1>
-  <p class="lede">Scrivi una griglia di accordi, scegli una zona di quattro-sette tasti e Manico ti mostra
-    quali voicing stanno dentro quella zona, come collegarli con il minimo movimento della mano, li fa
-    girare a tempo e li esporta in tab ASCII.</p>
-
-  <p class="lead">Manico e' un <b>leggio intelligente per bassisti</b>: non accompagna, allena. Carichi un
-    brano da iReal, MusicXML o testo con gli accordi; la forma arriva srotolata come si suona; il manico
-    ti mostra dove mettere le mani, il loop insiste dove serve, la trasposizione ti porta in ogni
-    tonalita', e ogni brano si ricorda di te. Questa guida racconta tutto, un pezzo alla volta.</p>
-  <h2>1. Scrivere la griglia</h2>
-  <p>Il campo in alto accetta gli accordi separati da spazio. Uno <b>spazio</b> apre una nuova battuta,
-    una <b>virgola</b> mette due accordi nella stessa battuta.</p>
-  <pre>D-7 G7 C^7,A7 D-7</pre>
-  <p>Sono quattro battute: la terza contiene due accordi da mezza battuta ciascuno. Nel player la durata
-    si divide di conseguenza.</p>
-
-  <h3>Sigle riconosciute</h3>
-  <table>
-    <tr><th>Scrivi</th><th>Ottieni</th></tr>
-    <tr><td>C  Cm  C-</td><td>maggiore, minore (le due notazioni sono equivalenti)</td></tr>
-    <tr><td>C7  C^7  Cmaj7  C-7  Cm7</td><td>settime di dominante, maggiore, minore</td></tr>
-    <tr><td>Ch7  Cm7b5</td><td>semidiminuito</td></tr>
-    <tr><td>Co7  Cdim7</td><td>diminuito</td></tr>
-    <tr><td>C6  C69  Cadd9  Csus4  Caug</td><td>sesta, sesta nona, aggiunte, sospesi, eccedente</td></tr>
-    <tr><td>C9  C11  C13  C7b9  C7#9  C7#5  Calt</td><td>estensioni e alterazioni</td></tr>
-    <tr><td>C/E</td><td>accordo con nota al basso indicata</td></tr>
-    <tr><td>N.C.</td><td>pausa, nessun accordo</td></tr>
-  </table>
-  <p>Funziona anche la scorciatoia <code>G-A-D</code>: un trattino seguito da una lettera di nota separa
-    le battute, mentre un trattino seguito da una cifra significa minore, come in <code>C-7</code>.</p>
-
-  <h2>2. La zona</h2>
-  <p>Due cursori sotto il manico fissano il primo tasto e l'ampiezza della zona. Tutto quello che il tool
-    propone sta dentro quei tasti: e' il modo di studiare una progressione senza spostarsi dalla posizione.</p>
-  <p>La striscia <b>copertura per posizione</b> assegna a ogni punto di partenza la percentuale di note
-    raggiungibili senza muoversi, calcolata sul peggiore accordo della griglia. Piu' la cella e' scura,
-    meno ti serve quella posizione. Un clic ti ci porta.</p>
-  <div class="note-box"><p>Quando la zona parte dal tasto 0 le corde a vuoto sono incluse, e non contano
-    nell'apertura della mano.</p></div>
-
-  <h2>3. I tipi di voicing</h2>
-  <table>
-    <tr><th>Tipo</th><th>Note</th><th>A cosa serve</th></tr>
-    <tr><td>Arpeggio</td><td>tutte, in successione</td><td>studio della posizione, walking</td></tr>
-    <tr><td>Shell</td><td>R + 7 + 3</td><td>l'accordo ridotto all'osso, si sente tutto</td></tr>
-    <tr><td>Note guida</td><td>3 + 7</td><td>comping, duo con un solista</td></tr>
-    <tr><td>Decime</td><td>R + 3</td><td>il suono classico basso e pianoforte</td></tr>
-    <tr><td>Triade</td><td>R + 3 + 5</td><td>bicordi e accordi in posizione stretta</td></tr>
-    <tr><td>Quartale</td><td>quarte sovrapposte</td><td>suono modale, sui minori settima</td></tr>
-  </table>
-  <p>Per i voicing suonati a blocco le note devono stare su corde diverse e crescenti, con l'apertura
-    della mano entro il limite che imposti tu, da tre a sei tasti. Ogni proposta indica la nota al basso
-    e quindi il rivolto, l'apertura richiesta e i gradi che contiene.</p>
-  <p>Clicca una proposta per sceglierla: e' quella che verra' suonata e che finira' nel tab.</p>
-
-  <h2>4. Voice leading</h2>
-  <p>Il pulsante <b>Ottimizza voice leading</b> percorre tutta la griglia e sceglie, per ogni accordo, il
-    voicing che minimizza il movimento complessivo: quanto si spostano le singole voci piu' quanto si
-    sposta la mano. Su ogni proposta compare il moto in semitoni rispetto all'accordo precedente, e in
-    fondo il totale.</p>
-  <p>L'ottimizzazione non esce mai dalla zona scelta: sarebbe barare rispetto allo scopo.</p>
-
-  <h2>5. Suonare</h2>
-  <p>Nella barra, accanto a <b>Play</b>, scegli <b>cosa suona</b> — e lo vedi prima di partire:</p>
-  <table>
-    <tr><th>Modalita'</th><th>Cosa senti</th></tr>
-    <tr><td>Arpeggio</td><td>l'accordo nota per nota dalla fondamentale, su per i gradi dentro la zona e a
-      specchio quando i movimenti superano le note: R-3-5-7 in 4/4, R-3-5-7-5-3 in 6/8</td></tr>
-    <tr><td>Walking</td><td>una linea walking dentro la zona: fondamentale, note dell'accordo nella direzione
-      del prossimo cambio, cromatica di avvicinamento dal lato del moto</td></tr>
-    <tr><td>Voicing</td><td>il voicing scelto suonato a blocco: per sentire il colore dell'armonia, o gli
-      shell come double stop</td></tr>
-    <tr><td>Click</td><td>il tool tiene griglia, zona e tempo — suoni tu, sul basso vero</td></tr>
-  </table>
-  <p>Mentre suona, <b>ogni nota si accende sul manico nel momento in cui la senti</b>. In walking le note
-    di passaggio compaiono come <b>pallini rossi</b> e il fraseggio varia a ogni giro: ottavi swingati
-    sull'ultimo movimento, ghost percussive sul levare, salti d'ottava — le semiminime restano l'impianto.</p>
-  <p>E al cambio di accordo le voci non spariscono: attorno a ogni nota del voicing c'e' un <b>anello del
-    colore del suo grado</b>, e gli anelli <b>planano verso le nuove posizioni</b> lasciando una scia,
-    partendo poco prima del cambio per arrivare sull'attacco. Il voice leading si vede accadere, voce per voce.</p>
-  <ul>
-    <li>Metro accanto alle modalita': 4/4, 3/4 e 2/4 con la loro pulsazione, 6/8 su due pulsazioni puntate.</li>
-    <li>Il tempo va da 40 a 200 bpm; il click accenta il primo movimento. Barra spaziatrice per avviare.</li>
-    <li>Di norma la zona insegue l'accordo corrente restando vicina a dove sei. Toccare i cursori della
-      zona attiva da solo <b>Zona fissa</b>: la tua scelta vale finche' non la sblocchi.</li>
-    <li>Le frecce sinistra e destra cambiano accordo a mano. Un clic su una nota del manico la fa suonare.</li>
-    <li><b>Loop di sezione</b>: sotto il manico scegli le battute da–a e il giro insiste li' (le battute nel
-      loop sono sottolineate nel nastro); la × lo toglie.</li>
-    <li><b>Trasposizione</b>: i tasti −/+ spostano tutta la griglia di un semitono alla volta, sigle
-      riscritte con la grafia d'uso (Db, Eb, F#, Ab, Bb); un tocco sul numero riporta a zero.</li>
-    <li><b>Memoria per brano</b>: per le canzoni del canzoniere, zona, accordatura, modalita', tempo, metro,
-      trasposizione e loop si salvano da soli — riapri il brano e lo ritrovi come l'avevi lasciato.</li>
-  </ul>
-
-  <h2>6. Tab ASCII</h2>
-  <p>Genera il tab della griglia da copiare o scaricare in <code>.txt</code>, in due contenuti a scelta:
-    i <b>voicing a blocchi</b> che hai selezionato, oppure la <b>linea walking</b> nota per nota, con le
-    note di passaggio fra parentesi.</p>
-  <pre>   D-7               G7
-G |-----------5--7--|--------7--|
-D |--------7--------|--5--9-----|
-A |--5--8-----------|-----------|
-E |-----------------|-----------|</pre>
-
-  <h2>7. Importare un brano</h2>
-  <p>Due strade, stesso pannello <b>+ Aggiungi brani</b>: incolla un link <code>irealb://</code> preso dal tasto
-    Condividi di iReal Pro (anche di una playlist intera), oppure carica un file <code>.musicxml</code>
-    — l'export della stessa iReal, o di MuseScore.</p>
-  <p>In entrambi i casi <b>la forma viene srotolata come si suona</b>, non semplificata: ritornelli con i
-    loro conteggi (anche i vamp segnati <code>3x</code>), primo, secondo e terzo finale, segno e coda,
-    D.S. al Coda, D.C. al Fine o al finale indicato, battute ribattute, e i cambi di metro a meta' brano.
-    Il lettore e' collaudato confrontando gli stessi brani nei due formati, misura per misura. Tempo e
-    metro del brano, quando il file li porta, vengono applicati da soli.</p>
-  <p>Terza strada, per il repertorio moderno: <b>incolla il testo con gli accordi sopra le parole</b>
-    (il formato dei siti di accordi) o un file <b>ChordPro</b>. Manico pesca le righe di soli accordi e
-    scarta le parole — e capisce anche la <b>notazione latina</b> dei siti italiani (LAm, MI7, DO7+); le stanghette <code>|</code>, quando ci sono, dividono le battute, altrimenti ogni
-    accordo vale una battuta — e la griglia resta modificabile a mano, per aggiustare le durate a
-    orecchio. Per il testo nudo la convenzione e': prima riga il titolo, seconda l'autore; ChordPro li
-    dichiara da se', col tempo.</p>
-  <h3>Il segnalibro “Manda a Manico”</h3>
-  <p>Per saltare il copia-incolla: trascina questo collegamento nella barra dei preferiti —
-    <a href="javascript:(()=>{const s=String(getSelection())||document.body.innerText;location.href='https://basso.massimodanieli.com/app.html#brano='+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify({t:document.title,c:s.slice(0,60000)})))))})()" class="bm">Manda a Manico</a> — poi, su qualunque pagina di accordi,
-    fai clic sul segnalibro. Manico si apre col brano gia' incollato e <b>titolo e autore indovinati
-    dal titolo della pagina</b>, pronti da correggere nei due campi se serve. Se prima selezioni solo il
-    blocco della carta, manda quello; altrimenti manda la pagina intera e le parole le scarta Manico.
-    Il brano viaggia nel frammento dell'indirizzo, che resta nel browser: non passa da nessun server.</p>
-  <p>Con un link di <b>playlist</b> la finestra offre <b>Salva tutti</b>: l'intera raccolta entra nel
-    canzoniere in un colpo — anche le playlist essenziali pubblicate da iReal (Jazz, Pop, Blues,
-    Brazilian…) con centinaia di brani. Il menu resta per caricarne uno subito.</p>
-  <p>Se qualche sigla non viene riconosciuta, la finestra resta aperta e la elenca; nel nastro compare in
-    rosso, cosi' sai subito cosa controllare prima di suonare.</p>
-  <div class="note-box"><p>Link e file vengono letti qui nel browser: non viene inviato niente da nessuna
-    parte, e la pagina non fa richieste di rete. Il pannello Forme include anche versioni essenziali
-    semplificate di brani celebri, con il tempo consigliato; per le griglie complete degli standard usi le
-    tue carte.</p></div>
-  <p>Ogni brano importato entra da solo nel <b>Canzoniere</b>, che vive
-    <b>su questo dispositivo</b>: lo ritrovi per titolo, autore o stile, lo carichi con un tocco, lo
-    togli con la ×. Il canzoniere si salva e si ripristina con un <b>backup JSON</b> —
-    esportalo ogni tanto: il browser non e' un archivio eterno. Nella stessa finestra restano le
-    <b>forme di serie</b>: blues, rhythm changes, cicli di II-V-I, cadenza andalusa, ciclo di terze
-    maggiori e brani tradizionali di pubblico dominio.</p>
-
-  <h2>8. Il basso</h2>
-  <p>Quattro accordature: quattro corde <code>E A D G</code>, cinque corde <code>B E A D G</code>, cinque
-    con Do acuto <code>E A D G C</code>, sei corde <code>B E A D G C</code>. Le corde sono disposte come
-    nelle tab, con la piu' acuta in alto; <b>Inverti corde</b> ribalta la vista.</p>
-  <p>La spaziatura dei tasti segue la formula reale <code>1 − 2^(−n/12)</code>, quindi il disegno e' un
-    manico vero e non una griglia a passo costante.</p>
-
-  <p style="margin-top:30px"><a class="cta" href="app.html">Apri lo strumento &rarr;</a></p>
-
-  <footer class="doc-foot">
-    Manico &copy; 2026 Massimo Danieli &middot; software libero sotto
-    <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>, senza alcuna garanzia &middot;
-    <a href="https://github.com/MassimoDanieli/accordi_di_basso">sorgenti su GitHub</a>
-  </footer>
+<div id="analysisModal" class="modal" hidden>
+  <div class="modal-card">
+    <div class="modal-icon">♩</div>
+    <h2 data-i18n="analyseTitle">Trascrivi la linea di basso</h2>
+    <p id="importFileName" class="file-name"></p>
+    <p id="analysisStatus" data-i18n="analyseHint">Il file resta sul dispositivo.</p>
+    <label class="sensitivity"><span data-i18n="sensitivity">Sensibilità agli attacchi</span><input id="sensitivity" type="range" min="55" max="90" value="72"><b id="sensitivityValue">72%</b></label>
+    <div class="progress"><i id="analysisProgress"></i></div>
+    <div class="modal-actions"><button id="cancelAnalysis" type="button" data-i18n="cancel">Annulla</button><button id="startAnalysis" class="primary" type="button" data-i18n="startAnalysis">Trascrivi e salva</button></div>
+  </div>
 </div>
 
-<script type="module">
-  import { initTheme } from './src/theme.js?v=4.4.1';
-  initTheme();
-</script>
+<div id="fatalError" class="fatal" hidden></div>
+<audio id="audio" preload="metadata"></audio>
+</div>
+<script src="assets/app.bundle.js?v=5.0.0"></script>
 </body>
 </html>
