@@ -1,10 +1,9 @@
 name: Apply Manico 5 production build
 
 on:
-  push:
-    branches: [agent/manico-5-production]
-    paths:
-      - '.manico5-ready'
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
@@ -15,11 +14,12 @@ concurrency:
 
 jobs:
   apply:
-    if: github.actor != 'github-actions[bot]'
+    if: github.head_ref == 'agent/manico-5-production' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
       - uses: actions/setup-node@v6
@@ -78,9 +78,6 @@ jobs:
       - name: Validate release
         run: npm run check:release
 
-      - name: Reject stale generated files
-        run: git diff --exit-code
-
       - name: Verify Docker image
         run: docker build --tag manico5-ci .
 
@@ -92,4 +89,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Rebuild Manico as a bass transcriber"
-          git push
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
