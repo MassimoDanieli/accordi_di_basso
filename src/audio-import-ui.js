@@ -1,5 +1,5 @@
 // Importazione audio dentro il dialogo Aggiungi brani.
-// Il riconoscimento vive in audio-import.html, isolato dal motore principale.
+// La trascrizione vive in audio-import.html, isolata dal motore principale.
 
 (function initAudioImportUI() {
   function language() {
@@ -10,17 +10,17 @@
   const copy = {
     it: {
       tab: 'Da MP3',
-      title: 'Importa da MP3',
-      hint: 'Carica una registrazione, controlla gli accordi stimati e importali direttamente nella griglia. Il file resta nel browser.',
-      open: 'Apri importatore MP3',
-      close: 'Chiudi importatore MP3'
+      title: 'Trascrivi la linea di basso da MP3',
+      hint: 'Carica una registrazione: Manico rileva attacchi, note gravi, ritmo e diteggiatura. L’accordo resta solo un’indicazione armonica secondaria.',
+      open: 'Apri trascrittore MP3',
+      close: 'Chiudi trascrittore MP3'
     },
     en: {
       tab: 'From MP3',
-      title: 'Import from MP3',
-      hint: 'Load a recording, review the estimated chords, then import them directly into the chart. The file stays in your browser.',
-      open: 'Open MP3 importer',
-      close: 'Close MP3 importer'
+      title: 'Transcribe the bass line from MP3',
+      hint: 'Load a recording: Manico detects attacks, low notes, rhythm and fingering. Chords remain optional harmonic context only.',
+      open: 'Open MP3 transcriber',
+      close: 'Close MP3 transcriber'
     }
   };
 
@@ -28,7 +28,6 @@
     const dialog = document.getElementById('dlgireal');
     if (!dialog || document.getElementById('iraudio')) return;
 
-    // La vecchia scorciatoia separata non serve piu': tutto parte da Aggiungi brani.
     document.querySelectorAll('a[href="audio.html"]').forEach(a => a.remove());
 
     const panel = document.createElement('section');
@@ -43,7 +42,7 @@
         <button type="button" id="iraudiotoggle" class="pri" data-audio-copy="open"></button>
       </div>
       <div id="iraudioframewrap" hidden style="margin-top:12px">
-        <iframe id="iraudioframe" title="MP3 import" style="display:block;width:100%;height:620px;border:0;border-radius:9px;background:#171411"></iframe>
+        <iframe id="iraudioframe" title="MP3 bass-line transcription" style="display:block;width:100%;height:760px;border:0;border-radius:9px;background:#171411"></iframe>
       </div>`;
 
     const foot = dialog.querySelector('.dlg-foot');
@@ -63,7 +62,20 @@
 
     button.addEventListener('click', () => {
       wrap.hidden = !wrap.hidden;
-      if (!wrap.hidden && !frame.src) frame.src = 'audio-import.html?v=4.2.0';
+      if (!wrap.hidden && !frame.src) frame.src = 'audio-import.html?v=4.3.0';
+      translate();
+    });
+
+    window.addEventListener('message', e => {
+      if (e.origin !== location.origin || !e.data || e.data.type !== 'manico-bassline') return;
+      wrap.hidden = true;
+      const info = document.getElementById('irinfo');
+      if (info) {
+        const count = Array.isArray(e.data.events) ? e.data.events.length : 0;
+        info.textContent = language() === 'en'
+          ? `${count} bass notes transcribed. The suggested TAB has been downloaded or copied from the transcriber.`
+          : `${count} note di basso trascritte. La TAB suggerita può essere copiata o scaricata dal trascrittore.`;
+      }
       translate();
     });
 
