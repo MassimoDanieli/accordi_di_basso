@@ -1,26 +1,21 @@
-name: Release build
+name: Verify release
 
 on:
   push:
     branches: [main]
-    paths:
-      - 'package.json'
-      - 'app.html'
-      - 'index.html'
-      - 'index.en.html'
-      - 'audio-import.html'
-      - 'src/**'
-      - 'assets/styles.css'
-      - 'tools/build.js'
-      - 'tools/release.js'
-      - '.github/workflows/release-build.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  release:
-    if: github.actor != 'github-actions[bot]'
+  test-and-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -28,16 +23,7 @@ jobs:
         with:
           node-version: 22
           package-manager-cache: false
-      - run: npm test
-      - run: npm run release
-      - name: Commit generated release files
-        run: |
-          if git diff --quiet; then
-            echo "Release files already current"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app.html index.html index.en.html assets/app.bundle.js dist/manico.html
-          git commit -m "Release $(node -p \"require('./package.json').version\") artifacts"
-          git push
+      - name: Test
+        run: npm test
+      - name: Build
+        run: npm run build
