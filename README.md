@@ -21,3 +21,5 @@ npm run check:release
 ```
 
 `npm run release` sincronizza la versione e genera `assets/app.bundle.js` e `dist/manico.html`.
+
+La pipeline di release ripete i test, rigenera gli artefatti, rifiuta file generati non aggiornati e costruisce l'immagine Docker prima di consentire il merge.
