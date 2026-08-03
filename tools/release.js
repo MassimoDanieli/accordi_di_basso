@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const version = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
-for (const filename of ['index.html', 'app.html', 'index.en.html']) {
+for (const filename of ['index.html', 'app.html', 'index.en.html', 'help-it.html', 'help-en.html']) {
   const path = join(root, filename);
   let html = readFileSync(path, 'utf8');
   html = html

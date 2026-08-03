@@ -898,6 +898,9 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     });
     $('langIt').classList.toggle('on', state.lang === 'it');
     $('langEn').classList.toggle('on', state.lang === 'en');
+    $('helpLink').href = state.lang === 'en' ? 'help-en.html' : 'help-it.html';
+    $('helpLink').title = state.lang === 'en' ? 'Help' : 'Aiuto';
+    $('helpLink').setAttribute('aria-label', $('helpLink').title);
     $('versionLabel').textContent = t('version');
     renderHome();
     if (state.track) renderStudio(true);
