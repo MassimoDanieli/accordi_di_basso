@@ -1,0 +1,67 @@
+name: Polish rectangular fretboard
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    if: github.head_ref == 'agent/rectangular-fretboard-5.1.1' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Tighten the desktop layout and make mobile fretboard scrollable
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('assets/styles.css')
+          css = path.read_text(encoding='utf-8')
+          marker = '/* Manico 5.1.1 rectangular fretboard polish */'
+          if marker not in css:
+              css += '''
+
+/* Manico 5.1.1 rectangular fretboard polish */
+.studio-grid{align-items:start}
+.board-area{min-height:0;padding:14px;align-items:flex-start;overflow:hidden}
+.instrument-stage{padding:12px 10px 8px}
+.string-label{font-size:22px}
+.fret-number{font-size:17px}
+@media(max-width:760px){
+  .board-area{min-height:0;padding:8px 0;overflow-x:auto;overflow-y:hidden;justify-content:flex-start;overscroll-behavior-x:contain}
+  .instrument-stage{width:960px;min-width:960px;padding:10px 8px 6px;border-left:0;border-right:0;border-radius:0}
+  #fretboard{width:940px;min-width:940px;max-height:none}
+}
+'''
+          path.write_text(css, encoding='utf-8')
+          PY
+      - name: Test and rebuild release
+        run: |
+          npm test
+          npm run release
+          npm run check:release
+          git diff --check
+          docker build --tag manico-polished-511 .
+      - name: Commit polished renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/polish-rectangular-fretboard.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Polish rectangular fretboard proportions"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
