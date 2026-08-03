@@ -1,0 +1,253 @@
+name: Retry Manico 5.1.2 fretboard polish
+
+on:
+  push:
+    branches: [agent/fretboard-polish-5.1.2]
+    paths:
+      - '.github/workflows/fretboard-polish-512-retry.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: manico-fretboard-polish-512-retry
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: agent/fretboard-polish-5.1.2
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Apply the 5.1.2 source changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          import re
+
+          VERSION = '5.1.2'
+
+          def require_replace(text, old, new, label, expected=None):
+              count = text.count(old)
+              if expected is not None and count != expected:
+                  raise SystemExit(f'{label}: expected {expected}, found {count}')
+              if count == 0:
+                  raise SystemExit(f'{label}: source text not found')
+              return text.replace(old, new)
+
+          package_path = Path('package.json')
+          package = json.loads(package_path.read_text(encoding='utf-8'))
+          package['version'] = VERSION
+          package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          core_path = Path('src/core.js')
+          core = core_path.read_text(encoding='utf-8')
+          core, count = re.subn(r"const VERSION = '[^']+';", f"const VERSION = '{VERSION}';", core, count=1)
+          if count != 1:
+              raise SystemExit(f'core version: expected 1, found {count}')
+          core = require_replace(
+              core,
+              "settings: { tuning, frets: 15, lookahead: 3, speed: 1, loopA: null, loopB: null },\n      events: optimiseFingering(events, TUNINGS[tuning].open, 15)",
+              "settings: { tuning, frets: 12, lookahead: 3, speed: 1, loopA: null, loopB: null },\n      events: optimiseFingering(events, TUNINGS[tuning].open, 12)",
+              'demo defaults',
+              expected=1
+          )
+          core_path.write_text(core, encoding='utf-8')
+
+          app_path = Path('src/app.js')
+          app = app_path.read_text(encoding='utf-8')
+          defaults = "tuning: '4', frets: 15, lookahead: 3, speed: 1, loopA: null, loopB: null"
+          app = require_replace(
+              app,
+              defaults,
+              "tuning: '4', frets: 12, lookahead: 3, speed: 1, loopA: null, loopB: null",
+              'application defaults',
+              expected=2
+          )
+
+          # More compact geometry: the useful 0-12 area fills the stage without looking like a spreadsheet.
+          geometry = {
+              'const height = Math.max(430, 174 + strings * 64);': 'const height = Math.max(390, 150 + strings * 60);',
+              'const stringStart = 96;': 'const stringStart = 92;',
+              'const nut = 164;': 'const nut = 166;',
+              'const rulerTop = 16;': 'const rulerTop = 12;',
+              'const rulerBottom = 70;': 'const rulerBottom = 58;',
+              'const boardTop = 76;': 'const boardTop = 64;',
+              'const boardBottom = height - 46;': 'const boardBottom = height - 30;',
+              'const stringTop = boardTop + 34;': 'const stringTop = boardTop + 30;',
+              'const stringBottom = boardBottom - 34;': 'const stringBottom = boardBottom - 30;'
+          }
+          for old, new in geometry.items():
+              app = require_replace(app, old, new, f'geometry {old}', expected=1)
+
+          # Cleaner, slightly smaller note markers with a light ring like the approved reference.
+          marker_changes = {
+              'const radius = isCurrent ? 31 : 25;': 'const radius = isCurrent ? 27 : isPast ? 21 : 22;',
+              "const fill = isPast ? 'rgba(17,16,14,.72)' : color;": "const fill = isPast ? 'rgba(22,18,14,.84)' : color;",
+              "const textColor = isCurrent ? '#211608' : isPast ? 'var(--past)' : '#10201b';": "const textColor = isCurrent ? '#241604' : isPast ? 'var(--past)' : '#f8fffc';\n    const outline = isPast ? color : 'rgba(255,250,240,.94)';",
+              'svg += `<circle cx="${point.x}" cy="${point.y}" r="${radius + 8}" fill="none" stroke="${color}" stroke-opacity=".16" stroke-width="8"/>`;': 'svg += `<circle cx="${point.x}" cy="${point.y}" r="${radius + 7}" fill="none" stroke="${color}" stroke-opacity=".13" stroke-width="6"/>`;\n    svg += `<circle cx="${point.x}" cy="${point.y + 2}" r="${radius}" fill="rgba(44,31,21,.24)"/>`;',
+              'svg += `<circle cx="${point.x}" cy="${point.y}" r="${radius}" fill="${fill}" stroke="${color}" stroke-width="${isPast ? 4 : 2.5}"/>`;': 'svg += `<circle cx="${point.x}" cy="${point.y}" r="${radius}" fill="${fill}" stroke="${outline}" stroke-width="${isPast ? 3.5 : 3}"/>`;',
+              'svg += `<text x="${point.x}" y="${point.y + 6}" text-anchor="middle" class="marker-note" fill="${textColor}">${Core.noteName(event.midi)}</text>`;': 'svg += `<text x="${point.x}" y="${point.y + 5.5}" text-anchor="middle" class="marker-note" fill="${textColor}">${Core.noteName(event.midi)}</text>`;',
+              'const thickness = 1.7 + (strings - string) * 0.72;': 'const thickness = 1.45 + (strings - string) * 0.68;'
+          }
+          for old, new in marker_changes.items():
+              app = require_replace(app, old, new, f'marker {old[:38]}', expected=1)
+
+          # Warm maple, thinner frets and less visual weight.
+          visual_changes = [
+              ('<stop offset="0" stop-color="#efd4a1"/>', '<stop offset="0" stop-color="#efd6a6"/>'),
+              ('<stop offset=".48" stop-color="#dfbd82"/>', '<stop offset=".5" stop-color="#d8b477"/>'),
+              ('<stop offset="1" stop-color="#c9985b"/>', '<stop offset="1" stop-color="#bc844b"/>'),
+              ('<stop offset="0" stop-color="#6f6a62"/>', '<stop offset="0" stop-color="#5d5953"/>'),
+              ('<stop offset=".42" stop-color="#f1ede5"/>', '<stop offset=".48" stop-color="#f7f2e9"/>'),
+              ('<stop offset="1" stop-color="#756f67"/>', '<stop offset="1" stop-color="#68625b"/>'),
+              ('<feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#000" flood-opacity=".38"/>', '<feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity=".31"/>'),
+              ('fill="#f8f4ea" stroke="#96764f" stroke-width="2.5"', 'fill="#f3eee6" stroke="#856b52" stroke-width="2"'),
+              ('stroke="#b59b78" stroke-width="2"', 'stroke="#c4ad8e" stroke-width="1.5"'),
+              ('stroke="#8c6e4b" stroke-opacity=".58" stroke-width="2"', 'stroke="#72563e" stroke-opacity=".58" stroke-width="1.5"'),
+              ('stroke="#fff7e8" stroke-opacity=".7" stroke-width="2"', 'stroke="#fff8ec" stroke-opacity=".60" stroke-width="1.5"'),
+              ('stroke="#6f4d2f" stroke-opacity=".72" stroke-width="3"', 'stroke="#5f422d" stroke-opacity=".66" stroke-width="2.5"'),
+              ('stroke="#5f554a" stroke-opacity=".34" stroke-width="5"', 'stroke="#4d443b" stroke-opacity=".26" stroke-width="4"'),
+              ('stroke="url(#fretMetal)" stroke-width="3.5"', 'stroke="url(#fretMetal)" stroke-width="2.7"'),
+              ('stroke="#2a241d" stroke-opacity=".35" stroke-width="12"', 'stroke="#2a241d" stroke-opacity=".27" stroke-width="10"'),
+              ('stroke="#f4ead8" stroke-width="7"', 'stroke="#f5ecde" stroke-width="6"'),
+              ('r="7.5" fill="#8f7045" opacity=".64"', 'r="6.5" fill="#7d5d38" opacity=".60"'),
+              ('r="7.5" fill="#8f7045" opacity=".58"', 'r="6.5" fill="#7d5d38" opacity=".52"'),
+              ('stroke="#4e4033" stroke-opacity=".44" stroke-width="${thickness + 2.2}"', 'stroke="#3f352c" stroke-opacity=".40" stroke-width="${thickness + 1.8}"'),
+              ('stroke-opacity=".45" stroke-width="4"', 'stroke-opacity=".32" stroke-width="3"'),
+              ('y="52" text-anchor="middle"', 'y="43" text-anchor="middle"')
+          ]
+          for old, new in visual_changes:
+              count = app.count(old)
+              if count == 0:
+                  raise SystemExit(f'visual token not found: {old}')
+              app = app.replace(old, new)
+
+          board_line = '    html += `<rect x="${geometry.outerLeft}" y="${geometry.boardTop}" width="${outerWidth}" height="${boardHeight}" fill="url(#boardWood)"/>`;'
+          grain = """    html += `<path d="M ${geometry.stringStart + 18} ${geometry.boardTop + 22} C ${geometry.nut + 180} ${geometry.boardTop + 8}, ${geometry.bridge - 260} ${geometry.boardTop + 38}, ${geometry.bridge - 18} ${geometry.boardTop + 19}" fill="none" stroke="#6e482d" stroke-opacity=".09" stroke-width="2"/>`;
+    html += `<path d="M ${geometry.stringStart + 4} ${geometry.boardBottom - 25} C ${geometry.nut + 240} ${geometry.boardBottom - 8}, ${geometry.bridge - 310} ${geometry.boardBottom - 42}, ${geometry.bridge - 8} ${geometry.boardBottom - 21}" fill="none" stroke="#fff2d9" stroke-opacity=".12" stroke-width="2"/>`;"""
+          app = require_replace(app, board_line, board_line + '\n' + grain, 'wood grain', expected=1)
+          app_path.write_text(app, encoding='utf-8')
+
+          css_path = Path('assets/styles.css')
+          css = css_path.read_text(encoding='utf-8')
+          css += '''
+
+/* Manico 5.1.2 fretboard finish */
+.instrument-stage{background:linear-gradient(180deg,rgba(246,231,207,.035),rgba(0,0,0,.17));border-color:rgba(239,216,181,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 12px 34px rgba(0,0,0,.16)}
+.marker-note{font-size:15px;letter-spacing:-.02em}
+.marker-order{font-size:11px}
+.fret-number{font-weight:700}
+'''
+          css_path.write_text(css, encoding='utf-8')
+
+          test_path = Path('test/smoke.test.js')
+          tests = test_path.read_text(encoding='utf-8')
+          tests, count = re.subn(r"assert\.equal\(C\.VERSION, '[^']+'\);", f"assert.equal(C.VERSION, '{VERSION}');", tests, count=1)
+          if count != 1:
+              raise SystemExit(f'test version: expected 1, found {count}')
+          anchor = "assert.equal(rock.events.length, 16);"
+          tests = require_replace(
+              tests,
+              anchor,
+              anchor + "\nassert.equal(rock.settings.frets, 12, 'new exercises default to 12 frets');\nassert.ok(rock.events.every(event => event.fret === null || event.fret <= 12));",
+              '12-fret regression',
+              expected=1
+          )
+          test_path.write_text(tests, encoding='utf-8')
+
+          readme_path = Path('README.md')
+          readme = readme_path.read_text(encoding='utf-8')
+          readme = require_replace(readme, '# Manico 5.1.1 · Bass Transcriber', '# Manico 5.1.2 · Bass Transcriber', 'README version', expected=1)
+          anchor = '- manico rettangolare a larghezza costante, senza paletta o sagome decorative;'
+          readme = require_replace(
+              readme,
+              anchor,
+              anchor + '\n- 12 tasti come impostazione iniziale per accompagnamento e studio nella zona più usata;\n- finitura più sobria con acero caldo, tasti più leggeri e note più pulite;',
+              'README fretboard changes',
+              expected=1
+          )
+          readme_path.write_text(readme, encoding='utf-8')
+          PY
+
+      - name: Test and build release
+        run: |
+          node --check src/app.js
+          npm test
+          npm run release
+          npm run check:release
+          git diff --check
+          docker build --tag manico-fretboard-512 .
+
+      - name: Browser verification
+        shell: bash
+        run: |
+          npm install --prefix /tmp/manico-visual --no-save --package-lock=false --ignore-scripts playwright-core@1.55.0
+          python3 -m http.server 8080 > /tmp/manico-http.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/ > /dev/null; then break; fi
+            if [ "$attempt" -eq 30 ]; then cat /tmp/manico-http.log; exit 1; fi
+            sleep 1
+          done
+          cat > /tmp/check.mjs <<'JS'
+          import { createRequire } from 'node:module';
+          import fs from 'node:fs';
+          const require = createRequire(import.meta.url);
+          const { chromium } = require('/tmp/manico-visual/node_modules/playwright-core');
+          const executablePath = ['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium-browser','/usr/bin/chromium'].find(path => fs.existsSync(path));
+          if (!executablePath) throw new Error('Chrome executable not found');
+          const browser = await chromium.launch({ executablePath, headless: true, args: ['--no-sandbox'] });
+          const page = await browser.newPage({ viewport: { width: 1440, height: 980 } });
+          await page.goto('http://127.0.0.1:8080/', { waitUntil: 'networkidle' });
+          await page.locator('#demoList .icon-button').first().click();
+          await page.locator('#fretboard').waitFor({ state: 'visible' });
+          await page.waitForTimeout(250);
+          const result = await page.evaluate(() => ({
+            frets: document.querySelector('#fretsSelect')?.value,
+            labels: [...document.querySelectorAll('#fretboard .fret-number')].map(node => node.textContent),
+            current: document.querySelector('#nowNote')?.textContent,
+            stageHeight: document.querySelector('.instrument-stage')?.getBoundingClientRect().height
+          }));
+          if (result.frets !== '12') throw new Error(`Default frets: ${result.frets}`);
+          if (!result.labels.includes('12') || result.labels.includes('15')) throw new Error(`Fret labels: ${result.labels.join(',')}`);
+          if (!result.current) throw new Error('Current note missing');
+          if (result.stageHeight < 220 || result.stageHeight > 410) throw new Error(`Stage height: ${result.stageHeight}`);
+          await page.screenshot({ path: 'manico-5.1.2-review.png' });
+          await page.locator('.instrument-stage').screenshot({ path: 'manico-5.1.2-fretboard.png' });
+          await browser.close();
+          JS
+          node /tmp/check.mjs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manico-5.1.2-fretboard-review
+          path: |
+            manico-5.1.2-review.png
+            manico-5.1.2-fretboard.png
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Commit Manico 5.1.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/fretboard-polish-512.yml
+          rm -f .github/workflows/fretboard-polish-512-retry.yml
+          rm -f manico-5.1.2-review.png manico-5.1.2-fretboard.png
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Polish fretboard and default to 12 frets"
+          git push origin HEAD:agent/fretboard-polish-5.1.2
