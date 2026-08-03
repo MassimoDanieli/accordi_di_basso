@@ -97,7 +97,7 @@ jobs:
 
           app, count = re.subn(
               r"  function neckGeometry\(strings, frets\) \{.*?\n  \}\n\n  function markerPoint",
-              textwrap.indent(geometry, '  ') + '\n\n  function markerPoint',
+              lambda _: textwrap.indent(geometry, '  ') + '\n\n  function markerPoint',
               app,
               count=1,
               flags=re.S,
@@ -219,7 +219,7 @@ jobs:
 
           app, count = re.subn(
               r"  function renderFretboard\(\) \{.*?\n  \}\n\n  function populatePositionSelect",
-              textwrap.indent(renderer, '  ') + '\n\n  function populatePositionSelect',
+              lambda _: textwrap.indent(renderer, '  ') + '\n\n  function populatePositionSelect',
               app,
               count=1,
               flags=re.S,
