@@ -340,25 +340,25 @@
   }
 
   function neckGeometry(strings, frets) {
-    const width = 1400;
-    const height = Math.max(430, 160 + strings * 62);
-    const nut = 282;
-    const bridge = 1326;
-    const nutTop = 94;
-    const nutBottom = height - 94;
-    const bridgeTop = 44;
-    const bridgeBottom = height - 44;
-    const topAt = x => nutTop + (bridgeTop - nutTop) * ((x - nut) / (bridge - nut));
-    const bottomAt = x => nutBottom + (bridgeBottom - nutBottom) * ((x - nut) / (bridge - nut));
-    const fretX = fret => nut + Core.fretPosition(fret, frets) * (bridge - nut);
-    const fretCenter = fret => fret === 0 ? nut - 39 : (fretX(fret - 1) + fretX(fret)) / 2;
-    const stringY = (string, x) => {
-      const display = strings - 1 - string;
-      const ratio = strings <= 1 ? 0.5 : display / (strings - 1);
-      return topAt(x) + (bottomAt(x) - topAt(x)) * ratio;
-    };
-    return { width, height, nut, bridge, nutTop, nutBottom, bridgeTop, bridgeBottom, topAt, bottomAt, fretX, fretCenter, stringY };
-  }
+  const width = 1400;
+  const height = Math.max(430, 170 + strings * 62);
+  const nut = 150;
+  const bridge = 1344;
+  const nutTop = 54;
+  const nutBottom = height - 54;
+  const bridgeTop = nutTop;
+  const bridgeBottom = nutBottom;
+  const topAt = () => nutTop;
+  const bottomAt = () => nutBottom;
+  const fretX = fret => nut + Core.fretPosition(fret, frets) * (bridge - nut);
+  const fretCenter = fret => fret === 0 ? nut - 40 : (fretX(fret - 1) + fretX(fret)) / 2;
+  const stringY = string => {
+    const display = strings - 1 - string;
+    const ratio = strings <= 1 ? 0.5 : display / (strings - 1);
+    return nutTop + (nutBottom - nutTop) * ratio;
+  };
+  return { width, height, nut, bridge, nutTop, nutBottom, bridgeTop, bridgeBottom, topAt, bottomAt, fretX, fretCenter, stringY };
+}
 
   function markerPoint(event, geometry, strings) {
     if (!event || event.string === null || event.fret === null) return null;
@@ -437,8 +437,6 @@
       </defs>`;
 
     html += `<g filter="url(#neckShadow)">`;
-    html += `<path d="M 24 ${geometry.height * 0.34} Q 58 ${geometry.height * 0.23} 121 ${geometry.height * 0.28} L ${geometry.nut} ${geometry.nutTop + 9} L ${geometry.nut} ${geometry.nutBottom - 9} L 121 ${geometry.height * 0.72} Q 58 ${geometry.height * 0.77} 24 ${geometry.height * 0.66} Q 7 ${geometry.height * 0.5} 24 ${geometry.height * 0.34} Z" fill="url(#headWood)" stroke="#8a654b" stroke-width="3"/>`;
-    html += `<path d="M ${geometry.bridge - 16} ${geometry.bridgeTop - 25} Q ${geometry.width - 8} ${geometry.height * 0.2} ${geometry.width - 12} ${geometry.height * 0.5} Q ${geometry.width - 8} ${geometry.height * 0.8} ${geometry.bridge - 16} ${geometry.bridgeBottom + 25} Z" fill="#281b15" stroke="#4d3529" stroke-width="3"/>`;
     html += `<path d="${boardPath}" fill="url(#neckWood)" stroke="#9b7254" stroke-width="3"/>`;
     html += `<path d="M ${geometry.nut} ${geometry.nutTop + 7} L ${geometry.bridge} ${geometry.bridgeTop + 7}" stroke="#d8b38c" stroke-opacity=".28" stroke-width="3"/>`;
     html += `<path d="M ${geometry.nut} ${geometry.nutBottom - 7} L ${geometry.bridge} ${geometry.bridgeBottom - 7}" stroke="#1a100c" stroke-opacity=".72" stroke-width="4"/>`;
@@ -464,19 +462,14 @@
     });
 
     open.forEach((openMidi, string) => {
-      const pegY = geometry.stringY(string, geometry.nut) + (string % 2 === 0 ? -18 : 18);
-      const pegX = 65 + (string % 2) * 62 + Math.floor(string / 2) * 18;
-      const nutY = geometry.stringY(string, geometry.nut);
-      const bridgeY = geometry.stringY(string, geometry.bridge);
-      const thickness = 1.8 + (strings - string) * 0.72;
-      html += `<line x1="${pegX}" y1="${pegY}" x2="${geometry.nut}" y2="${nutY}" stroke="#d9ccb9" stroke-opacity=".72" stroke-width="${thickness}"/>`;
-      html += `<line x1="${geometry.nut}" y1="${nutY}" x2="${geometry.bridge + 22}" y2="${bridgeY}" stroke="#e7dccb" stroke-opacity=".82" stroke-width="${thickness}"/>`;
-      html += `<circle cx="${pegX}" cy="${pegY}" r="11" fill="url(#metal)" stroke="#25211d" stroke-width="2"/>`;
-      html += `<rect x="${pegX - 17}" y="${pegY - 5}" width="12" height="10" rx="3" fill="url(#metal)"/>`;
-      html += `<text x="${geometry.nut - 24}" y="${nutY + 5}" text-anchor="end" class="string-label">${Core.noteName(openMidi).replace(/-?\d+$/, '')}</text>`;
-    });
+  const y = geometry.stringY(string, geometry.nut);
+  const thickness = 1.8 + (strings - string) * 0.72;
+  const left = geometry.nut - 66;
+  html += `<line x1="${left}" y1="${y}" x2="${geometry.bridge}" y2="${y}" stroke="#17110d" stroke-opacity=".48" stroke-width="${thickness + 2.2}"/>`;
+  html += `<line x1="${left}" y1="${y}" x2="${geometry.bridge}" y2="${y}" stroke="#e7dccb" stroke-opacity=".84" stroke-width="${thickness}"/>`;
+  html += `<text x="${left - 20}" y="${y + 6}" text-anchor="end" class="string-label">${Core.noteName(openMidi).replace(/-?\d+$/, '')}</text>`;
+});
 
-    html += `<rect x="${geometry.bridge + 8}" y="${geometry.height * 0.28}" width="32" height="${geometry.height * 0.44}" rx="7" fill="url(#metal)" stroke="#27231f" stroke-width="3"/>`;
     html += `</g>`;
 
     for (let fret = 0; fret <= frets; fret += 1) {
