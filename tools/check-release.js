@@ -13,6 +13,9 @@ const validScript = (source, name) => {
   catch (error) { errors.push(`${name}: invalid JavaScript (${error.message})`); }
 };
 
+expect(read('src/core.js').includes(`const VERSION = '${version}'`), `src/core.js: version is not ${version}`);
+expect(read('src/defaults.js').includes(`const VERSION = '${version}'`), `src/defaults.js: version is not ${version}`);
+
 for (const filename of ['index.html', 'app.html', 'index.en.html']) {
   const html = read(filename);
   expect(html.includes(`data-versione="${version}"`), `${filename}: version is not ${version}`);
@@ -20,6 +23,7 @@ for (const filename of ['index.html', 'app.html', 'index.en.html']) {
     expect(match[1] === version, `${filename}: cache token ${match[1]} instead of ${version}`);
   }
 }
+expect(read('index.html').includes(`Versione ${version}`), `index.html: fallback label is not ${version}`);
 for (const filename of ['assets/app.bundle.js', 'dist/manico.html']) {
   const path = join(root, filename);
   expect(existsSync(path), `${filename}: missing`);

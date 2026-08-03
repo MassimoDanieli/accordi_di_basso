@@ -1,7 +1,7 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '5.1.1';
+  const VERSION = '5.2.0';
   const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
   const PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const TUNINGS = {
@@ -19,6 +19,17 @@
   ];
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+  function validLoopBounds(settings, duration = Infinity, minimum = 0.15) {
+    if (settings?.loopA === null || settings?.loopA === undefined
+      || settings?.loopB === null || settings?.loopB === undefined) return null;
+    const loopA = Number(settings?.loopA);
+    const loopB = Number(settings?.loopB);
+    if (!Number.isFinite(loopA) || !Number.isFinite(loopB)) return null;
+    const start = clamp(loopA, 0, duration);
+    const end = clamp(loopB, 0, duration);
+    return end - start >= minimum ? { start, end } : null;
+  }
 
   function formatTime(seconds) {
     const value = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
@@ -320,7 +331,7 @@
 
   root.ManicoCore = {
     VERSION, NOTE_NAMES, TUNINGS, DEMOS, clamp, formatTime, noteName, parseNote,
-    fretPosition, candidatePositions, positionMatchesMidi, stabilizeOctaves,
+    fretPosition, candidatePositions, positionMatchesMidi, validLoopBounds, stabilizeOctaves,
     optimiseFingering, normalizeEvents, currentEventIndex, previewWindow,
     createDemoTrack, renderTab
   };

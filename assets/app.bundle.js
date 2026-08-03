@@ -1,7 +1,7 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '5.1.1';
+  const VERSION = '5.2.0';
   const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
   const PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const TUNINGS = {
@@ -19,6 +19,17 @@
   ];
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+  function validLoopBounds(settings, duration = Infinity, minimum = 0.15) {
+    if (settings?.loopA === null || settings?.loopA === undefined
+      || settings?.loopB === null || settings?.loopB === undefined) return null;
+    const loopA = Number(settings?.loopA);
+    const loopB = Number(settings?.loopB);
+    if (!Number.isFinite(loopA) || !Number.isFinite(loopB)) return null;
+    const start = clamp(loopA, 0, duration);
+    const end = clamp(loopB, 0, duration);
+    return end - start >= minimum ? { start, end } : null;
+  }
 
   function formatTime(seconds) {
     const value = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
@@ -320,7 +331,7 @@
 
   root.ManicoCore = {
     VERSION, NOTE_NAMES, TUNINGS, DEMOS, clamp, formatTime, noteName, parseNote,
-    fretPosition, candidatePositions, positionMatchesMidi, stabilizeOctaves,
+    fretPosition, candidatePositions, positionMatchesMidi, validLoopBounds, stabilizeOctaves,
     optimiseFingering, normalizeEvents, currentEventIndex, previewWindow,
     createDemoTrack, renderTab
   };
@@ -540,7 +551,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
   const Store = root.ManicoStorage;
   if (!Core || !Store) throw new Error('Manico defaults require core and storage');
 
-  const VERSION = '5.1.2';
+  const VERSION = '5.2.0';
   const DEFAULT_FRETS = 12;
 
   // Version is exposed by the core object and read by the application at startup.
@@ -888,7 +899,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       state.audioUrl = URL.createObjectURL(track.audioBlob);
       audio.src = state.audioUrl;
       audio.preload = 'metadata';
-      audio.playbackRate = track.settings.speed || 1;
+      setAudioSpeed(track.settings.speed || 1);
     }
     show('studio');
     renderStudio(true);
@@ -1203,9 +1214,24 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
 
   function renderLoop() {
     const { loopA, loopB } = state.track.settings;
-    $('loopLabel').textContent = loopA !== null && loopB !== null
-      ? `A ${Core.formatTime(loopA)} — B ${Core.formatTime(loopB)}`
-      : t('noLoop');
+    if (loopA !== null && loopB !== null) $('loopLabel').textContent = `A ${Core.formatTime(loopA)} — B ${Core.formatTime(loopB)}`;
+    else if (loopA !== null) $('loopLabel').textContent = `A ${Core.formatTime(loopA)} — B …`;
+    else if (loopB !== null) $('loopLabel').textContent = `A … — B ${Core.formatTime(loopB)}`;
+    else $('loopLabel').textContent = t('noLoop');
+
+    const duration = state.track.duration || audio.duration || 0;
+    const markers = [['loopMarkerA', loopA], ['loopMarkerB', loopB]];
+    markers.forEach(([id, value]) => {
+      const marker = $(id);
+      marker.hidden = value === null || !duration;
+      if (!marker.hidden) marker.style.left = `${Core.clamp(value / duration * 100, 0, 100)}%`;
+    });
+    const bounds = Core.validLoopBounds(state.track.settings, duration);
+    $('loopRange').hidden = !bounds || !duration;
+    if (bounds && duration) {
+      $('loopRange').style.left = `${bounds.start / duration * 100}%`;
+      $('loopRange').style.width = `${(bounds.end - bounds.start) / duration * 100}%`;
+    }
   }
 
   function renderStudio(full = false) {
@@ -1244,8 +1270,8 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     cancelAnimationFrame(state.animation);
     const frame = () => {
       if (!state.track) return;
-      const { loopA, loopB } = state.track.settings;
-      if (state.playing && loopA !== null && loopB !== null && currentTime() >= loopB) setTime(loopA);
+      const bounds = Core.validLoopBounds(state.track.settings, state.track.duration || audio.duration || Infinity);
+      if (state.playing && bounds && currentTime() >= bounds.end) setTime(bounds.start);
       updatePlayback(false);
       state.animation = requestAnimationFrame(frame);
     };
@@ -1300,13 +1326,15 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
 
   async function togglePlay() {
     if (!state.track) return;
+    const bounds = Core.validLoopBounds(state.track.settings, state.track.duration || audio.duration || Infinity);
+    if (!state.playing && bounds && (currentTime() < bounds.start || currentTime() >= bounds.end)) setTime(bounds.start);
     state.playing = !state.playing;
     if (state.track.demo) {
       if (state.playing) scheduleDemo();
       else clearTimeout(state.demoTimer);
     } else if (state.track.audioBlob) {
       try {
-        audio.playbackRate = state.track.settings.speed;
+        setAudioSpeed(state.track.settings.speed);
         if (state.playing) await audio.play();
         else audio.pause();
       } catch (error) {
@@ -1392,6 +1420,13 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     state.track.settings.loopB = null;
     scheduleSave();
     renderLoop();
+  }
+
+  function setAudioSpeed(speed) {
+    audio.preservesPitch = true;
+    audio.webkitPreservesPitch = true;
+    audio.mozPreservesPitch = true;
+    audio.playbackRate = speed;
   }
 
   function exportProject() {
@@ -1508,7 +1543,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     $('seek').oninput = event => setTime(Number(event.target.value) / 1000 * (state.track?.duration || 0));
     $('speedSelect').onchange = event => {
       state.track.settings.speed = Number(event.target.value);
-      audio.playbackRate = state.track.settings.speed;
+      setAudioSpeed(state.track.settings.speed);
       scheduleSave();
       if (state.playing && state.track.demo) scheduleDemo();
     };
@@ -1540,6 +1575,8 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       if (event.code === 'Space') { event.preventDefault(); togglePlay(); }
       else if (event.key === 'ArrowRight') selectEvent(state.currentIndex + 1);
       else if (event.key === 'ArrowLeft') selectEvent(state.currentIndex - 1);
+      else if (event.key === '[') setLoop('A');
+      else if (event.key === ']') setLoop('B');
     });
   }
 

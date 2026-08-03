@@ -1,8 +1,15 @@
-# Manico 5.1.2 · Bass Transcriber
+# Manico 5.2.0 · Bass Transcriber
 
 Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico rettangolare con anticipo visivo coerente delle note successive.
 
-La release 5.1.2 mantiene le correzioni musicali della 5.1 e rifinisce lo strumento:
+La release 5.2.0 aggiunge una modalità studio completa, mantenendo le correzioni musicali e grafiche della 5.1:
+
+- loop A–B persistente con intervallo e indicatori visibili sulla timeline;
+- riproduzione che riparte da A quando il cursore è fuori dal loop o si trova su B;
+- stato leggibile anche quando è stato impostato un solo estremo;
+- velocità regolabile dal 50% al 125%, anche su mobile, senza alterare l'intonazione;
+- scorciatoie `[` e `]` per impostare rapidamente A e B;
+- compatibilità con i progetti salvati nelle versioni precedenti;
 
 - conservazione delle note ribattute a ottavi;
 - stabilizzazione degli errori isolati d'ottava;
@@ -19,7 +26,7 @@ La release 5.1.2 mantiene le correzioni musicali della 5.1 e rifinisce lo strume
 
 I brani già salvati mantengono il numero di tasti scelto dall'utente: il nuovo default a 12 viene applicato soltanto alle nuove importazioni e agli esercizi inclusi.
 
-La release è verificata anche nel browser: un esercizio nuovo apre il selettore su `12`, mostra i tasti `0–12` e carica la finitura grafica 5.1.2.
+La release è verificata anche nel browser: un esercizio nuovo apre il selettore su `12`, mostra i tasti `0–12` e carica la finitura grafica aggiornata.
 
 ## Sviluppo
 
