@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="it" data-versione="5.1.2">
+<html lang="it" data-versione="5.2.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#11100e">
 <meta name="description" content="Importa una registrazione, trascrivi la linea di basso e studiala sul manico.">
 <title>Manico · Bass Transcriber</title>
-<link rel="stylesheet" href="assets/styles.css?v=5.1.2">
+<link rel="stylesheet" href="assets/styles.css?v=5.2.0">
 </head>
 <body>
 <div class="app-shell">
@@ -56,7 +56,7 @@
     <header class="section-head"><div><h2 data-i18n="examples">Esercizi inclusi</h2><p data-i18n="examplesHint">Linee essenziali pronte per provare il flusso.</p></div></header>
     <div id="demoList" class="track-grid"></div>
   </section>
-  <footer class="home-footer"><span id="versionLabel">Versione 5.1.0</span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
+  <footer class="home-footer"><span id="versionLabel">Versione 5.2.0</span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
 </main>
 
 <main id="studioView" class="view studio-view" hidden>
@@ -68,14 +68,14 @@
     </div>
     <span id="savedLabel" class="status-pill" data-i18n="saved">Salvato sul dispositivo</span>
     <span class="grow"></span>
-    <span class="keyboard-hint" data-i18n="keys">Spazio: play/pausa · frecce: nota precedente/successiva</span>
+    <span class="keyboard-hint" data-i18n="keys">Spazio: play/pausa · frecce: nota precedente/successiva · [ A · ] B</span>
   </header>
 
   <div class="studio-grid">
     <section class="main-stage">
       <div class="transport">
         <button id="playButton" class="play-button" type="button" title="Play">▶</button>
-        <input id="seek" class="seek" type="range" min="0" max="1000" value="0" aria-label="Position">
+        <div class="seek-track"><div id="loopRange" class="loop-range" hidden></div><i id="loopMarkerA" class="loop-marker marker-a" aria-hidden="true" hidden>A</i><i id="loopMarkerB" class="loop-marker marker-b" aria-hidden="true" hidden>B</i><input id="seek" class="seek" type="range" min="0" max="1000" value="0" aria-label="Position" aria-describedby="loopLabel"></div>
         <span id="clock" class="clock">0:00 / 0:00</span>
         <label class="inline-control"><span data-i18n="speed">Velocità</span><select id="speedSelect"></select></label>
       </div>
@@ -138,6 +138,6 @@
 <div id="fatalError" class="fatal" hidden></div>
 <audio id="audio" preload="metadata"></audio>
 </div>
-<script src="assets/app.bundle.js?v=5.1.2"></script>
+<script src="assets/app.bundle.js?v=5.2.0"></script>
 </body>
 </html>

@@ -266,7 +266,7 @@
       state.audioUrl = URL.createObjectURL(track.audioBlob);
       audio.src = state.audioUrl;
       audio.preload = 'metadata';
-      audio.playbackRate = track.settings.speed || 1;
+      setAudioSpeed(track.settings.speed || 1);
     }
     show('studio');
     renderStudio(true);
@@ -581,9 +581,24 @@
 
   function renderLoop() {
     const { loopA, loopB } = state.track.settings;
-    $('loopLabel').textContent = loopA !== null && loopB !== null
-      ? `A ${Core.formatTime(loopA)} — B ${Core.formatTime(loopB)}`
-      : t('noLoop');
+    if (loopA !== null && loopB !== null) $('loopLabel').textContent = `A ${Core.formatTime(loopA)} — B ${Core.formatTime(loopB)}`;
+    else if (loopA !== null) $('loopLabel').textContent = `A ${Core.formatTime(loopA)} — B …`;
+    else if (loopB !== null) $('loopLabel').textContent = `A … — B ${Core.formatTime(loopB)}`;
+    else $('loopLabel').textContent = t('noLoop');
+
+    const duration = state.track.duration || audio.duration || 0;
+    const markers = [['loopMarkerA', loopA], ['loopMarkerB', loopB]];
+    markers.forEach(([id, value]) => {
+      const marker = $(id);
+      marker.hidden = value === null || !duration;
+      if (!marker.hidden) marker.style.left = `${Core.clamp(value / duration * 100, 0, 100)}%`;
+    });
+    const bounds = Core.validLoopBounds(state.track.settings, duration);
+    $('loopRange').hidden = !bounds || !duration;
+    if (bounds && duration) {
+      $('loopRange').style.left = `${bounds.start / duration * 100}%`;
+      $('loopRange').style.width = `${(bounds.end - bounds.start) / duration * 100}%`;
+    }
   }
 
   function renderStudio(full = false) {
@@ -622,8 +637,8 @@
     cancelAnimationFrame(state.animation);
     const frame = () => {
       if (!state.track) return;
-      const { loopA, loopB } = state.track.settings;
-      if (state.playing && loopA !== null && loopB !== null && currentTime() >= loopB) setTime(loopA);
+      const bounds = Core.validLoopBounds(state.track.settings, state.track.duration || audio.duration || Infinity);
+      if (state.playing && bounds && currentTime() >= bounds.end) setTime(bounds.start);
       updatePlayback(false);
       state.animation = requestAnimationFrame(frame);
     };
@@ -678,13 +693,15 @@
 
   async function togglePlay() {
     if (!state.track) return;
+    const bounds = Core.validLoopBounds(state.track.settings, state.track.duration || audio.duration || Infinity);
+    if (!state.playing && bounds && (currentTime() < bounds.start || currentTime() >= bounds.end)) setTime(bounds.start);
     state.playing = !state.playing;
     if (state.track.demo) {
       if (state.playing) scheduleDemo();
       else clearTimeout(state.demoTimer);
     } else if (state.track.audioBlob) {
       try {
-        audio.playbackRate = state.track.settings.speed;
+        setAudioSpeed(state.track.settings.speed);
         if (state.playing) await audio.play();
         else audio.pause();
       } catch (error) {
@@ -770,6 +787,13 @@
     state.track.settings.loopB = null;
     scheduleSave();
     renderLoop();
+  }
+
+  function setAudioSpeed(speed) {
+    audio.preservesPitch = true;
+    audio.webkitPreservesPitch = true;
+    audio.mozPreservesPitch = true;
+    audio.playbackRate = speed;
   }
 
   function exportProject() {
@@ -886,7 +910,7 @@
     $('seek').oninput = event => setTime(Number(event.target.value) / 1000 * (state.track?.duration || 0));
     $('speedSelect').onchange = event => {
       state.track.settings.speed = Number(event.target.value);
-      audio.playbackRate = state.track.settings.speed;
+      setAudioSpeed(state.track.settings.speed);
       scheduleSave();
       if (state.playing && state.track.demo) scheduleDemo();
     };
@@ -918,6 +942,8 @@
       if (event.code === 'Space') { event.preventDefault(); togglePlay(); }
       else if (event.key === 'ArrowRight') selectEvent(state.currentIndex + 1);
       else if (event.key === 'ArrowLeft') selectEvent(state.currentIndex - 1);
+      else if (event.key === '[') setLoop('A');
+      else if (event.key === ']') setLoop('B');
     });
   }
 
