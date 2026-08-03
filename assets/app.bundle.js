@@ -648,6 +648,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
   function show(view) {
     $('homeView').hidden = view !== 'home';
     $('studioView').hidden = view !== 'studio';
+    requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }));
   }
 
   function bytes(value) {
@@ -871,7 +872,12 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       button.onclick = () => selectEvent(index);
       box.append(button);
     }
-    requestAnimationFrame(() => box.querySelector('.current')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }));
+    requestAnimationFrame(() => {
+      const current = box.querySelector('.current');
+      if (!current) return;
+      const left = current.offsetLeft - (box.clientWidth - current.offsetWidth) / 2;
+      box.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+    });
   }
 
   function neckGeometry(strings, frets) {

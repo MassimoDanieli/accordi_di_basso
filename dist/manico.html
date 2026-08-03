@@ -26,6 +26,19 @@
 .modal{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:18px;background:rgba(0,0,0,.76);backdrop-filter:blur(8px)}.modal-card{width:min(600px,100%);padding:25px;border:1px solid var(--line-2);border-radius:19px;background:var(--panel);box-shadow:var(--shadow)}.modal-icon{width:58px;height:58px;display:grid;place-items:center;border-radius:17px;background:var(--panel-3);border:1px solid var(--line);font-size:25px;margin-bottom:17px}.modal-card h2{margin:0 0 7px;font-size:24px;letter-spacing:-.03em}.modal-card p{color:var(--muted);line-height:1.6}.file-name{color:var(--paper)!important;font-weight:700;overflow-wrap:anywhere}.sensitivity{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;margin-top:18px;color:var(--muted);font-size:11px}.sensitivity input{width:100%;accent-color:var(--accent)}.progress{height:7px;border-radius:999px;background:var(--panel-3);overflow:hidden;margin:19px 0}.progress i{display:block;width:0;height:100%;background:var(--accent);transition:width .18s}.modal-actions{display:flex;justify-content:flex-end;gap:8px}
 @media(max-width:1100px){.track-grid{grid-template-columns:1fr 1fr}.studio-grid{grid-template-columns:1fr}.side-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.panel-section{border-bottom:0;border-right:1px solid var(--line)}.panel-section:last-child{border-right:0}.board-area{min-height:430px}.keyboard-hint{display:none}}@media(max-width:760px){.topbar{height:62px;padding:0 13px;gap:10px}.product{display:none}.home-view{width:min(100% - 20px,1240px);padding-top:18px}.hero{grid-template-columns:1fr}.hero-copy{padding:25px}.hero h1{font-size:49px}.import-card{padding:12px}.dropzone{min-height:280px}.track-grid{grid-template-columns:1fr}.studio-view{width:100%;padding-top:7px}.studio-head{padding:7px 10px 12px}.studio-title input{width:52vw;font-size:18px}.status-pill{display:none}.studio-grid{gap:0}.main-stage,.side-panel{border-radius:0;border-left:0;border-right:0}.transport{grid-template-columns:auto 1fr auto}.inline-control{display:none}.board-area{min-height:360px;padding:3px}.instrument-stage{padding:10px 0;border-left:0;border-right:0;border-radius:0}.side-panel{display:block}.panel-section{border-right:0;border-bottom:1px solid var(--line)}.phrase-note{min-width:72px}.home-footer{display:block}.home-footer span{display:block;margin-top:5px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 
+
+/* Manico 5.1.1 rectangular fretboard polish */
+.studio-grid{align-items:start}
+.board-area{min-height:0;padding:14px;align-items:flex-start;overflow:hidden}
+.instrument-stage{padding:12px 10px 8px}
+.string-label{font-size:22px}
+.fret-number{font-size:17px}
+@media(max-width:760px){
+  .board-area{min-height:0;padding:8px 0;overflow-x:auto;overflow-y:hidden;justify-content:flex-start;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+  .instrument-stage{width:960px;min-width:960px;padding:10px 8px 6px;border-left:0;border-right:0;border-radius:0}
+  #fretboard{width:940px;min-width:940px;max-height:none}
+}
+
 </style>
 </head>
 <body>
@@ -809,6 +822,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
   function show(view) {
     $('homeView').hidden = view !== 'home';
     $('studioView').hidden = view !== 'studio';
+    requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }));
   }
 
   function bytes(value) {
@@ -1032,7 +1046,12 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       button.onclick = () => selectEvent(index);
       box.append(button);
     }
-    requestAnimationFrame(() => box.querySelector('.current')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }));
+    requestAnimationFrame(() => {
+      const current = box.querySelector('.current');
+      if (!current) return;
+      const left = current.offsetLeft - (box.clientWidth - current.offsetWidth) / 2;
+      box.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+    });
   }
 
   function neckGeometry(strings, frets) {
