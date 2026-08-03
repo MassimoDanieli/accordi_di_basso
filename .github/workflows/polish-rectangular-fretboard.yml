@@ -1,3 +1,4 @@
+# One-shot branch refinement; the job removes this file after success.
 name: Polish rectangular fretboard
 
 on:
