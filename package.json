@@ -1,6 +1,6 @@
 {
   "name": "manico",
-  "version": "5.3.0",
+  "version": "6.0.0",
   "description": "Trascrittore locale di linee di basso da registrazioni audio",
   "repository": {
     "type": "git",

@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="it" data-versione="5.3.0">
+<html lang="it" data-versione="6.0.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#11100e">
 <meta name="description" content="Importa una registrazione, trascrivi la linea di basso e studiala sul manico.">
 <title>Manico · Bass Transcriber</title>
-<link rel="stylesheet" href="assets/styles.css?v=5.3.0">
+<link rel="stylesheet" href="assets/styles.css?v=6.0.0">
 </head>
 <body>
 <div class="app-shell">
@@ -56,7 +56,7 @@
     <header class="section-head"><div><h2 data-i18n="examples">Esercizi inclusi</h2><p data-i18n="examplesHint">Linee essenziali pronte per provare il flusso.</p></div></header>
     <div id="demoList" class="track-grid"></div>
   </section>
-  <footer class="home-footer"><span id="versionLabel">Versione 5.3.0</span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
+  <footer class="home-footer"><span id="versionLabel">Versione 6.0.0</span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
 </main>
 
 <main id="studioView" class="view studio-view" hidden>
@@ -94,6 +94,11 @@
       <section class="panel-section now-section">
         <h2 data-i18n="now">Adesso</h2>
         <div class="now-card"><div id="nowNote" class="now-note">—</div><div id="nowPosition" class="now-position">—</div><div id="confidenceLabel" class="confidence"></div></div>
+      </section>
+      <section class="panel-section performance-section">
+        <h2 data-i18n="playAlong">Suona con me</h2>
+        <div id="performanceCard" class="performance-card idle"><div class="performance-notes"><span id="performanceExpected">—</span><b id="performanceDetected">—</b></div><div id="performanceStatus" class="performance-status" data-i18n="micReady">Usa cuffie per evitare che il brano rientri nel microfono.</div><div id="performanceScore" class="performance-score">0 / 0</div></div>
+        <button id="microphoneButton" class="microphone-button" type="button" data-i18n="micStart">Avvia microfono</button>
       </section>
       <section class="panel-section">
         <h2 data-i18n="nextNotes">Prossime note</h2>
@@ -140,6 +145,6 @@
 <div id="fatalError" class="fatal" hidden></div>
 <audio id="audio" preload="metadata"></audio>
 </div>
-<script src="assets/app.bundle.js?v=5.3.0"></script>
+<script src="assets/app.bundle.js?v=6.0.0"></script>
 </body>
 </html>
