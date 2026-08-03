@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 await import('../src/core.js');
+await import('../src/storage.js');
 await import('../src/transcriber.js');
+await import('../src/defaults.js');
 const C = globalThis.ManicoCore;
+const S = globalThis.ManicoStorage;
 const T = globalThis.ManicoTranscriber;
 
-assert.equal(C.VERSION, '5.1.1');
+assert.equal(C.VERSION, '5.1.2');
 assert.equal(C.noteName(28), 'E1');
 assert.equal(C.noteName(45), 'A2');
 assert.equal(C.parseNote('Bb1'), 34);
@@ -66,6 +69,23 @@ assert.equal(C.currentEventIndex(fingered, .6), 2);
 
 const rock = C.createDemoTrack(C.DEMOS.find(demo => demo.id === 'demo-eighths'));
 assert.equal(rock.events.length, 16);
-assert.ok(rock.events.every(event => C.positionMatchesMidi(event, C.TUNINGS['4'].open, 15)));
+assert.equal(rock.settings.frets, 12, 'included exercises must default to 12 frets');
+assert.ok(rock.events.every(event => event.fret === null || event.fret <= 12));
+assert.ok(rock.events.every(event => C.positionMatchesMidi(event, C.TUNINGS['4'].open, 12)));
 assert.match(C.renderTab(rock, '4'), /Rock Eighths/);
-console.log('All Manico 5.1 smoke tests passed.');
+
+const now = Date.now();
+const imported = {
+  id: 'new-import',
+  title: 'New import',
+  createdAt: now,
+  updatedAt: now,
+  settings: { tuning: '4', frets: 15, lookahead: 3, speed: 1 },
+  events: C.normalizeEvents([{ start: 0, end: .5, midi: 33, confidence: 1 }], .5)
+};
+await S.save(imported);
+const stored = await S.get(imported.id);
+assert.equal(stored.settings.frets, 12, 'new audio imports must default to 12 frets');
+assert.ok(stored.events.every(event => event.fret === null || event.fret <= 12));
+
+console.log('All Manico 5.1.2 smoke tests passed.');
