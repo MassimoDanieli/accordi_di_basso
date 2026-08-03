@@ -39,6 +39,12 @@ jobs:
 
           version = '5.1.2'
 
+          def replace_exact(text, old, new, label, expected=1):
+              count = text.count(old)
+              if count != expected:
+                  raise SystemExit(f'{label}: expected {expected}, found {count}')
+              return text.replace(old, new)
+
           package_path = Path('package.json')
           package = json.loads(package_path.read_text(encoding='utf-8'))
           package['version'] = version
@@ -49,111 +55,94 @@ jobs:
           core, count = re.subn(r"const VERSION = '[^']+';", f"const VERSION = '{version}';", core, count=1)
           if count != 1:
               raise SystemExit(f'core version replacements: {count}')
-
-          old_demo = "settings: { tuning, frets: 15, lookahead: 3, speed: 1, loopA: null, loopB: null },\n      events: optimiseFingering(events, TUNINGS[tuning].open, 15)"
-          new_demo = "settings: { tuning, frets: 12, lookahead: 3, speed: 1, loopA: null, loopB: null },\n      events: optimiseFingering(events, TUNINGS[tuning].open, 12)"
-          if old_demo not in core:
-              raise SystemExit('demo 15-fret default not found')
-          core = core.replace(old_demo, new_demo, 1)
+          core = replace_exact(
+              core,
+              "settings: { tuning, frets: 15, lookahead: 3, speed: 1, loopA: null, loopB: null },\n      events: optimiseFingering(events, TUNINGS[tuning].open, 15)",
+              "settings: { tuning, frets: 12, lookahead: 3, speed: 1, loopA: null, loopB: null },\n      events: optimiseFingering(events, TUNINGS[tuning].open, 12)",
+              'demo 12-fret default'
+          )
           core_path.write_text(core, encoding='utf-8')
 
           app_path = Path('src/app.js')
           app = app_path.read_text(encoding='utf-8')
 
           default_settings = "tuning: '4', frets: 15, lookahead: 3, speed: 1, loopA: null, loopB: null"
-          occurrences = app.count(default_settings)
-          if occurrences != 1:
-              raise SystemExit(f'integrity default occurrences: {occurrences}')
-          app = app.replace(default_settings, "tuning: '4', frets: 12, lookahead: 3, speed: 1, loopA: null, loopB: null", 1)
+          app = replace_exact(
+              app,
+              default_settings,
+              "tuning: '4', frets: 12, lookahead: 3, speed: 1, loopA: null, loopB: null",
+              'application 12-fret defaults',
+              expected=2
+          )
 
-          import_settings = "const settings = { tuning: '4', frets: 15, lookahead: 3, speed: 1, loopA: null, loopB: null };"
-          if import_settings not in app:
-              raise SystemExit('import default settings not found')
-          app = app.replace(import_settings, "const settings = { tuning: '4', frets: 12, lookahead: 3, speed: 1, loopA: null, loopB: null };", 1)
+          scalar_replacements = [
+              ('const height = Math.max(430, 174 + strings * 64);', 'const height = Math.max(390, 150 + strings * 60);', 'board height'),
+              ('const stringStart = 96;', 'const stringStart = 92;', 'string label start'),
+              ('const nut = 164;', 'const nut = 166;', 'nut position'),
+              ('const rulerTop = 16;', 'const rulerTop = 12;', 'ruler top'),
+              ('const rulerBottom = 70;', 'const rulerBottom = 58;', 'ruler bottom'),
+              ('const boardTop = 76;', 'const boardTop = 64;', 'board top'),
+              ('const boardBottom = height - 46;', 'const boardBottom = height - 30;', 'board bottom'),
+              ('const stringTop = boardTop + 34;', 'const stringTop = boardTop + 30;', 'top string inset'),
+              ('const stringBottom = boardBottom - 34;', 'const stringBottom = boardBottom - 30;', 'bottom string inset'),
+              ('const radius = isCurrent ? 31 : 25;', 'const radius = isCurrent ? 27 : isPast ? 21 : 22;', 'note marker radius'),
+              ("const fill = isPast ? 'rgba(17,16,14,.72)' : color;", "const fill = isPast ? 'rgba(22,18,14,.84)' : color;", 'note marker fill'),
+              ("const textColor = isCurrent ? '#211608' : isPast ? 'var(--past)' : '#10201b';", "const textColor = isCurrent ? '#241604' : isPast ? 'var(--past)' : '#f8fffc';\n    const outline = isPast ? color : 'rgba(255,250,240,.92)';", 'note marker text and outline'),
+              ('const thickness = 1.7 + (strings - string) * 0.72;', 'const thickness = 1.45 + (strings - string) * 0.68;', 'string thickness')
+          ]
+          for old, new, label in scalar_replacements:
+              app = replace_exact(app, old, new, label)
 
-          geometry_old = """    const height = Math.max(430, 174 + strings * 64);
-              const outerLeft = 24;
-              const outerRight = 1376;
-              const stringStart = 96;
-              const nut = 164;
-              const bridge = 1354;
-              const rulerTop = 16;
-              const rulerBottom = 70;
-              const boardTop = 76;
-              const boardBottom = height - 46;
-              const stringTop = boardTop + 34;
-              const stringBottom = boardBottom - 34;"""
-          geometry_new = """    const height = Math.max(390, 150 + strings * 60);
-              const outerLeft = 24;
-              const outerRight = 1376;
-              const stringStart = 92;
-              const nut = 166;
-              const bridge = 1354;
-              const rulerTop = 12;
-              const rulerBottom = 58;
-              const boardTop = 64;
-              const boardBottom = height - 30;
-              const stringTop = boardTop + 30;
-              const stringBottom = boardBottom - 30;"""
-          if geometry_old not in app:
-              raise SystemExit('fretboard geometry block not found')
-          app = app.replace(geometry_old, geometry_new, 1)
+          marker_replacements = [
+              (
+                  'svg += `<circle cx="${point.x}" cy="${point.y}" r="${radius + 8}" fill="none" stroke="${color}" stroke-opacity=".16" stroke-width="8"/>`;',
+                  'svg += `<circle cx="${point.x}" cy="${point.y}" r="${radius + 7}" fill="none" stroke="${color}" stroke-opacity=".14" stroke-width="6"/>`;\n    svg += `<circle cx="${point.x}" cy="${point.y + 2}" r="${radius}" fill="rgba(44,31,21,.25)"/>`;',
+                  'marker halo and shadow'
+              ),
+              (
+                  'svg += `<circle cx="${point.x}" cy="${point.y}" r="${radius}" fill="${fill}" stroke="${color}" stroke-width="${isPast ? 4 : 2.5}"/>`;',
+                  'svg += `<circle cx="${point.x}" cy="${point.y}" r="${radius}" fill="${fill}" stroke="${outline}" stroke-width="${isPast ? 3.5 : 3}"/>`;',
+                  'marker face'
+              ),
+              (
+                  'svg += `<text x="${point.x}" y="${point.y + 6}" text-anchor="middle" class="marker-note" fill="${textColor}">${Core.noteName(event.midi)}</text>`;',
+                  'svg += `<text x="${point.x}" y="${point.y + 5.5}" text-anchor="middle" class="marker-note" fill="${textColor}">${Core.noteName(event.midi)}</text>`;',
+                  'marker label position'
+              )
+          ]
+          for old, new, label in marker_replacements:
+              app = replace_exact(app, old, new, label)
 
-          marker_old = """    const radius = isCurrent ? 31 : 25;
-              const fill = isPast ? 'rgba(17,16,14,.72)' : color;
-              const textColor = isCurrent ? '#211608' : isPast ? 'var(--past)' : '#10201b';
-              let svg = `<g class=\"neck-marker ${anchor.kind}\">`;
-              svg += `<circle cx=\"${point.x}\" cy=\"${point.y}\" r=\"${radius + 8}\" fill=\"none\" stroke=\"${color}\" stroke-opacity=\".16\" stroke-width=\"8\"/>`;
-              svg += `<circle cx=\"${point.x}\" cy=\"${point.y}\" r=\"${radius}\" fill=\"${fill}\" stroke=\"${color}\" stroke-width=\"${isPast ? 4 : 2.5}\"/>`;
-              svg += `<text x=\"${point.x}\" y=\"${point.y + 6}\" text-anchor=\"middle\" class=\"marker-note\" fill=\"${textColor}\">${Core.noteName(event.midi)}</text>`;"""
-          marker_new = """    const radius = isCurrent ? 27 : isPast ? 21 : 22;
-              const fill = isPast ? 'rgba(22,18,14,.84)' : color;
-              const textColor = isCurrent ? '#241604' : isPast ? 'var(--past)' : '#f8fffc';
-              const outline = isPast ? color : 'rgba(255,250,240,.92)';
-              let svg = `<g class=\"neck-marker ${anchor.kind}\">`;
-              svg += `<circle cx=\"${point.x}\" cy=\"${point.y}\" r=\"${radius + 7}\" fill=\"none\" stroke=\"${color}\" stroke-opacity=\".14\" stroke-width=\"6\"/>`;
-              svg += `<circle cx=\"${point.x}\" cy=\"${point.y + 2}\" r=\"${radius}\" fill=\"rgba(44,31,21,.25)\"/>`;
-              svg += `<circle cx=\"${point.x}\" cy=\"${point.y}\" r=\"${radius}\" fill=\"${fill}\" stroke=\"${outline}\" stroke-width=\"${isPast ? 3.5 : 3}\"/>`;
-              svg += `<text x=\"${point.x}\" y=\"${point.y + 5.5}\" text-anchor=\"middle\" class=\"marker-note\" fill=\"${textColor}\">${Core.noteName(event.midi)}</text>`;"""
-          if marker_old not in app:
-              raise SystemExit('marker style block not found')
-          app = app.replace(marker_old, marker_new, 1)
-
-          replacements = {
-              '<stop offset="0" stop-color="#efd4a1"/>': '<stop offset="0" stop-color="#edd2a0"/>',
-              '<stop offset=".48" stop-color="#dfbd82"/>': '<stop offset=".5" stop-color="#d5ad70"/>',
-              '<stop offset="1" stop-color="#c9985b"/>': '<stop offset="1" stop-color="#b87b43"/>',
-              '<stop offset="0" stop-color="#6f6a62"/>': '<stop offset="0" stop-color="#5d5953"/>',
-              '<stop offset=".42" stop-color="#f1ede5"/>': '<stop offset=".48" stop-color="#f7f2e9"/>',
-              '<stop offset="1" stop-color="#756f67"/>': '<stop offset="1" stop-color="#68625b"/>',
-              '<feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#000" flood-opacity=".38"/>': '<feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity=".32"/>',
-              'fill="#f8f4ea" stroke="#96764f" stroke-width="2.5"': 'fill="#f2ece2" stroke="#856b52" stroke-width="2"',
-              'stroke="#b59b78" stroke-width="2"': 'stroke="#c4ad8e" stroke-width="1.5"',
-              'stroke="#8c6e4b" stroke-opacity=".58" stroke-width="2"': 'stroke="#72563e" stroke-opacity=".62" stroke-width="1.5"',
-              'stroke="#fff7e8" stroke-opacity=".7" stroke-width="2"': 'stroke="#fff8ec" stroke-opacity=".62" stroke-width="1.5"',
-              'stroke="#6f4d2f" stroke-opacity=".72" stroke-width="3"': 'stroke="#5f422d" stroke-opacity=".68" stroke-width="2.5"',
-              'stroke="#5f554a" stroke-opacity=".34" stroke-width="5"': 'stroke="#4d443b" stroke-opacity=".28" stroke-width="4"',
-              'stroke="url(#fretMetal)" stroke-width="3.5"': 'stroke="url(#fretMetal)" stroke-width="2.7"',
-              'stroke="#2a241d" stroke-opacity=".35" stroke-width="12"': 'stroke="#2a241d" stroke-opacity=".28" stroke-width="10"',
-              'stroke="#f4ead8" stroke-width="7"': 'stroke="#f5ecde" stroke-width="6"',
-              'r="7.5" fill="#8f7045" opacity=".64"': 'r="6.5" fill="#7d5d38" opacity=".62"',
-              'r="7.5" fill="#8f7045" opacity=".58"': 'r="6.5" fill="#7d5d38" opacity=".54"',
-              'const thickness = 1.7 + (strings - string) * 0.72;': 'const thickness = 1.45 + (strings - string) * 0.68;',
-              'stroke="#4e4033" stroke-opacity=".44" stroke-width="${thickness + 2.2}"': 'stroke="#3f352c" stroke-opacity=".42" stroke-width="${thickness + 1.8}"',
-              'stroke-opacity=".45" stroke-width="4"': 'stroke-opacity=".34" stroke-width="3"',
-              'y="52" text-anchor="middle"': 'y="43" text-anchor="middle"'
-          }
-          for old, new in replacements.items():
-              if old not in app:
-                  raise SystemExit(f'renderer token not found: {old}')
-              app = app.replace(old, new)
+          renderer_replacements = [
+              ('<stop offset="0" stop-color="#efd4a1"/>', '<stop offset="0" stop-color="#edd2a0"/>', 'wood light stop'),
+              ('<stop offset=".48" stop-color="#dfbd82"/>', '<stop offset=".5" stop-color="#d5ad70"/>', 'wood middle stop'),
+              ('<stop offset="1" stop-color="#c9985b"/>', '<stop offset="1" stop-color="#b87b43"/>', 'wood dark stop'),
+              ('<stop offset="0" stop-color="#6f6a62"/>', '<stop offset="0" stop-color="#5d5953"/>', 'fret metal dark stop'),
+              ('<stop offset=".42" stop-color="#f1ede5"/>', '<stop offset=".48" stop-color="#f7f2e9"/>', 'fret metal light stop'),
+              ('<stop offset="1" stop-color="#756f67"/>', '<stop offset="1" stop-color="#68625b"/>', 'fret metal end stop'),
+              ('<feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#000" flood-opacity=".38"/>', '<feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity=".32"/>', 'board shadow'),
+              ('fill="#f8f4ea" stroke="#96764f" stroke-width="2.5"', 'fill="#f2ece2" stroke="#856b52" stroke-width="2"', 'outer frame'),
+              ('stroke="#b59b78" stroke-width="2"', 'stroke="#c4ad8e" stroke-width="1.5"', 'ruler line'),
+              ('stroke="#8c6e4b" stroke-opacity=".58" stroke-width="2"', 'stroke="#72563e" stroke-opacity=".62" stroke-width="1.5"', 'label divider'),
+              ('stroke="#fff7e8" stroke-opacity=".7" stroke-width="2"', 'stroke="#fff8ec" stroke-opacity=".62" stroke-width="1.5"', 'board top edge'),
+              ('stroke="#6f4d2f" stroke-opacity=".72" stroke-width="3"', 'stroke="#5f422d" stroke-opacity=".68" stroke-width="2.5"', 'board bottom edge'),
+              ('stroke="#5f554a" stroke-opacity=".34" stroke-width="5"', 'stroke="#4d443b" stroke-opacity=".28" stroke-width="4"', 'fret shadow'),
+              ('stroke="url(#fretMetal)" stroke-width="3.5"', 'stroke="url(#fretMetal)" stroke-width="2.7"', 'fret wire'),
+              ('stroke="#2a241d" stroke-opacity=".35" stroke-width="12"', 'stroke="#2a241d" stroke-opacity=".28" stroke-width="10"', 'nut shadow'),
+              ('stroke="#f4ead8" stroke-width="7"', 'stroke="#f5ecde" stroke-width="6"', 'nut face'),
+              ('r="7.5" fill="#8f7045" opacity=".64"', 'r="6.5" fill="#7d5d38" opacity=".62"', 'double inlay'),
+              ('r="7.5" fill="#8f7045" opacity=".58"', 'r="6.5" fill="#7d5d38" opacity=".54"', 'single inlay'),
+              ('stroke="#4e4033" stroke-opacity=".44" stroke-width="${thickness + 2.2}"', 'stroke="#3f352c" stroke-opacity=".42" stroke-width="${thickness + 1.8}"', 'string shadow'),
+              ('stroke-opacity=".45" stroke-width="4"', 'stroke-opacity=".34" stroke-width="3"', 'future route'),
+              ('y="52" text-anchor="middle"', 'y="43" text-anchor="middle"', 'fret number position')
+          ]
+          for old, new, label in renderer_replacements:
+              app = replace_exact(app, old, new, label)
 
           grain_anchor = '    html += `<rect x="${geometry.outerLeft}" y="${geometry.boardTop}" width="${outerWidth}" height="${boardHeight}" fill="url(#boardWood)"/>`;'
-          grain = grain_anchor + '\n' + '    html += `<path d="M ${geometry.stringStart + 18} ${geometry.boardTop + 22} C ${geometry.nut + 180} ${geometry.boardTop + 8}, ${geometry.bridge - 260} ${geometry.boardTop + 38}, ${geometry.bridge - 18} ${geometry.boardTop + 19}" fill="none" stroke="#6e482d" stroke-opacity=".10" stroke-width="2"/>`;\n' + '    html += `<path d="M ${geometry.stringStart + 4} ${geometry.boardBottom - 25} C ${geometry.nut + 240} ${geometry.boardBottom - 8}, ${geometry.bridge - 310} ${geometry.boardBottom - 42}, ${geometry.bridge - 8} ${geometry.boardBottom - 21}" fill="none" stroke="#fff2d9" stroke-opacity=".13" stroke-width="2"/>`;'
-          if grain_anchor not in app:
-              raise SystemExit('board wood anchor not found')
-          app = app.replace(grain_anchor, grain, 1)
-
+          grain_lines = """    html += `<path d="M ${geometry.stringStart + 18} ${geometry.boardTop + 22} C ${geometry.nut + 180} ${geometry.boardTop + 8}, ${geometry.bridge - 260} ${geometry.boardTop + 38}, ${geometry.bridge - 18} ${geometry.boardTop + 19}" fill="none" stroke="#6e482d" stroke-opacity=".10" stroke-width="2"/>`;
+    html += `<path d="M ${geometry.stringStart + 4} ${geometry.boardBottom - 25} C ${geometry.nut + 240} ${geometry.boardBottom - 8}, ${geometry.bridge - 310} ${geometry.boardBottom - 42}, ${geometry.bridge - 8} ${geometry.boardBottom - 21}" fill="none" stroke="#fff2d9" stroke-opacity=".13" stroke-width="2"/>`;"""
+          app = replace_exact(app, grain_anchor, grain_anchor + '\n' + grain_lines, 'subtle wood grain')
           app_path.write_text(app, encoding='utf-8')
 
           test_path = Path('test/smoke.test.js')
@@ -162,22 +151,30 @@ jobs:
           if count != 1:
               raise SystemExit(f'test version replacements: {count}')
           demo_assertion = "assert.equal(rock.events.length, 16);"
-          if demo_assertion not in tests:
-              raise SystemExit('demo assertion anchor not found')
-          tests = tests.replace(demo_assertion, demo_assertion + "\nassert.equal(rock.settings.frets, 12, 'new exercises must default to 12 frets');\nassert.ok(rock.events.every(event => event.fret === null || event.fret <= 12));", 1)
+          tests = replace_exact(
+              tests,
+              demo_assertion,
+              demo_assertion + "\nassert.equal(rock.settings.frets, 12, 'new exercises must default to 12 frets');\nassert.ok(rock.events.every(event => event.fret === null || event.fret <= 12));",
+              '12-fret regression test'
+          )
           test_path.write_text(tests, encoding='utf-8')
 
           readme_path = Path('README.md')
           readme = readme_path.read_text(encoding='utf-8')
-          readme = readme.replace('# Manico 5.1.1 · Bass Transcriber', '# Manico 5.1.2 · Bass Transcriber', 1)
+          readme = replace_exact(readme, '# Manico 5.1.1 · Bass Transcriber', '# Manico 5.1.2 · Bass Transcriber', 'README version')
           marker = '- manico rettangolare a larghezza costante, senza paletta o sagome decorative;'
-          if marker in readme:
-              readme = readme.replace(marker, marker + '\n- 12 tasti come impostazione iniziale per accompagnamento e studio nella zona più usata;\n- finitura più sobria del manico, con acero caldo, metallo più leggero e note più pulite;', 1)
+          readme = replace_exact(
+              readme,
+              marker,
+              marker + '\n- 12 tasti come impostazione iniziale per accompagnamento e studio nella zona più usata;\n- finitura più sobria del manico, con acero caldo, metallo più leggero e note più pulite;',
+              'README fretboard notes'
+          )
           readme_path.write_text(readme, encoding='utf-8')
           PY
 
       - name: Test and build release
         run: |
+          node --check src/app.js
           npm test
           npm run release
           npm run check:release
@@ -215,7 +212,7 @@ jobs:
           }));
           if (state.frets !== '12') throw new Error(`Expected default 12 frets, got ${state.frets}`);
           if (!state.labels.includes('12') || state.labels.includes('15')) throw new Error(`Unexpected fret labels: ${state.labels.join(',')}`);
-          if (state.stage < 250 || state.stage > 430) throw new Error(`Unbalanced fretboard height: ${state.stage}`);
+          if (state.stage < 230 || state.stage > 410) throw new Error(`Unbalanced fretboard height: ${state.stage}`);
           if (!state.current) throw new Error('Current note is missing');
           await page.screenshot({ path: 'visual-review-5.1.2.png' });
           await page.locator('.instrument-stage').screenshot({ path: 'fretboard-review-5.1.2.png' });
