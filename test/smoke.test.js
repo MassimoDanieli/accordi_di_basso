@@ -4,7 +4,7 @@ await import('../src/transcriber.js');
 const C = globalThis.ManicoCore;
 const T = globalThis.ManicoTranscriber;
 
-assert.equal(C.VERSION, '5.1.0');
+assert.equal(C.VERSION, '5.1.1');
 assert.equal(C.noteName(28), 'E1');
 assert.equal(C.noteName(45), 'A2');
 assert.equal(C.parseNote('Bb1'), 34);

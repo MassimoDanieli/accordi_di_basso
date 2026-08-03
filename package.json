@@ -1,8 +1,11 @@
 {
   "name": "manico",
-  "version": "5.1.0",
+  "version": "5.1.1",
   "description": "Trascrittore locale di linee di basso da registrazioni audio",
-  "repository": { "type": "git", "url": "https://github.com/MassimoDanieli/accordi_di_basso.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MassimoDanieli/accordi_di_basso.git"
+  },
   "homepage": "https://basso.massimodanieli.com/",
   "type": "module",
   "private": true,

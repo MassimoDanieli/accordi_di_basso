@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it" data-versione="5.1.0">
+<html lang="it" data-versione="5.1.1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -162,7 +162,7 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '5.1.0';
+  const VERSION = '5.1.1';
   const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
   const PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const TUNINGS = {
@@ -1037,23 +1037,34 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
 
   function neckGeometry(strings, frets) {
     const width = 1400;
-    const height = Math.max(430, 160 + strings * 62);
-    const nut = 282;
-    const bridge = 1326;
-    const nutTop = 94;
-    const nutBottom = height - 94;
-    const bridgeTop = 44;
-    const bridgeBottom = height - 44;
-    const topAt = x => nutTop + (bridgeTop - nutTop) * ((x - nut) / (bridge - nut));
-    const bottomAt = x => nutBottom + (bridgeBottom - nutBottom) * ((x - nut) / (bridge - nut));
+    const height = Math.max(430, 174 + strings * 64);
+    const outerLeft = 24;
+    const outerRight = 1376;
+    const stringStart = 96;
+    const nut = 164;
+    const bridge = 1354;
+    const rulerTop = 16;
+    const rulerBottom = 70;
+    const boardTop = 76;
+    const boardBottom = height - 46;
+    const stringTop = boardTop + 34;
+    const stringBottom = boardBottom - 34;
+    const topAt = () => boardTop;
+    const bottomAt = () => boardBottom;
     const fretX = fret => nut + Core.fretPosition(fret, frets) * (bridge - nut);
-    const fretCenter = fret => fret === 0 ? nut - 39 : (fretX(fret - 1) + fretX(fret)) / 2;
-    const stringY = (string, x) => {
+    const fretCenter = fret => fret === 0
+      ? (stringStart + nut) / 2
+      : (fretX(fret - 1) + fretX(fret)) / 2;
+    const stringY = string => {
       const display = strings - 1 - string;
       const ratio = strings <= 1 ? 0.5 : display / (strings - 1);
-      return topAt(x) + (bottomAt(x) - topAt(x)) * ratio;
+      return stringTop + (stringBottom - stringTop) * ratio;
     };
-    return { width, height, nut, bridge, nutTop, nutBottom, bridgeTop, bridgeBottom, topAt, bottomAt, fretX, fretCenter, stringY };
+    return {
+      width, height, outerLeft, outerRight, stringStart, nut, bridge,
+      rulerTop, rulerBottom, boardTop, boardBottom,
+      topAt, bottomAt, fretX, fretCenter, stringY
+    };
   }
 
   function markerPoint(event, geometry, strings) {
@@ -1102,27 +1113,25 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     const window = preview();
     svg.setAttribute('viewBox', `0 0 ${geometry.width} ${geometry.height}`);
 
-    const boardPath = [
-      `M ${geometry.nut} ${geometry.nutTop}`,
-      `L ${geometry.bridge} ${geometry.bridgeTop}`,
-      `L ${geometry.bridge} ${geometry.bridgeBottom}`,
-      `L ${geometry.nut} ${geometry.nutBottom}`,
-      'Z'
-    ].join(' ');
-
     let html = `
       <defs>
-        <linearGradient id="neckWood" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#6d4931"/><stop offset=".5" stop-color="#4b3021"/><stop offset="1" stop-color="#2d1d15"/>
+        <linearGradient id="boardWood" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#efd4a1"/>
+          <stop offset=".48" stop-color="#dfbd82"/>
+          <stop offset="1" stop-color="#c9985b"/>
         </linearGradient>
-        <linearGradient id="headWood" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#7a5238"/><stop offset="1" stop-color="#332117"/>
+        <linearGradient id="fretMetal" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#6f6a62"/>
+          <stop offset=".42" stop-color="#f1ede5"/>
+          <stop offset="1" stop-color="#756f67"/>
         </linearGradient>
-        <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#faf4e8"/><stop offset=".45" stop-color="#9c9488"/><stop offset="1" stop-color="#4d4944"/>
+        <linearGradient id="stringMetal" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fbf8f0"/>
+          <stop offset=".45" stop-color="#b9b0a4"/>
+          <stop offset="1" stop-color="#706960"/>
         </linearGradient>
-        <filter id="neckShadow" x="-20%" y="-30%" width="150%" height="170%">
-          <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000" flood-opacity=".55"/>
+        <filter id="boardShadow" x="-10%" y="-20%" width="120%" height="150%">
+          <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#000" flood-opacity=".38"/>
         </filter>
         <filter id="noteGlow" x="-80%" y="-80%" width="260%" height="260%">
           <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#f1b54a" flood-opacity=".72"/>
@@ -1132,53 +1141,52 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
         </marker>
       </defs>`;
 
-    html += `<g filter="url(#neckShadow)">`;
-    html += `<path d="M 24 ${geometry.height * 0.34} Q 58 ${geometry.height * 0.23} 121 ${geometry.height * 0.28} L ${geometry.nut} ${geometry.nutTop + 9} L ${geometry.nut} ${geometry.nutBottom - 9} L 121 ${geometry.height * 0.72} Q 58 ${geometry.height * 0.77} 24 ${geometry.height * 0.66} Q 7 ${geometry.height * 0.5} 24 ${geometry.height * 0.34} Z" fill="url(#headWood)" stroke="#8a654b" stroke-width="3"/>`;
-    html += `<path d="M ${geometry.bridge - 16} ${geometry.bridgeTop - 25} Q ${geometry.width - 8} ${geometry.height * 0.2} ${geometry.width - 12} ${geometry.height * 0.5} Q ${geometry.width - 8} ${geometry.height * 0.8} ${geometry.bridge - 16} ${geometry.bridgeBottom + 25} Z" fill="#281b15" stroke="#4d3529" stroke-width="3"/>`;
-    html += `<path d="${boardPath}" fill="url(#neckWood)" stroke="#9b7254" stroke-width="3"/>`;
-    html += `<path d="M ${geometry.nut} ${geometry.nutTop + 7} L ${geometry.bridge} ${geometry.bridgeTop + 7}" stroke="#d8b38c" stroke-opacity=".28" stroke-width="3"/>`;
-    html += `<path d="M ${geometry.nut} ${geometry.nutBottom - 7} L ${geometry.bridge} ${geometry.bridgeBottom - 7}" stroke="#1a100c" stroke-opacity=".72" stroke-width="4"/>`;
+    const outerWidth = geometry.outerRight - geometry.outerLeft;
+    const boardHeight = geometry.boardBottom - geometry.boardTop;
+
+    html += `<g filter="url(#boardShadow)">`;
+    html += `<rect x="${geometry.outerLeft}" y="${geometry.rulerTop}" width="${outerWidth}" height="${geometry.boardBottom - geometry.rulerTop}" rx="14" fill="#f8f4ea" stroke="#96764f" stroke-width="2.5"/>`;
+    html += `<path d="M ${geometry.outerLeft + 14} ${geometry.rulerBottom} H ${geometry.outerRight - 14}" stroke="#b59b78" stroke-width="2"/>`;
+    html += `<rect x="${geometry.outerLeft}" y="${geometry.boardTop}" width="${outerWidth}" height="${boardHeight}" fill="url(#boardWood)"/>`;
+    html += `<line x1="${geometry.stringStart}" y1="${geometry.boardTop}" x2="${geometry.stringStart}" y2="${geometry.boardBottom}" stroke="#8c6e4b" stroke-opacity=".58" stroke-width="2"/>`;
+    html += `<line x1="${geometry.outerLeft}" y1="${geometry.boardTop}" x2="${geometry.outerRight}" y2="${geometry.boardTop}" stroke="#fff7e8" stroke-opacity=".7" stroke-width="2"/>`;
+    html += `<line x1="${geometry.outerLeft}" y1="${geometry.boardBottom}" x2="${geometry.outerRight}" y2="${geometry.boardBottom}" stroke="#6f4d2f" stroke-opacity=".72" stroke-width="3"/>`;
 
     for (let fret = 1; fret <= frets; fret += 1) {
       const x = geometry.fretX(fret);
-      html += `<line x1="${x}" y1="${geometry.topAt(x)}" x2="${x}" y2="${geometry.bottomAt(x)}" stroke="#e1d8ca" stroke-opacity=".22" stroke-width="6"/>`;
-      html += `<line x1="${x - 1.4}" y1="${geometry.topAt(x)}" x2="${x - 1.4}" y2="${geometry.bottomAt(x)}" stroke="url(#metal)" stroke-width="3"/>`;
+      html += `<line x1="${x + 2}" y1="${geometry.boardTop}" x2="${x + 2}" y2="${geometry.boardBottom}" stroke="#5f554a" stroke-opacity=".34" stroke-width="5"/>`;
+      html += `<line x1="${x}" y1="${geometry.boardTop}" x2="${x}" y2="${geometry.boardBottom}" stroke="url(#fretMetal)" stroke-width="3.5"/>`;
     }
 
-    html += `<line x1="${geometry.nut}" y1="${geometry.nutTop - 1}" x2="${geometry.nut}" y2="${geometry.nutBottom + 1}" stroke="#f5ead8" stroke-width="9"/>`;
-    html += `<line x1="${geometry.nut + 3}" y1="${geometry.nutTop}" x2="${geometry.nut + 3}" y2="${geometry.nutBottom}" stroke="#796f63" stroke-opacity=".55" stroke-width="2"/>`;
+    html += `<line x1="${geometry.nut}" y1="${geometry.boardTop}" x2="${geometry.nut}" y2="${geometry.boardBottom}" stroke="#2a241d" stroke-opacity=".35" stroke-width="12"/>`;
+    html += `<line x1="${geometry.nut - 2}" y1="${geometry.boardTop}" x2="${geometry.nut - 2}" y2="${geometry.boardBottom}" stroke="#f4ead8" stroke-width="7"/>`;
 
     [3, 5, 7, 9, 12, 15, 17, 19, 21, 24].filter(fret => fret <= frets).forEach(fret => {
       const x = geometry.fretCenter(fret);
-      const y = (geometry.topAt(x) + geometry.bottomAt(x)) / 2;
+      const y = (geometry.boardTop + geometry.boardBottom) / 2;
       if (fret % 12 === 0) {
-        html += `<circle cx="${x}" cy="${y - 27}" r="8" fill="#c5a97e" opacity=".78"/>`;
-        html += `<circle cx="${x}" cy="${y + 27}" r="8" fill="#c5a97e" opacity=".78"/>`;
+        html += `<circle cx="${x}" cy="${y - 29}" r="7.5" fill="#8f7045" opacity=".64"/>`;
+        html += `<circle cx="${x}" cy="${y + 29}" r="7.5" fill="#8f7045" opacity=".64"/>`;
       } else {
-        html += `<circle cx="${x}" cy="${y}" r="8" fill="#c5a97e" opacity=".7"/>`;
+        html += `<circle cx="${x}" cy="${y}" r="7.5" fill="#8f7045" opacity=".58"/>`;
       }
     });
 
     open.forEach((openMidi, string) => {
-      const pegY = geometry.stringY(string, geometry.nut) + (string % 2 === 0 ? -18 : 18);
-      const pegX = 65 + (string % 2) * 62 + Math.floor(string / 2) * 18;
-      const nutY = geometry.stringY(string, geometry.nut);
-      const bridgeY = geometry.stringY(string, geometry.bridge);
-      const thickness = 1.8 + (strings - string) * 0.72;
-      html += `<line x1="${pegX}" y1="${pegY}" x2="${geometry.nut}" y2="${nutY}" stroke="#d9ccb9" stroke-opacity=".72" stroke-width="${thickness}"/>`;
-      html += `<line x1="${geometry.nut}" y1="${nutY}" x2="${geometry.bridge + 22}" y2="${bridgeY}" stroke="#e7dccb" stroke-opacity=".82" stroke-width="${thickness}"/>`;
-      html += `<circle cx="${pegX}" cy="${pegY}" r="11" fill="url(#metal)" stroke="#25211d" stroke-width="2"/>`;
-      html += `<rect x="${pegX - 17}" y="${pegY - 5}" width="12" height="10" rx="3" fill="url(#metal)"/>`;
-      html += `<text x="${geometry.nut - 24}" y="${nutY + 5}" text-anchor="end" class="string-label">${Core.noteName(openMidi).replace(/-?\d+$/, '')}</text>`;
+      const y = geometry.stringY(string);
+      const thickness = 1.7 + (strings - string) * 0.72;
+      html += `<text x="${geometry.stringStart - 23}" y="${y + 7}" text-anchor="end" class="string-label" fill="#2b241d">${Core.noteName(openMidi).replace(/-?\d+$/, '')}</text>`;
+      html += `<line x1="${geometry.stringStart}" y1="${y + 2}" x2="${geometry.bridge}" y2="${y + 2}" stroke="#4e4033" stroke-opacity=".44" stroke-width="${thickness + 2.2}"/>`;
+      html += `<line x1="${geometry.stringStart}" y1="${y}" x2="${geometry.bridge}" y2="${y}" stroke="url(#stringMetal)" stroke-width="${thickness}"/>`;
     });
-
-    html += `<rect x="${geometry.bridge + 8}" y="${geometry.height * 0.28}" width="32" height="${geometry.height * 0.44}" rx="7" fill="url(#metal)" stroke="#27231f" stroke-width="3"/>`;
     html += `</g>`;
 
-    for (let fret = 0; fret <= frets; fret += 1) {
-      const x = geometry.fretCenter(fret);
-      html += `<text x="${x}" y="${geometry.height - 9}" text-anchor="middle" class="fret-number">${fret}</text>`;
-    }
+    const numberFrets = frets <= 18
+      ? Array.from({ length: frets + 1 }, (_, index) => index)
+      : [0, 1, 2, 3, 4, 5, 7, 9, 12, 15, 17, 19, 21, 24].filter(fret => fret <= frets);
+    numberFrets.forEach(fret => {
+      html += `<text x="${geometry.fretCenter(fret)}" y="52" text-anchor="middle" class="fret-number" fill="#2d2822">${fret}</text>`;
+    });
 
     const entries = [];
     if (window.previous) entries.push({ event: window.previous, kind: 'past', order: 0 });
@@ -1190,7 +1198,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       .filter(Boolean);
     if (routePoints.length > 1) {
       const path = routePoints.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' ');
-      html += `<path d="${path}" fill="none" stroke="var(--future)" stroke-opacity=".48" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 10" marker-end="url(#routeArrow)"/>`;
+      html += `<path d="${path}" fill="none" stroke="var(--future)" stroke-opacity=".45" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 10" marker-end="url(#routeArrow)"/>`;
     }
 
     const groups = new Map();
