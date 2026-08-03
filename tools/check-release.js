@@ -23,6 +23,15 @@ for (const filename of ['index.html', 'app.html', 'index.en.html']) {
     expect(match[1] === version, `${filename}: cache token ${match[1]} instead of ${version}`);
   }
 }
+for (const filename of ['help-it.html', 'help-en.html']) {
+  const html = read(filename);
+  expect(html.includes('href="./"'), `${filename}: link back to the app is missing`);
+  expect(html.includes('help-it.html') && html.includes('help-en.html'), `${filename}: language links are incomplete`);
+  for (const match of html.matchAll(/\?v=([^"'<>\s]+)/g)) {
+    expect(match[1] === version, `${filename}: cache token ${match[1]} instead of ${version}`);
+  }
+}
+expect(read('index.html').includes('id="helpLink"'), 'index.html: persistent help link is missing');
 expect(read('index.html').includes(`Versione ${version}`), `index.html: fallback label is not ${version}`);
 for (const filename of ['assets/app.bundle.js', 'dist/manico.html']) {
   const path = join(root, filename);
