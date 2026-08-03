@@ -1,8 +1,15 @@
-# Manico 6.0.0 · Bass Transcriber
+# Manico 6.1.0 · Bass Transcriber
 
 Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico rettangolare con anticipo visivo coerente delle note successive.
 
-La release 6.0.0 introduce **Suona con me**, una modalità di ascolto locale tramite microfono:
+La release 6.1.0 migliora la qualità della trascrizione automatica:
+
+- evita la selezione ripetuta di sottomultipli che poteva abbassare la nota di un'ottava;
+- adatta le finestre di analisi alla durata fra due onset, senza invadere la nota successiva;
+- privilegia il voto coerente di più finestre rispetto a un singolo rilevamento anomalo;
+- conserva le note ribattute e la stabilizzazione musicale delle ottave.
+
+Mantiene **Suona con me**, introdotto nella 6.0:
 
 - riconoscimento in tempo reale della nota suonata;
 - confronto con la nota attesa nella trascrizione;
