@@ -1,0 +1,83 @@
+name: Finalize Manico 5.1.2 in PR
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finalize-manico-512-pr
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    if: github.head_ref == 'agent/fretboard-polish-5.1.2' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Test and build release
+        run: |
+          node --check src/defaults.js
+          npm test
+          npm run release
+          npm run check:release
+          git diff --check
+          docker build --tag manico-512 .
+
+      - name: Verify 12-fret browser default
+        shell: bash
+        run: |
+          npm install --prefix /tmp/manico-visual --no-save --package-lock=false --ignore-scripts playwright-core@1.55.0
+          python3 -m http.server 8080 > /tmp/manico-http.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/ > /dev/null; then break; fi
+            if [ "$attempt" -eq 30 ]; then cat /tmp/manico-http.log; exit 1; fi
+            sleep 1
+          done
+          cat > /tmp/check.mjs <<'JS'
+          import { createRequire } from 'node:module';
+          import fs from 'node:fs';
+          const require = createRequire(import.meta.url);
+          const { chromium } = require('/tmp/manico-visual/node_modules/playwright-core');
+          const executablePath = ['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium-browser','/usr/bin/chromium'].find(path => fs.existsSync(path));
+          if (!executablePath) throw new Error('Chrome executable not found');
+          const browser = await chromium.launch({ executablePath, headless: true, args: ['--no-sandbox'] });
+          const page = await browser.newPage({ viewport: { width: 1440, height: 980 } });
+          await page.goto('http://127.0.0.1:8080/', { waitUntil: 'networkidle' });
+          await page.locator('#demoList .icon-button').first().click();
+          await page.locator('#fretboard').waitFor({ state: 'visible' });
+          const result = await page.evaluate(() => ({
+            frets: document.querySelector('#fretsSelect')?.value,
+            labels: [...document.querySelectorAll('#fretboard .fret-number')].map(node => node.textContent),
+            finish: Boolean(document.querySelector('#manico-fretboard-finish-512'))
+          }));
+          if (result.frets !== '12') throw new Error(`Expected 12 frets, got ${result.frets}`);
+          if (!result.labels.includes('12') || result.labels.includes('15')) throw new Error(`Unexpected labels: ${result.labels.join(',')}`);
+          if (!result.finish) throw new Error('Fretboard finish stylesheet missing');
+          await browser.close();
+          JS
+          node /tmp/check.mjs
+
+      - name: Commit generated release
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/finalize-fretboard-512.yml
+          rm -f .github/workflows/finalize-fretboard-512-pr.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Build Manico 5.1.2 release"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
