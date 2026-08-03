@@ -1,10 +1,9 @@
 name: Build rectangular fretboard 5.1.1
 
 on:
-  push:
-    branches: [agent/rectangular-fretboard-5.1.1]
-    paths:
-      - '.github/workflows/rectangular-fretboard-511.yml'
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
@@ -15,12 +14,12 @@ concurrency:
 
 jobs:
   build:
-    if: github.actor != 'github-actions[bot]'
+    if: github.head_ref == 'agent/rectangular-fretboard-5.1.1' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: agent/rectangular-fretboard-5.1.1
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
       - uses: actions/setup-node@v6
@@ -151,7 +150,7 @@ jobs:
               html += `<g filter="url(#boardShadow)">`;
               html += `<rect x="${geometry.outerLeft}" y="${geometry.rulerTop}" width="${outerWidth}" height="${geometry.boardBottom - geometry.rulerTop}" rx="14" fill="#f8f4ea" stroke="#96764f" stroke-width="2.5"/>`;
               html += `<path d="M ${geometry.outerLeft + 14} ${geometry.rulerBottom} H ${geometry.outerRight - 14}" stroke="#b59b78" stroke-width="2"/>`;
-              html += `<rect x="${geometry.outerLeft}" y="${geometry.boardTop}" width="${outerWidth}" height="${boardHeight}" rx="0" fill="url(#boardWood)"/>`;
+              html += `<rect x="${geometry.outerLeft}" y="${geometry.boardTop}" width="${outerWidth}" height="${boardHeight}" fill="url(#boardWood)"/>`;
               html += `<line x1="${geometry.stringStart}" y1="${geometry.boardTop}" x2="${geometry.stringStart}" y2="${geometry.boardBottom}" stroke="#8c6e4b" stroke-opacity=".58" stroke-width="2"/>`;
               html += `<line x1="${geometry.outerLeft}" y1="${geometry.boardTop}" x2="${geometry.outerRight}" y2="${geometry.boardTop}" stroke="#fff7e8" stroke-opacity=".7" stroke-width="2"/>`;
               html += `<line x1="${geometry.outerLeft}" y1="${geometry.boardBottom}" x2="${geometry.outerRight}" y2="${geometry.boardBottom}" stroke="#6f4d2f" stroke-opacity=".72" stroke-width="3"/>`;
@@ -248,4 +247,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Use a clean rectangular fretboard"
-          git push origin HEAD:agent/rectangular-fretboard-5.1.1
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
