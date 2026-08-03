@@ -7,7 +7,15 @@ const C = globalThis.ManicoCore;
 const S = globalThis.ManicoStorage;
 const T = globalThis.ManicoTranscriber;
 
-assert.equal(C.VERSION, '6.0.0');
+assert.equal(C.VERSION, '6.1.0');
+new Function(T.workerSource());
+const adaptiveOffsets = T.analysisOffsets(1, 1.11);
+assert.ok(adaptiveOffsets.length >= 2);
+assert.ok(adaptiveOffsets.every(offset => 1 + offset < 1.11), 'pitch windows must remain before the next onset');
+const stableVote = T.selectPitchVotes([
+  { midi: 33, confidence: .72 }, { midi: 33, confidence: .68 }, { midi: 45, confidence: .91 }
+]);
+assert.equal(stableVote.midi, 33, 'consistent windows must beat one high-confidence octave outlier');
 assert.deepEqual(C.validLoopBounds({ loopA: 2, loopB: 5 }, 10), { start: 2, end: 5 });
 assert.equal(C.validLoopBounds({ loopA: 2, loopB: null }, 10), null, 'an incomplete loop must stay inactive');
 assert.equal(C.validLoopBounds({ loopA: 2, loopB: 2.1 }, 10), null, 'a loop shorter than 150ms must stay inactive');
@@ -115,4 +123,4 @@ const stored = await S.get(imported.id);
 assert.equal(stored.settings.frets, 12, 'new audio imports must default to 12 frets');
 assert.ok(stored.events.every(event => event.fret === null || event.fret <= 12));
 
-console.log('All Manico 6.0.0 smoke tests passed.');
+console.log('All Manico 6.1.0 smoke tests passed.');
