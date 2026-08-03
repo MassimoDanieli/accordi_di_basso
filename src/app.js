@@ -26,7 +26,8 @@
       lookahead: 'Note in anticipo', speed: 'Velocità', loop: 'Loop', setA: 'Imposta A',
       setB: 'Imposta B', clearLoop: 'Azzera', noLoop: 'nessun loop', correction: 'Correggi la nota',
       semitoneDown: '− semitono', semitoneUp: '+ semitono', deleteNote: 'Elimina nota',
-      splitNote: 'Dividi nota', export: 'Esporta', exportTab: 'Scarica TAB',
+      splitNote: 'Dividi nota', mergeNote: 'Unisci alla successiva', addNote: 'Aggiungi al cursore',
+      noteStart: 'Inizio (s)', noteEnd: 'Fine (s)', export: 'Esporta', exportTab: 'Scarica TAB', exportMidi: 'Scarica MIDI',
       exportProject: 'Scarica progetto', confidence: 'confidenza', string: 'corda', fret: 'tasto',
       position: 'Posizione', automatic: 'Automatica', locked: 'bloccata', notPlayable: 'fuori manico',
       analyseTitle: 'Trascrivi la linea di basso',
@@ -38,7 +39,7 @@
       noNotes: 'Non ho trovato note affidabili. Prova con una sensibilità più alta o con un mix dove il basso è più presente.',
       persistentYes: 'archiviazione persistente', persistentNo: 'il browser può liberare spazio automaticamente',
       importedLine: 'Linea di basso trascritta',
-      keys: 'Spazio: play/pausa · frecce: nota precedente/successiva',
+      keys: 'Spazio: play/pausa · frecce: nota precedente/successiva · [ A · ] B',
       audioMissing: 'L’audio salvato non è più disponibile, ma la trascrizione è rimasta.',
       migrated: 'Ottave e posizioni riallineate', version: `Versione ${Core.VERSION}`
     },
@@ -58,7 +59,8 @@
       lookahead: 'Look-ahead notes', speed: 'Speed', loop: 'Loop', setA: 'Set A',
       setB: 'Set B', clearLoop: 'Clear', noLoop: 'no loop', correction: 'Correct note',
       semitoneDown: '− semitone', semitoneUp: '+ semitone', deleteNote: 'Delete note',
-      splitNote: 'Split note', export: 'Export', exportTab: 'Download TAB',
+      splitNote: 'Split note', mergeNote: 'Merge with next', addNote: 'Add at cursor',
+      noteStart: 'Start (s)', noteEnd: 'End (s)', export: 'Export', exportTab: 'Download TAB', exportMidi: 'Download MIDI',
       exportProject: 'Download project', confidence: 'confidence', string: 'string', fret: 'fret',
       position: 'Position', automatic: 'Automatic', locked: 'locked', notPlayable: 'outside fretboard',
       analyseTitle: 'Transcribe the bass line',
@@ -69,7 +71,7 @@
       noNotes: 'No reliable notes were found. Try a higher sensitivity or a mix with a more prominent bass.',
       persistentYes: 'persistent storage', persistentNo: 'the browser may reclaim storage automatically',
       importedLine: 'Transcribed bass line',
-      keys: 'Space: play/pause · arrows: previous/next note',
+      keys: 'Space: play/pause · arrows: previous/next note · [ A · ] B',
       audioMissing: 'The stored audio is no longer available, but the transcription remains.',
       migrated: 'Octaves and positions realigned', version: `Version ${Core.VERSION}`
     }
@@ -573,10 +575,16 @@
 
     $('noteSelect').value = event ? String(event.midi) : '';
     populatePositionSelect(event);
+    $('noteStart').value = event ? event.start.toFixed(2) : '';
+    $('noteEnd').value = event ? event.end.toFixed(2) : '';
+    $('noteStart').disabled = !event;
+    $('noteEnd').disabled = !event;
     $('noteDown').disabled = !event;
     $('noteUp').disabled = !event;
     $('deleteNote').disabled = !event || state.track.events.length <= 1;
     $('splitNote').disabled = !event || event.end - event.start < 0.12;
+    $('mergeNote').disabled = !event || state.currentIndex >= state.track.events.length - 1;
+    $('addNote').disabled = !state.track;
   }
 
   function renderLoop() {
@@ -714,8 +722,12 @@
     renderStudio(false);
   }
 
-  function recalc() {
+  function recalc(selectedId = selected()?.id) {
     state.track.events = Core.optimiseFingering(state.track.events, tuning().open, state.track.settings.frets);
+    if (selectedId) {
+      const index = state.track.events.findIndex(event => event.id === selectedId);
+      if (index >= 0) state.currentIndex = index;
+    }
     scheduleSave();
     renderStudio(true);
   }
@@ -768,6 +780,49 @@
     event.end = middle;
     state.track.events.splice(state.currentIndex + 1, 0, second);
     recalc();
+  }
+
+  function changeTiming() {
+    const event = selected();
+    if (!event) return;
+    Core.updateEventTiming(
+      state.track.events,
+      state.currentIndex,
+      Number($('noteStart').value),
+      Number($('noteEnd').value),
+      state.track.duration
+    );
+    recalc(event.id);
+  }
+
+  function mergeCurrent() {
+    const event = selected();
+    if (!event || state.currentIndex >= state.track.events.length - 1) return;
+    Core.mergeWithNext(state.track.events, state.currentIndex);
+    recalc(event.id);
+  }
+
+  function addAtCursor() {
+    if (!state.track) return;
+    const start = Core.clamp(currentTime(), 0, Math.max(0, state.track.duration - 0.04));
+    const next = state.track.events.find(event => event.start > start + 0.01);
+    const end = Math.min(state.track.duration, next ? next.start : start + 0.25);
+    const midi = selected()?.midi ?? 40;
+    const event = {
+      id: `added-${Date.now()}`,
+      start,
+      end: Math.max(start + 0.04, end),
+      midi,
+      rawMidi: midi,
+      confidence: 1,
+      string: null,
+      fret: null,
+      lockedPosition: false,
+      edited: true
+    };
+    state.track.events.push(event);
+    state.track.events.sort((left, right) => left.start - right.start);
+    recalc(event.id);
   }
 
   function setLoop(which) {
@@ -930,7 +985,12 @@
     $('noteUp').onclick = () => changeMidi(1);
     $('deleteNote').onclick = deleteCurrent;
     $('splitNote').onclick = splitCurrent;
+    $('noteStart').onchange = changeTiming;
+    $('noteEnd').onchange = changeTiming;
+    $('mergeNote').onclick = mergeCurrent;
+    $('addNote').onclick = addAtCursor;
     $('exportTab').onclick = () => download(`${safeName(state.track.title)}.txt`, Core.renderTab(state.track, state.track.settings.tuning));
+    $('exportMidi').onclick = () => download(`${safeName(state.track.title)}.mid`, Core.renderMidi(state.track), 'audio/midi');
     $('exportProject').onclick = exportProject;
     $('trackTitle').onchange = event => { state.track.title = event.target.value.trim() || state.track.title; scheduleSave(); };
     audio.onplay = () => { state.playing = true; renderStudio(false); };

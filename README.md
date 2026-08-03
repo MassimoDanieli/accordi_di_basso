@@ -1,8 +1,16 @@
-# Manico 5.2.0 · Bass Transcriber
+# Manico 5.3.0 · Bass Transcriber
 
 Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico rettangolare con anticipo visivo coerente delle note successive.
 
-La release 5.2.0 aggiunge una modalità studio completa, mantenendo le correzioni musicali e grafiche della 5.1:
+La release 5.3.0 completa l'editor della trascrizione e rende il risultato riutilizzabile in software musicali esterni:
+
+- modifica numerica precisa di inizio e fine di ogni nota;
+- aggiunta di una nota nella posizione corrente del cursore;
+- unione con la nota successiva, oltre a divisione ed eliminazione già disponibili;
+- riordinamento e ricalcolo automatico della diteggiatura dopo ogni modifica;
+- esportazione MIDI standard Type 0, compatibile con DAW e software di notazione;
+
+Mantiene inoltre la modalità studio introdotta nella 5.2:
 
 - loop A–B persistente con intervallo e indicatori visibili sulla timeline;
 - riproduzione che riparte da A quando il cursore è fuori dal loop o si trova su B;

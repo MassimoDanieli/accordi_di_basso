@@ -7,11 +7,25 @@ const C = globalThis.ManicoCore;
 const S = globalThis.ManicoStorage;
 const T = globalThis.ManicoTranscriber;
 
-assert.equal(C.VERSION, '5.2.0');
+assert.equal(C.VERSION, '5.3.0');
 assert.deepEqual(C.validLoopBounds({ loopA: 2, loopB: 5 }, 10), { start: 2, end: 5 });
 assert.equal(C.validLoopBounds({ loopA: 2, loopB: null }, 10), null, 'an incomplete loop must stay inactive');
 assert.equal(C.validLoopBounds({ loopA: 2, loopB: 2.1 }, 10), null, 'a loop shorter than 150ms must stay inactive');
 assert.deepEqual(C.validLoopBounds({ loopA: -2, loopB: 20 }, 10), { start: 0, end: 10 });
+const editable = [
+  { id: 'a', start: 0, end: .4, midi: 33 },
+  { id: 'b', start: .5, end: .9, midi: 35 }
+];
+C.updateEventTiming(editable, 1, .25, .75, 1);
+assert.equal(editable[1].id, 'b');
+assert.equal(editable[1].start, .25);
+C.mergeWithNext(editable, 0);
+assert.equal(editable.length, 1);
+assert.equal(editable[0].end, .75);
+const midi = C.renderMidi({ events: [{ start: 0, end: .5, midi: 33 }] });
+assert.equal(new TextDecoder().decode(midi.slice(0, 4)), 'MThd');
+assert.equal(new TextDecoder().decode(midi.slice(14, 18)), 'MTrk');
+assert.ok(midi.includes(0x90), 'MIDI export must contain a note-on event');
 assert.equal(C.noteName(28), 'E1');
 assert.equal(C.noteName(45), 'A2');
 assert.equal(C.parseNote('Bb1'), 34);
@@ -92,4 +106,4 @@ const stored = await S.get(imported.id);
 assert.equal(stored.settings.frets, 12, 'new audio imports must default to 12 frets');
 assert.ok(stored.events.every(event => event.fret === null || event.fret <= 12));
 
-console.log('All Manico 5.2.0 smoke tests passed.');
+console.log('All Manico 5.3.0 smoke tests passed.');

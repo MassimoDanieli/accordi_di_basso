@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="it" data-versione="5.2.0">
+<html lang="it" data-versione="5.3.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#11100e">
 <meta name="description" content="Importa una registrazione, trascrivi la linea di basso e studiala sul manico.">
 <title>Manico · Bass Transcriber</title>
-<link rel="stylesheet" href="assets/styles.css?v=5.2.0">
+<link rel="stylesheet" href="assets/styles.css?v=5.3.0">
 </head>
 <body>
 <div class="app-shell">
@@ -56,7 +56,7 @@
     <header class="section-head"><div><h2 data-i18n="examples">Esercizi inclusi</h2><p data-i18n="examplesHint">Linee essenziali pronte per provare il flusso.</p></div></header>
     <div id="demoList" class="track-grid"></div>
   </section>
-  <footer class="home-footer"><span id="versionLabel">Versione 5.2.0</span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
+  <footer class="home-footer"><span id="versionLabel">Versione 5.3.0</span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
 </main>
 
 <main id="studioView" class="view studio-view" hidden>
@@ -112,12 +112,14 @@
         <h2 data-i18n="correction">Correggi la nota</h2>
         <label class="stacked-control"><span data-i18n="correction">Nota</span><select id="noteSelect" class="note-select" aria-label="Note"></select></label>
         <label class="stacked-control"><span data-i18n="position">Posizione</span><select id="positionSelect" class="note-select" aria-label="Position"></select></label>
+        <div class="timing-grid"><label class="stacked-control"><span data-i18n="noteStart">Inizio (s)</span><input id="noteStart" class="note-time" type="number" min="0" step="0.01"></label><label class="stacked-control"><span data-i18n="noteEnd">Fine (s)</span><input id="noteEnd" class="note-time" type="number" min="0.04" step="0.01"></label></div>
         <div class="button-row edit-row"><button id="noteDown" type="button" data-i18n="semitoneDown">− semitono</button><button id="noteUp" type="button" data-i18n="semitoneUp">+ semitono</button></div>
         <div class="button-row edit-row"><button id="splitNote" type="button" data-i18n="splitNote">Dividi nota</button><button id="deleteNote" class="danger" type="button" data-i18n="deleteNote">Elimina nota</button></div>
+        <div class="button-row edit-row"><button id="mergeNote" type="button" data-i18n="mergeNote">Unisci alla successiva</button><button id="addNote" type="button" data-i18n="addNote">Aggiungi al cursore</button></div>
       </section>
       <section class="panel-section">
         <h2 data-i18n="export">Esporta</h2>
-        <div class="button-row"><button id="exportTab" type="button" data-i18n="exportTab">Scarica TAB</button><button id="exportProject" type="button" data-i18n="exportProject">Scarica progetto</button></div>
+        <div class="button-row"><button id="exportTab" type="button" data-i18n="exportTab">Scarica TAB</button><button id="exportMidi" type="button" data-i18n="exportMidi">Scarica MIDI</button><button id="exportProject" type="button" data-i18n="exportProject">Scarica progetto</button></div>
       </section>
     </aside>
   </div>
@@ -138,6 +140,6 @@
 <div id="fatalError" class="fatal" hidden></div>
 <audio id="audio" preload="metadata"></audio>
 </div>
-<script src="assets/app.bundle.js?v=5.2.0"></script>
+<script src="assets/app.bundle.js?v=5.3.0"></script>
 </body>
 </html>
