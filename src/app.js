@@ -1043,6 +1043,10 @@
   function bind() {
     $('langIt').onclick = () => setLanguage('it');
     $('langEn').onclick = () => setLanguage('en');
+    $('helpLink').onclick = event => {
+      event.preventDefault();
+      window.location.assign(state.lang === 'en' ? 'help-en.html' : 'help-it.html');
+    };
     $('homeButton').onclick = () => { stopAudio(); state.track = null; show('home'); };
     $('importTop').onclick = () => $('fileInput').click();
     $('chooseFile').onclick = () => $('fileInput').click();

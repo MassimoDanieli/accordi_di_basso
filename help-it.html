@@ -6,13 +6,14 @@
 <meta name="theme-color" content="#11100e">
 <meta name="description" content="Guida completa a Manico Bass Transcriber.">
 <title>Aiuto · Manico</title>
+<script>try{if(localStorage.getItem('manico-language')==='en')location.replace('help-en.html')}catch(e){}</script>
 <link rel="stylesheet" href="assets/styles.css?v=6.1.0">
 </head>
 <body><div class="help-shell">
 <header class="topbar help-topbar">
   <a class="brand" href="./" aria-label="Torna a Manico"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Manico<b>.</b></span></a>
   <span class="product">Aiuto</span><span class="grow"></span>
-  <nav class="help-language" aria-label="Lingua"><a class="active" href="help-it.html" lang="it">IT</a><a href="help-en.html" lang="en">EN</a></nav>
+  <nav class="help-language" aria-label="Lingua"><a class="active" href="help-it.html" lang="it" onclick="try{localStorage.setItem('manico-language','it')}catch(e){}">IT</a><a href="help-en.html" lang="en" onclick="try{localStorage.setItem('manico-language','en')}catch(e){}">EN</a></nav>
 </header>
 <main class="help-main">
   <section class="help-hero"><div class="eyebrow">Guida rapida e completa</div><h1>Come usare Manico</h1><p>Importa un brano, controlla la linea di basso sul manico, correggi la trascrizione e studia ogni passaggio. Audio e modifiche restano nel tuo browser.</p></section>
