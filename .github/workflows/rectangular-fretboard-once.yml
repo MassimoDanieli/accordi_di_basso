@@ -1,0 +1,117 @@
+name: Apply rectangular fretboard refinement
+
+on:
+  push:
+    branches: [agent/fretboard-octave-5.1.0]
+    paths:
+      - '.github/workflows/rectangular-fretboard-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refine:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: agent/fretboard-octave-5.1.0
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Remove headstock and make the neck rectangular
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('src/app.js')
+          text = path.read_text(encoding='utf-8')
+
+          geometry = '''  function neckGeometry(strings, frets) {
+            const width = 1400;
+            const height = Math.max(430, 170 + strings * 62);
+            const nut = 150;
+            const bridge = 1344;
+            const nutTop = 54;
+            const nutBottom = height - 54;
+            const bridgeTop = nutTop;
+            const bridgeBottom = nutBottom;
+            const topAt = () => nutTop;
+            const bottomAt = () => nutBottom;
+            const fretX = fret => nut + Core.fretPosition(fret, frets) * (bridge - nut);
+            const fretCenter = fret => fret === 0 ? nut - 40 : (fretX(fret - 1) + fretX(fret)) / 2;
+            const stringY = string => {
+              const display = strings - 1 - string;
+              const ratio = strings <= 1 ? 0.5 : display / (strings - 1);
+              return nutTop + (nutBottom - nutTop) * ratio;
+            };
+            return { width, height, nut, bridge, nutTop, nutBottom, bridgeTop, bridgeBottom, topAt, bottomAt, fretX, fretCenter, stringY };
+          }'''
+
+          pattern = re.compile(r"  function neckGeometry\(strings, frets\) \{.*?\n  \}\n\n  function markerPoint", re.S)
+          text, count = pattern.subn(geometry + '\n\n  function markerPoint', text, count=1)
+          if count != 1:
+            raise SystemExit(f'neckGeometry replacement count: {count}')
+
+          # Remove the decorative headstock and body silhouette. The fretboard itself
+          # remains the only instrument shape, with a constant rectangular width.
+          lines = []
+          removed_head = removed_body = 0
+          for line in text.splitlines():
+            if 'fill="url(#headWood)"' in line:
+              removed_head += 1
+              continue
+            if 'fill="#281b15"' in line and '${geometry.bridge - 16}' in line:
+              removed_body += 1
+              continue
+            lines.append(line)
+          if removed_head != 1 or removed_body != 1:
+            raise SystemExit(f'decorative shape removal: head={removed_head}, body={removed_body}')
+          text = '\n'.join(lines) + '\n'
+
+          start_marker = '    open.forEach((openMidi, string) => {'
+          end_marker = '    html += `</g>`;'
+          start = text.find(start_marker)
+          end = text.find(end_marker, start)
+          if start < 0 or end < 0:
+            raise SystemExit('string rendering block not found')
+
+          strings = '''    open.forEach((openMidi, string) => {
+            const y = geometry.stringY(string, geometry.nut);
+            const thickness = 1.8 + (strings - string) * 0.72;
+            const left = geometry.nut - 66;
+            html += `<line x1="${left}" y1="${y}" x2="${geometry.bridge}" y2="${y}" stroke="#17110d" stroke-opacity=".48" stroke-width="${thickness + 2.2}"/>`;
+            html += `<line x1="${left}" y1="${y}" x2="${geometry.bridge}" y2="${y}" stroke="#e7dccb" stroke-opacity=".84" stroke-width="${thickness}"/>`;
+            html += `<text x="${left - 20}" y="${y + 6}" text-anchor="end" class="string-label">${Core.noteName(openMidi).replace(/-?\\d+$/, '')}</text>`;
+          });
+
+          '''
+          text = text[:start] + strings + text[end:]
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Test and rebuild release
+        run: |
+          npm test
+          npm run release
+          npm run check:release
+          docker build --tag manico-rectangular-ci .
+
+      - name: Commit refined renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/rectangular-fretboard-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Use a clean rectangular bass fretboard"
+          git push origin HEAD:agent/fretboard-octave-5.1.0
