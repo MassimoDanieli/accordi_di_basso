@@ -1,16 +1,15 @@
-# Manico 5 · Bass Transcriber
+# Manico 5.1 · Bass Transcriber
 
-Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico realistico con anticipo visivo delle note successive.
+Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico realistico con anticipo visivo coerente delle note successive.
 
-## Flusso
+La release 5.1 migliora in particolare:
 
-1. importa MP3, WAV, M4A, AAC, OGG o FLAC;
-2. l'audio viene decodificato e analizzato localmente;
-3. audio, trascrizione, correzioni e impostazioni vengono salvati in IndexedDB;
-4. la linea si studia sul manico con velocità variabile, loop A-B e note future;
-5. la trascrizione si corregge ed esporta in TAB o JSON.
-
-Nessun file viene caricato su un server.
+- conservazione delle note ribattute a ottavi;
+- stabilizzazione degli errori isolati d'ottava;
+- una sola sorgente di verità per timeline, manico e pannello laterale;
+- posizioni sempre coerenti con il MIDI assoluto della nota;
+- manico più realistico, con headstock, corde differenziate, tasti, inlay e percorso della frase;
+- scelta manuale e bloccabile di corda e tasto.
 
 ## Sviluppo
 
@@ -19,7 +18,3 @@ npm test
 npm run release
 npm run check:release
 ```
-
-`npm run release` sincronizza la versione e genera `assets/app.bundle.js` e `dist/manico.html`.
-
-La pipeline di release ripete i test, rigenera gli artefatti, rifiuta file generati non aggiornati e costruisce l'immagine Docker prima di consentire il merge.

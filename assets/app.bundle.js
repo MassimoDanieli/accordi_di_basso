@@ -1,190 +1,1461 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '5.0.0';
-  const NOTE_NAMES = ['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
-  const PITCH = { C:0,D:2,E:4,F:5,G:7,A:9,B:11 };
+  const VERSION = '5.1.0';
+  const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+  const PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const TUNINGS = {
-    '4':  { label:'E A D G', open:[28,33,38,43] },
-    '5':  { label:'B E A D G', open:[23,28,33,38,43] },
-    '5c': { label:'E A D G C', open:[28,33,38,43,48] },
-    '6':  { label:'B E A D G C', open:[23,28,33,38,43,48] }
+    '4':  { label: 'E A D G', open: [28, 33, 38, 43] },
+    '5':  { label: 'B E A D G', open: [23, 28, 33, 38, 43] },
+    '5c': { label: 'E A D G C', open: [28, 33, 38, 43, 48] },
+    '6':  { label: 'B E A D G C', open: [23, 28, 33, 38, 43, 48] }
   };
   const DEMOS = [
-    { id:'demo-blues', title:'Slow Blues in F', style:'Blues', bpm:82, notes:['F1','A1','C2','Eb2','F2','C2','A1','F1','Bb1','D2','F2','Ab2','A1','C2','Eb2','E2','F2'] },
-    { id:'demo-funk', title:'Funk Pocket', style:'Funk', bpm:104, notes:['E1','E1','G1','A1','B1','D2','E2','D2','B1','A1','G1','E1','E2','D2','B1','A1'] },
-    { id:'demo-reggae', title:'Reggae One Drop', style:'Reggae', bpm:74, notes:['A1','E2','G2','A2','A1','E2','D2','C2','A1','E2','G2','A2'] },
-    { id:'demo-bossa', title:'Bossa in D minor', style:'Bossa', bpm:112, notes:['D2','A1','C2','D2','F2','A2','G2','E2','D2','A1','C2','Db2'] }
+    { id: 'demo-blues', title: 'Slow Blues in F', style: 'Blues', bpm: 82, notes: ['F1','A1','C2','Eb2','F2','C2','A1','F1','Bb1','D2','F2','Ab2','A1','C2','Eb2','E2','F2'] },
+    { id: 'demo-funk', title: 'Funk Pocket', style: 'Funk', bpm: 104, notes: ['E1','E1','G1','A1','B1','D2','E2','D2','B1','A1','G1','E1','E2','D2','B1','A1'] },
+    { id: 'demo-reggae', title: 'Reggae One Drop', style: 'Reggae', bpm: 74, notes: ['A1','E2','G2','A2','A1','E2','D2','C2','A1','E2','G2','A2'] },
+    { id: 'demo-bossa', title: 'Bossa in D minor', style: 'Bossa', bpm: 112, notes: ['D2','A1','C2','D2','F2','A2','G2','E2','D2','A1','C2','Db2'] },
+    { id: 'demo-eighths', title: 'Rock Eighths', style: 'Rock', bpm: 126, notes: ['A1','A1','A1','A1','C2','C2','D2','D2','A1','A1','G1','G1','E1','E1','A1','A1'] }
   ];
 
-  function clamp(value,min,max){ return Math.max(min,Math.min(max,value)); }
-  function formatTime(seconds){ const s=Number.isFinite(seconds)?Math.max(0,seconds):0; return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`; }
-  function noteName(midi){ const m=Math.round(Number(midi)); return `${NOTE_NAMES[((m%12)+12)%12]}${Math.floor(m/12)-1}`; }
-  function parseNote(value){
-    const match=String(value||'').trim().match(/^([A-Ga-g])([#b]?)(-?\d)$/);
-    if(!match)return null;
-    const pc=PITCH[match[1].toUpperCase()]+(match[2]==='#'?1:match[2]==='b'?-1:0);
-    return (Number(match[3])+1)*12+((pc%12)+12)%12;
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+  function formatTime(seconds) {
+    const value = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+    return `${Math.floor(value / 60)}:${String(Math.floor(value % 60)).padStart(2, '0')}`;
   }
-  function fretPosition(fret,frets=15){ if(fret<=0)return 0; return (1-Math.pow(2,-fret/12))/(1-Math.pow(2,-frets/12)); }
-  function candidatePositions(midi,open,maxFret=15){
-    const result=[];
-    open.forEach((value,string)=>{ const fret=Math.round(midi-value); if(fret>=0&&fret<=maxFret)result.push({string,fret,midi:Math.round(midi)}); });
+
+  function noteName(midi) {
+    const value = Math.round(Number(midi));
+    return `${NOTE_NAMES[((value % 12) + 12) % 12]}${Math.floor(value / 12) - 1}`;
+  }
+
+  function parseNote(value) {
+    const match = String(value || '').trim().match(/^([A-Ga-g])([#b]?)(-?\d)$/);
+    if (!match) return null;
+    const pitchClass = PITCH[match[1].toUpperCase()] + (match[2] === '#' ? 1 : match[2] === 'b' ? -1 : 0);
+    return (Number(match[3]) + 1) * 12 + ((pitchClass % 12) + 12) % 12;
+  }
+
+  function fretPosition(fret, frets = 15) {
+    if (fret <= 0) return 0;
+    return (1 - Math.pow(2, -fret / 12)) / (1 - Math.pow(2, -frets / 12));
+  }
+
+  function candidatePositions(midi, open, maxFret = 15) {
+    const value = Math.round(Number(midi));
+    const result = [];
+    open.forEach((openMidi, string) => {
+      const fret = value - openMidi;
+      if (fret >= 0 && fret <= maxFret) result.push({ string, fret, midi: value });
+    });
     return result;
   }
-  function transition(previous,current,samePitch,pause){
-    if(previous.string===null||current.string===null)return 14;
-    let cost=Math.abs(current.fret-previous.fret)*1.8+Math.abs(current.string-previous.string)*2.25;
-    if(Math.abs(current.fret-previous.fret)>5)cost+=(Math.abs(current.fret-previous.fret)-5)*1.6;
-    if(samePitch&&current.string===previous.string&&current.fret===previous.fret)cost-=1.4;
-    if(pause>.35)cost*=.6;
-    return cost+current.fret*.025;
+
+  function positionMatchesMidi(event, open, maxFret = 24) {
+    if (!event || !Number.isInteger(event.string) || !Number.isInteger(event.fret)) return false;
+    if (event.string < 0 || event.string >= open.length || event.fret < 0 || event.fret > maxFret) return false;
+    return open[event.string] + event.fret === Math.round(event.midi);
   }
-  function optimiseFingering(events,open,maxFret=15){
-    if(!Array.isArray(events)||!events.length)return [];
-    const layers=events.map(event=>{ const list=candidatePositions(event.midi,open,maxFret); return list.length?list:[{string:null,fret:null,midi:event.midi}]; });
-    const costs=[],back=[];
-    layers.forEach((positions,index)=>{
-      costs[index]=new Array(positions.length).fill(Infinity);
-      back[index]=new Array(positions.length).fill(-1);
-      positions.forEach((position,j)=>{
-        if(index===0){ costs[index][j]=position.string===null?20:position.fret*.12+position.string*.08; return; }
-        layers[index-1].forEach((previous,k)=>{
-          const same=events[index].midi===events[index-1].midi;
-          const pause=Math.max(0,events[index].start-events[index-1].end);
-          const value=costs[index-1][k]+transition(previous,position,same,pause);
-          if(value<costs[index][j]){costs[index][j]=value;back[index][j]=k;}
+
+  const pitchClass = midi => ((Math.round(midi) % 12) + 12) % 12;
+
+  function octaveCandidates(rawMidi, minMidi = 23, maxMidi = 64) {
+    const result = [];
+    for (let shift = -36; shift <= 36; shift += 12) {
+      const midi = Math.round(rawMidi) + shift;
+      if (midi >= minMidi && midi <= maxMidi) result.push(midi);
+    }
+    return [...new Set(result)];
+  }
+
+  /**
+   * Stabilizza gli errori d'ottava senza appiattire i veri salti d'ottava.
+   * Le note ribattute ravvicinate preferiscono lo stesso registro; un salto
+   * sostenuto da alta confidenza e da un respiro ritmico viene conservato.
+   */
+  function stabilizeOctaves(events, options = {}) {
+    if (!Array.isArray(events) || !events.length) return [];
+    const minMidi = options.minMidi ?? 23;
+    const maxMidi = options.maxMidi ?? 64;
+    const layers = events.map(event => octaveCandidates(event.midi, minMidi, maxMidi));
+    const costs = [];
+    const back = [];
+
+    layers.forEach((candidates, index) => {
+      costs[index] = new Array(candidates.length).fill(Infinity);
+      back[index] = new Array(candidates.length).fill(-1);
+      const raw = Math.round(events[index].midi);
+      const confidence = clamp(Number(events[index].confidence) || 0.5, 0, 1);
+
+      candidates.forEach((candidate, candidateIndex) => {
+        const octaveDistance = Math.abs(candidate - raw) / 12;
+        const observation = octaveDistance * (1.1 + confidence * 3.2)
+          + Math.abs(candidate - 36) * 0.006;
+
+        if (index === 0) {
+          costs[index][candidateIndex] = observation;
+          return;
+        }
+
+        const previousEvent = events[index - 1];
+        const gap = Math.max(0, events[index].start - previousEvent.end);
+        const onsetGap = Math.max(0, events[index].start - previousEvent.start);
+        const rawJump = Math.abs(raw - Math.round(previousEvent.midi));
+        const previousConfidence = clamp(Number(previousEvent.confidence) || 0.5, 0, 1);
+
+        layers[index - 1].forEach((previous, previousIndex) => {
+          const jump = Math.abs(candidate - previous);
+          const repeatedClass = pitchClass(candidate) === pitchClass(previous);
+          const quickRepeat = repeatedClass && onsetGap <= 0.72;
+          let transition = Math.min(jump, 12) * 0.075 + Math.max(0, jump - 7) * 0.19;
+
+          if (jump === 0) transition -= quickRepeat ? 0.95 : 0.25;
+          if (quickRepeat && jump >= 12) {
+            const strongRealJump = rawJump >= 11
+              && Math.min(confidence, previousConfidence) >= 0.82
+              && (gap >= 0.28 || onsetGap >= 0.9);
+            transition += strongRealJump ? 0.45 : 5.2;
+          }
+          if (!repeatedClass && jump > 16) transition += (jump - 16) * 0.28;
+          if (gap > 0.45) transition *= 0.68;
+
+          const value = costs[index - 1][previousIndex] + observation + transition;
+          if (value < costs[index][candidateIndex]) {
+            costs[index][candidateIndex] = value;
+            back[index][candidateIndex] = previousIndex;
+          }
         });
       });
     });
-    let cursor=0; const last=costs.at(-1); last.forEach((value,index)=>{if(value<last[cursor])cursor=index;});
-    const selected=new Array(events.length);
-    for(let index=events.length-1;index>=0;index--){ selected[index]=layers[index][cursor]; cursor=back[index][cursor]; if(cursor<0&&index>0)cursor=0; }
-    return events.map((event,index)=>({...event,...selected[index]}));
-  }
-  function normalizeEvents(events,duration=0){
-    const result=(events||[]).filter(event=>Number.isFinite(event.start)&&Number.isFinite(event.midi)).map((event,index)=>({
-      id:event.id||`n-${index}-${Math.round(event.start*1000)}`,
-      start:Math.max(0,Number(event.start)),
-      end:Math.max(Number(event.start)+.04,Number(event.end)||Number(event.start)+.25),
-      midi:Math.round(event.midi),confidence:clamp(Number(event.confidence)||0,0,1),
-      string:Number.isInteger(event.string)?event.string:null,fret:Number.isInteger(event.fret)?event.fret:null
-    })).sort((a,b)=>a.start-b.start);
-    result.forEach((event,index)=>{ const next=result[index+1]; if(next)event.end=Math.max(event.start+.04,Math.min(event.end,next.start)); else if(duration)event.end=Math.min(duration,Math.max(event.start+.15,event.end)); });
+
+    let cursor = 0;
+    const lastCosts = costs.at(-1);
+    lastCosts.forEach((value, index) => {
+      if (value < lastCosts[cursor]) cursor = index;
+    });
+
+    const result = events.map(event => ({ ...event }));
+    for (let index = result.length - 1; index >= 0; index -= 1) {
+      result[index].rawMidi ??= Math.round(result[index].midi);
+      result[index].midi = layers[index][cursor];
+      cursor = back[index][cursor];
+      if (cursor < 0 && index > 0) cursor = 0;
+    }
     return result;
   }
-  function currentEventIndex(events,time,fallback=0){
-    if(!events.length)return -1;
-    let low=0,high=events.length-1;
-    while(low<=high){const middle=Math.floor((low+high)/2),event=events[middle];if(time<event.start)high=middle-1;else if(time>=event.end)low=middle+1;else return middle;}
-    return clamp(high>=0?high:fallback,0,events.length-1);
+
+  function transitionCost(previous, current, previousEvent, currentEvent) {
+    if (previous.string === null || current.string === null) return 18;
+    const fretMove = Math.abs(current.fret - previous.fret);
+    const stringMove = Math.abs(current.string - previous.string);
+    const pause = Math.max(0, currentEvent.start - previousEvent.end);
+    const onsetGap = Math.max(0, currentEvent.start - previousEvent.start);
+    const sameMidi = currentEvent.midi === previousEvent.midi;
+    let cost = fretMove * 1.55 + stringMove * 2.3;
+    if (fretMove > 5) cost += (fretMove - 5) * 1.75;
+    if (stringMove > 2) cost += (stringMove - 2) * 1.4;
+    if (sameMidi && current.string === previous.string && current.fret === previous.fret) {
+      cost -= onsetGap <= 0.75 ? 3.2 : 1.4;
+    }
+    if (pause > 0.4) cost *= 0.62;
+    return cost + current.fret * 0.02;
   }
-  function createDemoTrack(definition,tuning='4'){
-    const beat=60/definition.bpm;let time=0;
-    const events=definition.notes.map((name,index)=>{const length=beat*(index%4===3?1.08:.82);const event={id:`${definition.id}-${index}`,start:time,end:time+length,midi:parseNote(name),confidence:1};time+=length;return event;});
-    return {id:definition.id,demo:true,title:definition.title,style:definition.style,bpm:definition.bpm,duration:time,createdAt:0,updatedAt:0,settings:{tuning,frets:15,lookahead:3,speed:1,loopA:null,loopB:null},events:optimiseFingering(events,TUNINGS[tuning].open,15)};
+
+  function positionCandidatesForEvent(event, open, maxFret) {
+    const candidates = candidatePositions(event.midi, open, maxFret);
+    if (event.lockedPosition && positionMatchesMidi(event, open, maxFret)) {
+      return [{ string: event.string, fret: event.fret, midi: Math.round(event.midi), locked: true }];
+    }
+    return candidates.length ? candidates : [{ string: null, fret: null, midi: Math.round(event.midi) }];
   }
-  function renderTab(track,tuningKey='4',columns=16){
-    const tuning=TUNINGS[tuningKey]||TUNINGS['4'];const names=tuning.open.map(noteName).map(value=>value.replace(/-?\d+$/,''));const order=[...tuning.open.keys()].reverse();const lines=[];const events=track.events||[];
-    for(let start=0;start<events.length;start+=columns){const chunk=events.slice(start,start+columns);lines.push(`   ${chunk.map(event=>noteName(event.midi).padEnd(4,' ')).join('')}`.trimEnd());order.forEach(string=>{let row=`${names[string].padEnd(2,' ')}|`;chunk.forEach(event=>{const value=event.string===string&&event.fret!==null?String(event.fret):'';row+=value.padStart(2,'-').padEnd(4,'-');});lines.push(row+'|');});lines.push('');}
+
+  /** Calcola una diteggiatura unica per tutta la frase. */
+  function optimiseFingering(events, open, maxFret = 15) {
+    if (!Array.isArray(events) || !events.length) return [];
+    const source = events.map(event => ({ ...event, midi: Math.round(event.midi) }));
+    const layers = source.map(event => positionCandidatesForEvent(event, open, maxFret));
+    const costs = [];
+    const back = [];
+
+    layers.forEach((positions, index) => {
+      costs[index] = new Array(positions.length).fill(Infinity);
+      back[index] = new Array(positions.length).fill(-1);
+      positions.forEach((position, candidateIndex) => {
+        if (index === 0) {
+          costs[index][candidateIndex] = position.string === null
+            ? 40
+            : position.fret * 0.11 + position.string * 0.06 - (position.locked ? 2 : 0);
+          return;
+        }
+        layers[index - 1].forEach((previous, previousIndex) => {
+          const value = costs[index - 1][previousIndex]
+            + transitionCost(previous, position, source[index - 1], source[index])
+            - (position.locked ? 2 : 0);
+          if (value < costs[index][candidateIndex]) {
+            costs[index][candidateIndex] = value;
+            back[index][candidateIndex] = previousIndex;
+          }
+        });
+      });
+    });
+
+    let cursor = 0;
+    const lastCosts = costs.at(-1);
+    lastCosts.forEach((value, index) => {
+      if (value < lastCosts[cursor]) cursor = index;
+    });
+
+    const selected = new Array(source.length);
+    for (let index = source.length - 1; index >= 0; index -= 1) {
+      selected[index] = layers[index][cursor];
+      cursor = back[index][cursor];
+      if (cursor < 0 && index > 0) cursor = 0;
+    }
+
+    return source.map((event, index) => ({
+      ...event,
+      string: selected[index].string,
+      fret: selected[index].fret,
+      positionKey: selected[index].string === null ? null : `${selected[index].string}:${selected[index].fret}:${event.midi}`
+    }));
+  }
+
+  function normalizeEvents(events, duration = 0) {
+    const result = (events || [])
+      .filter(event => Number.isFinite(event.start) && Number.isFinite(event.midi))
+      .map((event, index) => ({
+        id: event.id || `n-${index}-${Math.round(event.start * 1000)}`,
+        start: Math.max(0, Number(event.start)),
+        end: Math.max(Number(event.start) + 0.04, Number(event.end) || Number(event.start) + 0.25),
+        midi: Math.round(event.midi),
+        rawMidi: Number.isFinite(event.rawMidi) ? Math.round(event.rawMidi) : Math.round(event.midi),
+        confidence: clamp(Number(event.confidence) || 0, 0, 1),
+        string: Number.isInteger(event.string) ? event.string : null,
+        fret: Number.isInteger(event.fret) ? event.fret : null,
+        lockedPosition: Boolean(event.lockedPosition),
+        edited: Boolean(event.edited)
+      }))
+      .sort((left, right) => left.start - right.start);
+
+    result.forEach((event, index) => {
+      const next = result[index + 1];
+      if (next) event.end = Math.max(event.start + 0.04, Math.min(event.end, next.start));
+      else if (duration) event.end = Math.min(duration, Math.max(event.start + 0.15, event.end));
+    });
+    return result;
+  }
+
+  function currentEventIndex(events, time, fallback = 0) {
+    if (!events.length) return -1;
+    let low = 0;
+    let high = events.length - 1;
+    while (low <= high) {
+      const middle = Math.floor((low + high) / 2);
+      const event = events[middle];
+      if (time < event.start) high = middle - 1;
+      else if (time >= event.end) low = middle + 1;
+      else return middle;
+    }
+    return clamp(high >= 0 ? high : fallback, 0, events.length - 1);
+  }
+
+  /** Unica sorgente di verità per timeline, manico e pannello laterale. */
+  function previewWindow(events, currentIndex, count = 3) {
+    const index = clamp(currentIndex, 0, Math.max(0, events.length - 1));
+    return {
+      index,
+      previous: index > 0 ? events[index - 1] : null,
+      current: events[index] || null,
+      upcoming: events.slice(index + 1, index + 1 + Math.max(0, count))
+    };
+  }
+
+  function createDemoTrack(definition, tuning = '4') {
+    const beat = 60 / definition.bpm;
+    let time = 0;
+    const events = definition.notes.map((name, index) => {
+      const length = beat * (definition.style === 'Rock' ? 0.5 : index % 4 === 3 ? 1.08 : 0.82);
+      const midi = parseNote(name);
+      const event = { id: `${definition.id}-${index}`, start: time, end: time + length, midi, rawMidi: midi, confidence: 1 };
+      time += length;
+      return event;
+    });
+    return {
+      id: definition.id,
+      demo: true,
+      title: definition.title,
+      style: definition.style,
+      bpm: definition.bpm,
+      duration: time,
+      createdAt: 0,
+      updatedAt: 0,
+      analysisVersion: 2,
+      settings: { tuning, frets: 15, lookahead: 3, speed: 1, loopA: null, loopB: null },
+      events: optimiseFingering(events, TUNINGS[tuning].open, 15)
+    };
+  }
+
+  function renderTab(track, tuningKey = '4', columns = 16) {
+    const tuning = TUNINGS[tuningKey] || TUNINGS['4'];
+    const names = tuning.open.map(noteName).map(value => value.replace(/-?\d+$/, ''));
+    const order = [...tuning.open.keys()].reverse();
+    const lines = [];
+    const events = track.events || [];
+    for (let start = 0; start < events.length; start += columns) {
+      const chunk = events.slice(start, start + columns);
+      lines.push(`   ${chunk.map(event => noteName(event.midi).padEnd(4, ' ')).join('')}`.trimEnd());
+      order.forEach(string => {
+        let row = `${names[string].padEnd(2, ' ')}|`;
+        chunk.forEach(event => {
+          const value = event.string === string && event.fret !== null ? String(event.fret) : '';
+          row += value.padStart(2, '-').padEnd(4, '-');
+        });
+        lines.push(`${row}|`);
+      });
+      lines.push('');
+    }
     return `${track.title}\n${tuning.label}\n\n${lines.join('\n')}`;
   }
 
-  root.ManicoCore={VERSION,NOTE_NAMES,TUNINGS,DEMOS,clamp,formatTime,noteName,parseNote,fretPosition,candidatePositions,optimiseFingering,normalizeEvents,currentEventIndex,createDemoTrack,renderTab};
-})(globalThis);
-
-
-(function initManicoStorage(root){
-  'use strict';
-  const DB='manico-bass-transcriber',STORE='tracks';let promise=null;const memory=new Map();
-  const result=request=>new Promise((resolve,reject)=>{request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
-  async function database(){
-    if(typeof indexedDB==='undefined')return null;if(promise)return promise;
-    promise=new Promise(resolve=>{const request=indexedDB.open(DB,1);request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(STORE)){const store=db.createObjectStore(STORE,{keyPath:'id'});store.createIndex('updatedAt','updatedAt');}};request.onsuccess=()=>resolve(request.result);request.onerror=()=>resolve(null);});return promise;
-  }
-  async function save(track){const copy=typeof structuredClone==='function'?structuredClone(track):track;memory.set(copy.id,copy);const db=await database();if(!db)return copy;await result(db.transaction(STORE,'readwrite').objectStore(STORE).put(copy));return copy;}
-  async function get(id){const db=await database();if(!db)return memory.get(id)||null;const value=await result(db.transaction(STORE,'readonly').objectStore(STORE).get(id));if(value)memory.set(value.id,value);return value||null;}
-  async function list(){const db=await database();const rows=db?await result(db.transaction(STORE,'readonly').objectStore(STORE).getAll()):[...memory.values()];return rows.filter(track=>!track.demo).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));}
-  async function remove(id){memory.delete(id);const db=await database();if(db)await result(db.transaction(STORE,'readwrite').objectStore(STORE).delete(id));}
-  async function persist(){try{return navigator.storage?.persist?await navigator.storage.persist():false;}catch(error){return false;}}
-  async function estimate(){try{return navigator.storage?.estimate?await navigator.storage.estimate():{usage:0,quota:0};}catch(error){return{usage:0,quota:0};}}
-  root.ManicoStorage={save,get,list,remove,persist,estimate};
-})(globalThis);
-
-
-(function initManicoTranscriber(root){
-  'use strict';
-  const Core=root.ManicoCore;const TARGET_RATE=5512;
-  function source(){return `'use strict';
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function percentile(values,ratio){if(!values.length)return 0;const sorted=values.slice().sort((a,b)=>a-b);return sorted[Math.max(0,Math.min(sorted.length-1,Math.floor((sorted.length-1)*ratio)))];}
-function rms(signal,start,length){let sum=0,end=Math.min(signal.length,start+length);for(let i=start;i<end;i++){const v=signal[i];sum+=v*v;}return Math.sqrt(sum/Math.max(1,end-start));}
-function onsets(signal,sr,sensitivity){const hop=Math.max(1,Math.round(sr*.012)),win=Math.max(hop*3,Math.round(sr*.045)),energy=[];for(let p=0;p+win<signal.length;p+=hop)energy.push(rms(signal,p,win));const noise=percentile(energy,.32),strong=percentile(energy,.9),threshold=noise+(strong-noise)*(1-sensitivity)*.72,flux=energy.map((v,i)=>i<2?0:v-Math.max(energy[i-1],energy[i-2])),fluxThreshold=Math.max(.000003,percentile(flux.filter(v=>v>0),.67)*(1.08-sensitivity*.35)),gap=Math.max(1,Math.round(.065*sr/hop)),out=[];let last=-gap;for(let i=2;i<energy.length-2;i++){const local=energy[i]>=energy[i-1]&&energy[i]>=energy[i+1];if(local&&energy[i]>threshold&&flux[i]>fluxThreshold&&i-last>=gap){out.push(i*hop/sr);last=i;}}if(!out.length||out[0]>.18)out.unshift(0);return out;}
-function corr(signal,start,size,lag){let xy=0,xx=0,yy=0,end=Math.min(signal.length,start+size-lag);for(let i=start;i<end;i++){const a=signal[i],b=signal[i+lag];xy+=a*b;xx+=a*a;yy+=b*b;}return xy/(Math.sqrt(xx*yy)||1);}
-function pitch(signal,sr,time){const votes=[];for(const offset of [.028,.078,.132]){const start=Math.max(0,Math.floor((time+offset)*sr)),size=Math.min(Math.round(sr*.16),signal.length-start);if(size<Math.round(sr*.08))continue;const minLag=Math.max(2,Math.floor(sr/330)),maxLag=Math.min(Math.floor(sr/31),Math.floor(size/2));let bestLag=-1,best=-1;const scores=new Float32Array(maxLag+1);for(let lag=minLag;lag<=maxLag;lag++){const score=corr(signal,start,size,lag);scores[lag]=score;if(score>best){best=score;bestLag=lag;}}if(bestLag<0||best<.48)continue;if(bestLag*2<=maxLag&&scores[bestLag*2]>best*.88)bestLag*=2;const midi=Math.round(69+12*Math.log2((sr/bestLag)/440));if(midi>=23&&midi<=64)votes.push({midi,confidence:best});}if(!votes.length)return null;const grouped=new Map();for(const vote of votes){const item=grouped.get(vote.midi)||{score:0,count:0};item.score+=vote.confidence;item.count++;grouped.set(vote.midi,item);}let selected=null;for(const [midi,item]of grouped){const score=item.score+item.count*.15;if(!selected||score>selected.score)selected={midi,score,confidence:item.score/item.count};}return selected;}
-function smooth(events){if(events.length<2)return events;const candidates=events.map(event=>[...new Set([event.midi,event.midi-12,event.midi+12].filter(m=>m>=23&&m<=64))]),costs=[],back=[];candidates.forEach((list,i)=>{costs[i]=new Array(list.length).fill(Infinity);back[i]=new Array(list.length).fill(-1);list.forEach((m,j)=>{const octave=Math.abs(m-events[i].midi)*.11;if(i===0){costs[i][j]=octave;return;}candidates[i-1].forEach((pm,k)=>{const jump=Math.abs(m-pm),large=jump>12?(jump-12)*.45:0,value=costs[i-1][k]+jump*.16+large+octave;if(value<costs[i][j]){costs[i][j]=value;back[i][j]=k;}});});});let cursor=0,last=costs.at(-1);last.forEach((v,i)=>{if(v<last[cursor])cursor=i;});for(let i=events.length-1;i>=0;i--){events[i].midi=candidates[i][cursor];cursor=back[i][cursor];if(cursor<0&&i>0)cursor=0;}return events;}
-self.onmessage=event=>{const{signal,sampleRate,sensitivity,duration}=event.data,points=onsets(signal,sampleRate,sensitivity),events=[];for(let i=0;i<points.length;i++){const start=points[i],next=i+1<points.length?points[i+1]:Math.min(duration,start+.7),found=pitch(signal,sampleRate,start);if(found&&found.confidence>=.48)events.push({start,end:Math.max(start+.06,next),midi:found.midi,confidence:clamp(found.confidence,0,1)});if(i%6===0)self.postMessage({type:'progress',value:(i+1)/points.length});}smooth(events);const compact=[];for(const item of events){const previous=compact.at(-1);if(previous&&previous.midi===item.midi&&item.start-previous.end<.035){previous.end=item.end;previous.confidence=Math.max(previous.confidence,item.confidence);}else compact.push(item);}self.postMessage({type:'result',events:compact});};`;}
-  function worker(){const url=URL.createObjectURL(new Blob([source()],{type:'text/javascript'})),instance=new Worker(url);instance.__url=url;return instance;}
-  async function decode(file){const context=new (window.AudioContext||window.webkitAudioContext)();try{return await context.decodeAudioData((await file.arrayBuffer()).slice(0));}finally{await context.close();}}
-  async function prepare(buffer,onProgress=()=>{}){const ratio=buffer.sampleRate/TARGET_RATE,length=Math.max(1,Math.floor(buffer.length/ratio)),output=new Float32Array(length),channels=Array.from({length:buffer.numberOfChannels},(_,i)=>buffer.getChannelData(i)),dt=1/buffer.sampleRate,hpRC=1/(2*Math.PI*30),hpAlpha=hpRC/(hpRC+dt),lpAlpha=1-Math.exp(-2*Math.PI*360/buffer.sampleRate);let hp=0,previous=0,lp=0;const chunk=180000;for(let start=0;start<length;start+=chunk){const end=Math.min(length,start+chunk);for(let out=start;out<end;out++){const s0=Math.floor(out*ratio),s1=Math.max(s0+1,Math.floor((out+1)*ratio));let sum=0,count=0;for(let s=s0;s<s1&&s<buffer.length;s++){let sample=0;for(const channel of channels)sample+=channel[s]||0;sample/=channels.length;hp=hpAlpha*(hp+sample-previous);previous=sample;lp+=lpAlpha*(hp-lp);sum+=lp;count++;}output[out]=count?sum/count:0;}onProgress(end/length);await new Promise(resolve=>setTimeout(resolve,0));}return{signal:output,sampleRate:TARGET_RATE};}
-  async function transcribe(buffer,options={}){const progress=options.onProgress||(()=>{}),prepared=await prepare(buffer,value=>progress(value*.22,'prepare')),instance=worker();return new Promise((resolve,reject)=>{instance.onmessage=event=>{if(event.data.type==='progress'){progress(.22+event.data.value*.78,'analyse');return;}if(event.data.type==='result'){instance.terminate();URL.revokeObjectURL(instance.__url);resolve(Core.normalizeEvents(event.data.events,buffer.duration));}};instance.onerror=error=>{instance.terminate();URL.revokeObjectURL(instance.__url);reject(error);};instance.postMessage({signal:prepared.signal,sampleRate:prepared.sampleRate,sensitivity:Number.isFinite(options.sensitivity)?options.sensitivity:.72,duration:buffer.duration},[prepared.signal.buffer]);});}
-  root.ManicoTranscriber={decode,transcribe};
-})(globalThis);
-
-
-(function initManicoApp(root){
-  'use strict';
-  const Core=root.ManicoCore,Store=root.ManicoStorage,Transcriber=root.ManicoTranscriber;
-  if(!Core||!Store||!Transcriber)throw new Error('Manico modules missing');
-  const $=id=>document.getElementById(id),audio=$('audio');
-  const COPY={
-    it:{product:'Bass Transcriber',import:'Importa audio',eyebrow:'Dal brano alle dita',heroTitle:'Ascolta. Trascrivi. Suona.',heroText:'Importa una registrazione, ricava la linea di basso e studiala sul manico. Audio, trascrizione e correzioni restano sul tuo dispositivo.',privacy:'Nessun upload. Tutto avviene nel browser.',dropTitle:'Porta qui il tuo brano',dropText:'MP3, WAV, M4A, AAC, OGG o FLAC',choose:'Scegli un file',yourTracks:'I tuoi brani',yourTracksHint:'Riapri una trascrizione e continua da dove eri rimasto.',examples:'Esercizi inclusi',examplesHint:'Linee essenziali pronte per provare il flusso.',empty:'Non hai ancora importato brani.',open:'Apri',remove:'Elimina',confirmDelete:'Eliminare questo brano e il suo audio?',notes:'note',storage:'Spazio locale',unavailable:'non disponibile',saved:'Salvato sul dispositivo',demo:'Esercizio incluso',previous:'precedente',current:'adesso',upcoming:'in arrivo',now:'Adesso',nextNotes:'Prossime note',study:'Studio',tuning:'Accordatura',frets:'Tasti',lookahead:'Note in anticipo',speed:'Velocità',loop:'Loop',setA:'Imposta A',setB:'Imposta B',clearLoop:'Azzera',noLoop:'nessun loop',correction:'Correggi la nota',semitoneDown:'− semitono',semitoneUp:'+ semitono',deleteNote:'Elimina nota',splitNote:'Dividi nota',export:'Esporta',exportTab:'Scarica TAB',exportProject:'Scarica progetto',confidence:'confidenza',string:'corda',fret:'tasto',notPlayable:'fuori manico',analyseTitle:'Trascrivi la linea di basso',analyseHint:'Il file resta sul dispositivo. La trascrizione è una stima e può essere corretta dopo l’importazione.',sensitivity:'Sensibilità agli attacchi',startAnalysis:'Trascrivi e salva',cancel:'Annulla',preparing:'Preparazione del segnale…',analysing:'Riconoscimento delle note…',decoding:'Decodifica dell’audio…',saving:'Salvataggio locale…',failed:'Non sono riuscito a trascrivere questo file.',noNotes:'Non ho trovato note affidabili. Prova con una sensibilità più alta o con un mix dove il basso è più presente.',persistentYes:'archiviazione persistente',persistentNo:'il browser può liberare spazio automaticamente',importedLine:'Linea di basso trascritta',keys:'Spazio: play/pausa · frecce: nota precedente/successiva',audioMissing:'L’audio salvato non è più disponibile, ma la trascrizione è rimasta.',version:`Versione ${Core.VERSION}`},
-    en:{product:'Bass Transcriber',import:'Import audio',eyebrow:'From the track to your fingers',heroTitle:'Listen. Transcribe. Play.',heroText:'Import a recording, extract the bass line and practise it on the fretboard. Audio, transcription and corrections stay on your device.',privacy:'No upload. Everything happens in your browser.',dropTitle:'Drop your track here',dropText:'MP3, WAV, M4A, AAC, OGG or FLAC',choose:'Choose a file',yourTracks:'Your tracks',yourTracksHint:'Reopen a transcription and continue where you left off.',examples:'Included exercises',examplesHint:'Essential lines ready to demonstrate the workflow.',empty:'You have not imported a track yet.',open:'Open',remove:'Delete',confirmDelete:'Delete this track and its stored audio?',notes:'notes',storage:'Local storage',unavailable:'unavailable',saved:'Saved on device',demo:'Included exercise',previous:'previous',current:'now',upcoming:'coming next',now:'Now',nextNotes:'Next notes',study:'Practice',tuning:'Tuning',frets:'Frets',lookahead:'Look-ahead notes',speed:'Speed',loop:'Loop',setA:'Set A',setB:'Set B',clearLoop:'Clear',noLoop:'no loop',correction:'Correct note',semitoneDown:'− semitone',semitoneUp:'+ semitone',deleteNote:'Delete note',splitNote:'Split note',export:'Export',exportTab:'Download TAB',exportProject:'Download project',confidence:'confidence',string:'string',fret:'fret',notPlayable:'outside fretboard',analyseTitle:'Transcribe the bass line',analyseHint:'The file stays on your device. The transcription is an estimate and can be corrected after import.',sensitivity:'Attack sensitivity',startAnalysis:'Transcribe and save',cancel:'Cancel',preparing:'Preparing the signal…',analysing:'Recognising notes…',decoding:'Decoding audio…',saving:'Saving locally…',failed:'This file could not be transcribed.',noNotes:'No reliable notes were found. Try a higher sensitivity or a mix with a more prominent bass.',persistentYes:'persistent storage',persistentNo:'the browser may reclaim storage automatically',importedLine:'Transcribed bass line',keys:'Space: play/pause · arrows: previous/next note',audioMissing:'The stored audio is no longer available, but the transcription remains.',version:`Version ${Core.VERSION}`}
+  root.ManicoCore = {
+    VERSION, NOTE_NAMES, TUNINGS, DEMOS, clamp, formatTime, noteName, parseNote,
+    fretPosition, candidatePositions, positionMatchesMidi, stabilizeOctaves,
+    optimiseFingering, normalizeEvents, currentEventIndex, previewWindow,
+    createDemoTrack, renderTab
   };
-  const state={lang:'it',tracks:[],track:null,currentIndex:0,pendingFile:null,cancelled:false,audioUrl:null,playing:false,animation:0,demoTimer:0,demoClock:0,saveTimer:0,persistent:false,synth:null};
-  const t=key=>COPY[state.lang][key]??key;
-  function readLanguage(){try{const saved=localStorage.getItem('manico-language');if(saved==='en'||saved==='it')return saved;}catch(error){}return(navigator.language||'').toLowerCase().startsWith('en')?'en':'it';}
-  function applyLanguage(){document.documentElement.lang=state.lang;document.querySelectorAll('[data-i18n]').forEach(el=>{const value=t(el.dataset.i18n);if(value!==undefined)el.textContent=value;});$('langIt').classList.toggle('on',state.lang==='it');$('langEn').classList.toggle('on',state.lang==='en');$('versionLabel').textContent=t('version');renderHome();if(state.track)renderStudio(true);}
-  function setLanguage(lang){state.lang=lang;try{localStorage.setItem('manico-language',lang);}catch(error){}applyLanguage();}
-  function show(view){$('homeView').hidden=view!=='home';$('studioView').hidden=view!=='studio';}
-  function bytes(value){if(!value)return'0 MB';const units=['B','KB','MB','GB'];let amount=value,index=0;while(amount>=1024&&index<units.length-1){amount/=1024;index++;}return`${amount.toFixed(index>1?1:0)} ${units[index]}`;}
-  async function refreshStorage(){const estimate=await Store.estimate(),suffix=state.persistent?t('persistentYes'):t('persistentNo');$('storageLabel').textContent=estimate.quota?`${t('storage')}: ${bytes(estimate.usage)} / ${bytes(estimate.quota)} · ${suffix}`:`${t('storage')}: ${t('unavailable')} · ${suffix}`;}
-  function stringName(index){const tuning=Core.TUNINGS[state.track?.settings?.tuning||'4'];return tuning&&index!==null?Core.noteName(tuning.open[index]).replace(/-?\d+$/,''):'?';}
-  function safeName(value){return String(value||'bass-line').trim().replace(/[^a-z0-9._-]+/gi,'-').replace(/^-+|-+$/g,'')||'bass-line';}
-  function download(name,text,type='text/plain'){const url=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),500);}
-  function trackCard(track){const article=document.createElement('article');article.className='track-card';const cover=document.createElement('div');cover.className='cover';cover.textContent=track.demo?track.style.slice(0,2).toUpperCase():'MP3';const info=document.createElement('div'),title=document.createElement('h3'),meta=document.createElement('div');title.textContent=track.title;meta.className='meta';meta.textContent=`${track.events?.length||0} ${t('notes')} · ${Core.formatTime(track.duration)}${track.demo?` · ${track.style}`:''}`;info.append(title,meta);const actions=document.createElement('div');actions.className='card-actions';const open=document.createElement('button');open.className='icon-button';open.textContent='▶';open.title=t('open');open.onclick=()=>openTrack(track.id,!!track.demo);actions.append(open);if(!track.demo){const remove=document.createElement('button');remove.className='icon-button danger';remove.textContent='×';remove.title=t('remove');remove.onclick=async event=>{event.stopPropagation();if(!confirm(t('confirmDelete')))return;await Store.remove(track.id);await loadLibrary();await refreshStorage();};actions.append(remove);}article.append(cover,info,actions);return article;}
-  function renderHome(){const list=$('trackList');if(!list)return;list.replaceChildren();if(!state.tracks.length){const empty=document.createElement('div');empty.className='empty-card';empty.textContent=t('empty');list.append(empty);}else state.tracks.forEach(track=>list.append(trackCard(track)));const demos=$('demoList');demos.replaceChildren();Core.DEMOS.forEach(def=>demos.append(trackCard(Core.createDemoTrack(def))));}
-  async function loadLibrary(){state.tracks=await Store.list();renderHome();}
-  function stopAudio(){cancelAnimationFrame(state.animation);clearTimeout(state.demoTimer);audio.pause();audio.removeAttribute('src');audio.load();if(state.audioUrl)URL.revokeObjectURL(state.audioUrl);state.audioUrl=null;state.playing=false;}
-  function ensureSettings(){state.track.settings={tuning:'4',frets:15,lookahead:3,speed:1,loopA:null,loopB:null,...(state.track.settings||{})};const tuning=Core.TUNINGS[state.track.settings.tuning]||Core.TUNINGS['4'];state.track.events=Core.optimiseFingering(state.track.events||[],tuning.open,state.track.settings.frets);}
-  async function openTrack(id,demo=false){stopAudio();const track=demo?Core.createDemoTrack(Core.DEMOS.find(item=>item.id===id)||Core.DEMOS[0]):await Store.get(id);if(!track)return;state.track=track;state.currentIndex=0;state.demoClock=0;ensureSettings();if(track.audioBlob){state.audioUrl=URL.createObjectURL(track.audioBlob);audio.src=state.audioUrl;audio.preload='metadata';audio.playbackRate=track.settings.speed||1;}show('studio');renderStudio(true);startAnimation();}
-  function scheduleSave(){if(!state.track||state.track.demo)return;clearTimeout(state.saveTimer);state.saveTimer=setTimeout(async()=>{state.track.updatedAt=Date.now();await Store.save(state.track);$('savedLabel').textContent=t('saved');await loadLibrary();},420);}
-  function currentTime(){return state.track?.demo?state.demoClock:(audio.currentTime||0);}
-  function setTime(value){if(!state.track)return;const time=Core.clamp(value,0,state.track.duration||0);if(state.track.demo){state.demoClock=time;state.currentIndex=Core.currentEventIndex(state.track.events,time,state.currentIndex);if(state.playing)scheduleDemo();}else audio.currentTime=time;updatePlayback(true);}
-  function selected(){return state.track?.events?.[state.currentIndex]||null;}
-  function selectEvent(index,seek=true){if(!state.track?.events?.length)return;state.currentIndex=Core.clamp(index,0,state.track.events.length-1);if(seek)setTime(state.track.events[state.currentIndex].start);renderStudio(true);}
-  function renderTimeline(){const box=$('phraseStrip');box.replaceChildren();const events=state.track.events,start=Math.max(0,state.currentIndex-7),end=Math.min(events.length,state.currentIndex+22),ahead=state.track.settings.lookahead;for(let i=start;i<end;i++){const event=events[i],button=document.createElement('button');button.className=`phrase-note${i===state.currentIndex?' current':i>state.currentIndex&&i<=state.currentIndex+ahead?' next':''}`;const strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=Core.noteName(event.midi);small.textContent=`${Core.formatTime(event.start)} · ${event.string===null?'—':`${stringName(event.string)}${event.fret}`}`;button.append(strong,small);button.onclick=()=>selectEvent(i);box.append(button);}requestAnimationFrame(()=>box.querySelector('.current')?.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'}));}
-  function renderFretboard(){const svg=$('fretboard'),track=state.track,tuning=Core.TUNINGS[track.settings.tuning],open=tuning.open,strings=open.length,frets=track.settings.frets,W=1200,H=Math.max(330,78+strings*62),nut=105,right=1164,top=43,row=strings>1?(H-104)/(strings-1):0,fx=f=>nut+Core.fretPosition(f,frets)*(right-nut),cx=f=>f===0?nut-31:(fx(f-1)+fx(f))/2,order=[...open.keys()].reverse();svg.setAttribute('viewBox',`0 0 ${W} ${H}`);let html='<defs><linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--wood1)"/><stop offset="1" stop-color="var(--wood2)"/></linearGradient></defs>';html+=`<rect x="${nut}" y="20" width="${right-nut}" height="${H-62}" rx="12" fill="url(#wood)"/><rect x="${nut-7}" y="20" width="7" height="${H-62}" fill="var(--nut)" opacity=".92"/>`;for(let f=1;f<=frets;f++)html+=`<line x1="${fx(f)}" y1="20" x2="${fx(f)}" y2="${H-42}" stroke="var(--fretwire)" stroke-width="${f<5?4:3}" opacity=".8"/>`;order.forEach((string,r)=>{const y=top+r*row;html+=`<line x1="55" y1="${y}" x2="${right}" y2="${y}" stroke="var(--string)" stroke-width="${1.35+(open.length-string)*.6}" opacity=".72"/><text x="18" y="${y+7}" fill="var(--muted)" font-size="22" font-family="var(--mono)">${stringName(string)}</text>`;});[3,5,7,9,12,15,17,19,21,24].filter(f=>f<=frets).forEach(f=>{const x=cx(f),y=top+row*(strings-1)/2;if(f%12===0)html+=`<circle cx="${x}" cy="${y-25}" r="7" fill="var(--inlay)"/><circle cx="${x}" cy="${y+25}" r="7" fill="var(--inlay)"/>`;else html+=`<circle cx="${x}" cy="${y}" r="7" fill="var(--inlay)"/>`;});for(let f=0;f<=frets;f++)html+=`<text x="${cx(f)}" y="${H-10}" text-anchor="middle" fill="var(--faint)" font-size="15" font-family="var(--mono)">${f}</text>`;const markers=[];if(state.currentIndex>0)markers.push({event:track.events[state.currentIndex-1],kind:'past',order:''});if(selected())markers.push({event:selected(),kind:'current',order:''});for(let n=1;n<=track.settings.lookahead;n++){const event=track.events[state.currentIndex+n];if(event)markers.push({event,kind:'next',order:String(n)});}markers.forEach(marker=>{const event=marker.event;if(event.string===null||event.fret===null)return;const r=order.indexOf(event.string);if(r<0||event.fret>frets)return;const x=cx(event.fret),y=top+r*row,current=marker.kind==='current',past=marker.kind==='past',opacity=marker.kind==='next'?Math.max(.28,1-Number(marker.order)*.18):1,radius=current?30:23,color=past?'var(--past)':current?'var(--accent)':'var(--future)';html+=`<g opacity="${opacity}"><circle cx="${x}" cy="${y}" r="${radius}" fill="${past?'none':color}" stroke="${color}" stroke-width="${past?4:2}"/><text x="${x}" y="${y+6}" text-anchor="middle" font-size="${current?18:15}" font-weight="900" fill="${current?'#211608':past?'var(--past)':'#10201b'}">${marker.order||Core.noteName(event.midi)}</text></g>`;});svg.innerHTML=html;}
-  function renderSide(){const event=selected();$('nowNote').textContent=event?Core.noteName(event.midi):'—';$('nowPosition').textContent=event&&event.string!==null?`${t('string')} ${stringName(event.string)} · ${t('fret')} ${event.fret}`:t('notPlayable');$('confidenceLabel').textContent=event?`${t('confidence')} ${Math.round((event.confidence||0)*100)}%`:'';const list=$('nextList');list.replaceChildren();for(let n=1;n<=state.track.settings.lookahead;n++){const event=state.track.events[state.currentIndex+n];if(!event)continue;const row=document.createElement('div');row.className='next-row';const order=document.createElement('span');order.className='order';order.textContent=n;const name=document.createElement('b');name.textContent=Core.noteName(event.midi);const pos=document.createElement('span');pos.textContent=event.string===null?'—':`${stringName(event.string)}${event.fret}`;row.append(order,name,pos);list.append(row);}$('noteSelect').value=event?String(event.midi):'';$('noteDown').disabled=!event;$('noteUp').disabled=!event;$('deleteNote').disabled=!event||state.track.events.length<=1;$('splitNote').disabled=!event||event.end-event.start<.12;}
-  function renderLoop(){const{loopA,loopB}=state.track.settings;$('loopLabel').textContent=loopA!==null&&loopB!==null?`A ${Core.formatTime(loopA)} — B ${Core.formatTime(loopB)}`:t('noLoop');}
-  function renderStudio(full=false){if(!state.track)return;$('trackTitle').value=state.track.title;$('trackMeta').textContent=`${state.track.demo?t('demo'):t('importedLine')} · ${state.track.events.length} ${t('notes')} · ${Core.TUNINGS[state.track.settings.tuning].label}`;$('savedLabel').textContent=state.track.demo?t('demo'):t('saved');$('tuningSelect').value=state.track.settings.tuning;$('fretsSelect').value=String(state.track.settings.frets);$('lookaheadSelect').value=String(state.track.settings.lookahead);$('speedSelect').value=String(state.track.settings.speed);$('playButton').textContent=state.playing?'❚❚':'▶';renderTimeline();renderFretboard();renderSide();renderLoop();if(full)updatePlayback(false);}
-  function updatePlayback(force=false){if(!state.track)return;const time=currentTime(),duration=state.track.duration||audio.duration||0;$('seek').value=duration?time/duration*1000:0;$('clock').textContent=`${Core.formatTime(time)} / ${Core.formatTime(duration)}`;const index=Core.currentEventIndex(state.track.events,time,state.currentIndex);if(index!==state.currentIndex||force){state.currentIndex=index;renderTimeline();renderFretboard();renderSide();}}
-  function startAnimation(){cancelAnimationFrame(state.animation);const frame=()=>{if(!state.track)return;const{loopA,loopB}=state.track.settings;if(state.playing&&loopA!==null&&loopB!==null&&currentTime()>=loopB)setTime(loopA);updatePlayback(false);state.animation=requestAnimationFrame(frame);};frame();}
-  function pluck(midi,duration=.5){state.synth||=new(window.AudioContext||window.webkitAudioContext)();if(state.synth.state==='suspended')state.synth.resume();const now=state.synth.currentTime,f=440*Math.pow(2,(midi-69)/12),osc=state.synth.createOscillator(),gain=state.synth.createGain(),filter=state.synth.createBiquadFilter();osc.type='triangle';osc.frequency.value=f;filter.type='lowpass';filter.frequency.setValueAtTime(1200,now);filter.frequency.exponentialRampToValueAtTime(260,now+duration);gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.28,now+.01);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);osc.connect(filter);filter.connect(gain);gain.connect(state.synth.destination);osc.start(now);osc.stop(now+duration+.04);}
-  function scheduleDemo(){clearTimeout(state.demoTimer);if(!state.playing||!state.track?.demo)return;const event=selected();if(!event)return;state.demoClock=event.start;pluck(event.midi,Math.min(.8,(event.end-event.start)/state.track.settings.speed));state.demoTimer=setTimeout(()=>{if(!state.playing)return;if(state.currentIndex>=state.track.events.length-1){state.playing=false;state.currentIndex=0;state.demoClock=0;renderStudio(true);return;}state.currentIndex++;state.demoClock=state.track.events[state.currentIndex].start;renderStudio(true);scheduleDemo();},Math.max(90,(event.end-event.start)*1000/state.track.settings.speed));}
-  async function togglePlay(){if(!state.track)return;state.playing=!state.playing;if(state.track.demo){if(state.playing)scheduleDemo();else clearTimeout(state.demoTimer);}else if(state.track.audioBlob){try{audio.playbackRate=state.track.settings.speed;if(state.playing)await audio.play();else audio.pause();}catch(error){state.playing=false;}}else{state.playing=false;alert(t('audioMissing'));}renderStudio(false);}
-  function recalc(){const tuning=Core.TUNINGS[state.track.settings.tuning];state.track.events=Core.optimiseFingering(state.track.events,tuning.open,state.track.settings.frets);scheduleSave();renderStudio(true);}
-  function changeMidi(value,absolute=false){const event=selected();if(!event)return;event.midi=Core.clamp(absolute?Number(value):event.midi+value,23,76);event.confidence=1;recalc();}
-  function deleteCurrent(){if(!state.track||state.track.events.length<=1)return;state.track.events.splice(state.currentIndex,1);state.currentIndex=Core.clamp(state.currentIndex,0,state.track.events.length-1);recalc();}
-  function splitCurrent(){const event=selected();if(!event||event.end-event.start<.12)return;const middle=(event.start+event.end)/2,second={...event,id:`${event.id}-b-${Date.now()}`,start:middle};event.end=middle;state.track.events.splice(state.currentIndex+1,0,second);recalc();}
-  function setLoop(which){const time=currentTime();if(which==='A')state.track.settings.loopA=Math.min(time,state.track.settings.loopB??time);else state.track.settings.loopB=Math.max(time,state.track.settings.loopA??0);if(state.track.settings.loopA!==null&&state.track.settings.loopB!==null&&state.track.settings.loopB-state.track.settings.loopA<.15)state.track.settings.loopB=Math.min(state.track.duration,state.track.settings.loopA+.15);scheduleSave();renderLoop();}
-  function clearLoop(){state.track.settings.loopA=null;state.track.settings.loopB=null;scheduleSave();renderLoop();}
-  function exportProject(){const track=state.track,project={manico:5,version:Core.VERSION,title:track.title,duration:track.duration,settings:track.settings,events:track.events.map(event=>({start:event.start,end:event.end,midi:event.midi,note:Core.noteName(event.midi),confidence:event.confidence,string:event.string,fret:event.fret}))};download(`${safeName(track.title)}.manico.json`,JSON.stringify(project,null,2),'application/json');}
-  function openImport(file){if(!file)return;state.pendingFile=file;state.cancelled=false;$('importFileName').textContent=file.name;$('analysisStatus').textContent=t('analyseHint');$('analysisProgress').style.width='0%';$('startAnalysis').disabled=false;$('analysisModal').hidden=false;}
-  async function startImport(){const file=state.pendingFile;if(!file)return;state.cancelled=false;$('startAnalysis').disabled=true;try{$('analysisStatus').textContent=t('decoding');$('analysisProgress').style.width='4%';const buffer=await Transcriber.decode(file);if(state.cancelled)return;const events=await Transcriber.transcribe(buffer,{sensitivity:Number($('sensitivity').value)/100,onProgress(value,stage){$('analysisProgress').style.width=`${Math.round(value*100)}%`;$('analysisStatus').textContent=stage==='prepare'?t('preparing'):t('analysing');}});if(state.cancelled)return;if(!events.length)throw new Error('NO_NOTES');$('analysisStatus').textContent=t('saving');const id=`track-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,now=Date.now(),settings={tuning:'4',frets:15,lookahead:3,speed:1,loopA:null,loopB:null},track={id,title:file.name.replace(/\.[^.]+$/,''),filename:file.name,mime:file.type,audioBlob:file,duration:buffer.duration,createdAt:now,updatedAt:now,settings,events:Core.optimiseFingering(events,Core.TUNINGS['4'].open,15)};await Store.save(track);$('analysisModal').hidden=true;await loadLibrary();await refreshStorage();await openTrack(id,false);}catch(error){$('startAnalysis').disabled=false;$('analysisProgress').style.width='0%';$('analysisStatus').textContent=error?.message==='NO_NOTES'?t('noNotes'):t('failed');}}
-  function cancelImport(){state.cancelled=true;state.pendingFile=null;$('analysisModal').hidden=true;}
-  function populate(){ $('tuningSelect').innerHTML=Object.entries(Core.TUNINGS).map(([key,item])=>`<option value="${key}">${item.label}</option>`).join('');$('fretsSelect').innerHTML=[12,15,18,24].map(value=>`<option value="${value}">${value}</option>`).join('');$('lookaheadSelect').innerHTML=[2,3,4,5].map(value=>`<option value="${value}">${value}</option>`).join('');$('speedSelect').innerHTML=[.5,.65,.75,.85,1,1.1,1.25].map(value=>`<option value="${value}">${Math.round(value*100)}%</option>`).join('');$('noteSelect').innerHTML=Array.from({length:54},(_,i)=>23+i).map(midi=>`<option value="${midi}">${Core.noteName(midi)}</option>`).join(''); }
-  function bind(){ $('langIt').onclick=()=>{state.lang='it';try{localStorage.setItem('manico-language','it');}catch(error){}applyLanguage();};$('langEn').onclick=()=>{state.lang='en';try{localStorage.setItem('manico-language','en');}catch(error){}applyLanguage();};$('homeButton').onclick=()=>{stopAudio();state.track=null;show('home');};$('importTop').onclick=()=>$('fileInput').click();$('chooseFile').onclick=()=>$('fileInput').click();$('fileInput').onchange=()=>{openImport($('fileInput').files[0]);$('fileInput').value='';};$('startAnalysis').onclick=startImport;$('cancelAnalysis').onclick=cancelImport;$('sensitivity').oninput=event=>$('sensitivityValue').textContent=`${event.target.value}%`;const drop=$('dropzone');drop.ondragover=event=>{event.preventDefault();drop.classList.add('over');};drop.ondragleave=()=>drop.classList.remove('over');drop.ondrop=event=>{event.preventDefault();drop.classList.remove('over');openImport(event.dataTransfer.files[0]);};$('backHome').onclick=()=>{stopAudio();state.track=null;show('home');};$('playButton').onclick=togglePlay;$('seek').oninput=event=>setTime(Number(event.target.value)/1000*(state.track?.duration||0));$('speedSelect').onchange=event=>{state.track.settings.speed=Number(event.target.value);audio.playbackRate=state.track.settings.speed;scheduleSave();if(state.playing&&state.track.demo)scheduleDemo();};$('tuningSelect').onchange=event=>{state.track.settings.tuning=event.target.value;recalc();};$('fretsSelect').onchange=event=>{state.track.settings.frets=Number(event.target.value);recalc();};$('lookaheadSelect').onchange=event=>{state.track.settings.lookahead=Number(event.target.value);scheduleSave();renderStudio(true);};$('setLoopA').onclick=()=>setLoop('A');$('setLoopB').onclick=()=>setLoop('B');$('clearLoop').onclick=clearLoop;$('noteSelect').onchange=event=>changeMidi(Number(event.target.value),true);$('noteDown').onclick=()=>changeMidi(-1);$('noteUp').onclick=()=>changeMidi(1);$('deleteNote').onclick=deleteCurrent;$('splitNote').onclick=splitCurrent;$('exportTab').onclick=()=>download(`${safeName(state.track.title)}.txt`,Core.renderTab(state.track,state.track.settings.tuning));$('exportProject').onclick=exportProject;$('trackTitle').onchange=event=>{state.track.title=event.target.value.trim()||state.track.title;scheduleSave();};audio.onplay=()=>{state.playing=true;renderStudio(false);};audio.onpause=()=>{state.playing=false;renderStudio(false);};audio.onended=()=>{state.playing=false;setTime(0);renderStudio(false);};audio.onloadedmetadata=()=>{if(state.track&&!state.track.duration)state.track.duration=audio.duration;updatePlayback(true);};document.addEventListener('keydown',event=>{if(['INPUT','SELECT','TEXTAREA'].includes(event.target.tagName)||$('studioView').hidden)return;if(event.code==='Space'){event.preventDefault();togglePlay();}else if(event.key==='ArrowRight')selectEvent(state.currentIndex+1);else if(event.key==='ArrowLeft')selectEvent(state.currentIndex-1);}); }
-  async function init(){state.lang=readLanguage();populate();bind();state.persistent=await Store.persist();await loadLibrary();await refreshStorage();applyLanguage();show('home');}
-  init().catch(error=>{$('fatalError').hidden=false;$('fatalError').textContent=error?.message||String(error);console.error(error);});
+})(globalThis);
+
+
+(function initManicoStorage(root) {
+  'use strict';
+
+  const DB = 'manico-bass-transcriber';
+  const STORE = 'tracks';
+  let promise = null;
+  const memory = new Map();
+
+  const result = request => new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+  async function database() {
+    if (typeof indexedDB === 'undefined') return null;
+    if (promise) return promise;
+    promise = new Promise(resolve => {
+      let request;
+      try { request = indexedDB.open(DB, 1); }
+      catch (error) { resolve(null); return; }
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(STORE)) {
+          const store = db.createObjectStore(STORE, { keyPath: 'id' });
+          store.createIndex('updatedAt', 'updatedAt');
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(null);
+    });
+    return promise;
+  }
+
+  async function save(track) {
+    const copy = typeof structuredClone === 'function' ? structuredClone(track) : track;
+    memory.set(copy.id, copy);
+    const db = await database();
+    if (!db) return copy;
+    try { await result(db.transaction(STORE, 'readwrite').objectStore(STORE).put(copy)); }
+    catch (error) { return copy; }
+    return copy;
+  }
+
+  async function get(id) {
+    const db = await database();
+    if (!db) return memory.get(id) || null;
+    try {
+      const value = await result(db.transaction(STORE, 'readonly').objectStore(STORE).get(id));
+      if (value) memory.set(value.id, value);
+      return value || null;
+    } catch (error) { return memory.get(id) || null; }
+  }
+
+  async function list() {
+    const db = await database();
+    let rows = [...memory.values()];
+    if (db) {
+      try { rows = await result(db.transaction(STORE, 'readonly').objectStore(STORE).getAll()); }
+      catch (error) { /* memory fallback */ }
+    }
+    return rows.filter(track => !track.demo).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  }
+
+  async function remove(id) {
+    memory.delete(id);
+    const db = await database();
+    if (db) {
+      try { await result(db.transaction(STORE, 'readwrite').objectStore(STORE).delete(id)); }
+      catch (error) { /* memory deletion already completed */ }
+    }
+  }
+
+  async function persist() {
+    try { return navigator.storage?.persist ? await navigator.storage.persist() : false; }
+    catch (error) { return false; }
+  }
+
+  async function estimate() {
+    try { return navigator.storage?.estimate ? await navigator.storage.estimate() : { usage: 0, quota: 0 }; }
+    catch (error) { return { usage: 0, quota: 0 }; }
+  }
+
+  root.ManicoStorage = { save, get, list, remove, persist, estimate };
+})(globalThis);
+
+
+(function initManicoTranscriber(root) {
+  'use strict';
+
+  const Core = root.ManicoCore;
+  const TARGET_RATE = 5512;
+
+  function workerSource() {
+    return `'use strict';
+const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
+function percentile(values,ratio){if(!values.length)return 0;const sorted=values.slice().sort((a,b)=>a-b);return sorted[Math.max(0,Math.min(sorted.length-1,Math.floor((sorted.length-1)*ratio)))];}
+function rms(signal,start,length){let sum=0;const end=Math.min(signal.length,start+length);for(let index=start;index<end;index++){const value=signal[index];sum+=value*value;}return Math.sqrt(sum/Math.max(1,end-start));}
+function onsets(signal,sampleRate,sensitivity){const hop=Math.max(1,Math.round(sampleRate*.01)),windowSize=Math.max(hop*3,Math.round(sampleRate*.04)),energy=[];for(let position=0;position+windowSize<signal.length;position+=hop)energy.push(rms(signal,position,windowSize));const noise=percentile(energy,.32),strong=percentile(energy,.91),threshold=noise+(strong-noise)*(1-sensitivity)*.68,flux=energy.map((value,index)=>index<2?0:value-Math.max(energy[index-1],energy[index-2])),fluxThreshold=Math.max(.000003,percentile(flux.filter(value=>value>0),.64)*(1.05-sensitivity*.34)),minimumGap=Math.max(1,Math.round(.052*sampleRate/hop)),result=[];let last=-minimumGap;for(let index=2;index<energy.length-2;index++){const local=flux[index]>=flux[index-1]&&flux[index]>=flux[index+1];if(local&&energy[index]>threshold&&flux[index]>fluxThreshold&&index-last>=minimumGap){result.push(index*hop/sampleRate);last=index;}}if(!result.length||result[0]>.18)result.unshift(0);return result;}
+function correlation(signal,start,size,lag){let xy=0,xx=0,yy=0;const end=Math.min(signal.length,start+size-lag);for(let index=start;index<end;index++){const left=signal[index],right=signal[index+lag];xy+=left*right;xx+=left*left;yy+=right*right;}return xy/(Math.sqrt(xx*yy)||1);}
+function estimateWindow(signal,sampleRate,start,size){const minimumLag=Math.max(2,Math.floor(sampleRate/330)),maximumLag=Math.min(Math.floor(sampleRate/31),Math.floor(size/2));let bestLag=-1,bestScore=-1;const scores=new Float32Array(maximumLag+1);for(let lag=minimumLag;lag<=maximumLag;lag++){const score=correlation(signal,start,size,lag);scores[lag]=score;if(score>bestScore){bestScore=score;bestLag=lag;}}if(bestLag<0||bestScore<.47)return null;let chosen=bestLag;while(chosen*2<=maximumLag&&scores[chosen*2]>=bestScore*.9){chosen*=2;bestScore=Math.max(bestScore,scores[chosen]);}const frequency=sampleRate/chosen,midi=Math.round(69+12*Math.log2(frequency/440));return midi>=23&&midi<=76?{midi,confidence:bestScore}:null;}
+function pitch(signal,sampleRate,time){const votes=[];for(const offset of [.026,.072,.124,.176]){const start=Math.max(0,Math.floor((time+offset)*sampleRate)),size=Math.min(Math.round(sampleRate*.17),signal.length-start);if(size<Math.round(sampleRate*.075))continue;const estimate=estimateWindow(signal,sampleRate,start,size);if(estimate)votes.push(estimate);}if(!votes.length)return null;const groups=new Map();for(const vote of votes){const key=vote.midi,item=groups.get(key)||{score:0,count:0};item.score+=vote.confidence;item.count++;groups.set(key,item);}let selected=null;for(const[midi,item]of groups){const score=item.score+item.count*.18;if(!selected||score>selected.score)selected={midi,score,confidence:item.score/item.count};}return selected;}
+self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.data,points=onsets(signal,sampleRate,sensitivity),events=[];for(let index=0;index<points.length;index++){const start=points[index],next=index+1<points.length?points[index+1]:Math.min(duration,start+.72),found=pitch(signal,sampleRate,start);if(found&&found.confidence>=.47)events.push({start,end:Math.max(start+.045,next),midi:found.midi,rawMidi:found.midi,confidence:clamp(found.confidence,0,1)});if(index%6===0)self.postMessage({type:'progress',value:(index+1)/points.length});}self.postMessage({type:'result',events});};`;
+  }
+
+  function createWorker() {
+    const url = URL.createObjectURL(new Blob([workerSource()], { type: 'text/javascript' }));
+    const instance = new Worker(url);
+    instance.__url = url;
+    return instance;
+  }
+
+  async function decode(file) {
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+    try { return await context.decodeAudioData((await file.arrayBuffer()).slice(0)); }
+    finally { await context.close(); }
+  }
+
+  async function prepare(buffer, onProgress = () => {}) {
+    const ratio = buffer.sampleRate / TARGET_RATE;
+    const length = Math.max(1, Math.floor(buffer.length / ratio));
+    const output = new Float32Array(length);
+    const channels = Array.from({ length: buffer.numberOfChannels }, (_, index) => buffer.getChannelData(index));
+    const dt = 1 / buffer.sampleRate;
+    const highPassRC = 1 / (2 * Math.PI * 30);
+    const highPassAlpha = highPassRC / (highPassRC + dt);
+    const lowPassAlpha = 1 - Math.exp(-2 * Math.PI * 360 / buffer.sampleRate);
+    let highPass = 0;
+    let previous = 0;
+    let lowPass = 0;
+    const chunk = 180000;
+
+    for (let start = 0; start < length; start += chunk) {
+      const end = Math.min(length, start + chunk);
+      for (let outputIndex = start; outputIndex < end; outputIndex += 1) {
+        const sourceStart = Math.floor(outputIndex * ratio);
+        const sourceEnd = Math.max(sourceStart + 1, Math.floor((outputIndex + 1) * ratio));
+        let sum = 0;
+        let count = 0;
+        for (let sourceIndex = sourceStart; sourceIndex < sourceEnd && sourceIndex < buffer.length; sourceIndex += 1) {
+          let sample = 0;
+          for (const channel of channels) sample += channel[sourceIndex] || 0;
+          sample /= channels.length;
+          highPass = highPassAlpha * (highPass + sample - previous);
+          previous = sample;
+          lowPass += lowPassAlpha * (highPass - lowPass);
+          sum += lowPass;
+          count += 1;
+        }
+        output[outputIndex] = count ? sum / count : 0;
+      }
+      onProgress(end / length);
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    return { signal: output, sampleRate: TARGET_RATE };
+  }
+
+  /** Elimina solo doppi onset quasi identici, mai note ribattute musicali. */
+  function dedupeEvents(events) {
+    const result = [];
+    for (const event of events) {
+      const previous = result.at(-1);
+      if (previous && event.start - previous.start < 0.045) {
+        if (event.confidence > previous.confidence) result[result.length - 1] = { ...event };
+      } else {
+        result.push({ ...event });
+      }
+    }
+    return result;
+  }
+
+  async function transcribe(buffer, options = {}) {
+    const progress = options.onProgress || (() => {});
+    const prepared = await prepare(buffer, value => progress(value * 0.22, 'prepare'));
+    const instance = createWorker();
+
+    return new Promise((resolve, reject) => {
+      instance.onmessage = message => {
+        if (message.data.type === 'progress') {
+          progress(0.22 + message.data.value * 0.78, 'analyse');
+          return;
+        }
+        if (message.data.type === 'result') {
+          instance.terminate();
+          URL.revokeObjectURL(instance.__url);
+          const normalized = Core.normalizeEvents(dedupeEvents(message.data.events), buffer.duration);
+          resolve(Core.stabilizeOctaves(normalized));
+        }
+      };
+      instance.onerror = error => {
+        instance.terminate();
+        URL.revokeObjectURL(instance.__url);
+        reject(error);
+      };
+      instance.postMessage({
+        signal: prepared.signal,
+        sampleRate: prepared.sampleRate,
+        sensitivity: Number.isFinite(options.sensitivity) ? options.sensitivity : 0.72,
+        duration: buffer.duration
+      }, [prepared.signal.buffer]);
+    });
+  }
+
+  root.ManicoTranscriber = { decode, transcribe, dedupeEvents };
+})(globalThis);
+
+
+(function initManicoApp(root) {
+  'use strict';
+
+  const Core = root.ManicoCore;
+  const Store = root.ManicoStorage;
+  const Transcriber = root.ManicoTranscriber;
+  if (!Core || !Store || !Transcriber) throw new Error('Manico modules missing');
+
+  const $ = id => document.getElementById(id);
+  const audio = $('audio');
+
+  const COPY = {
+    it: {
+      product: 'Bass Transcriber', import: 'Importa audio', eyebrow: 'Dal brano alle dita',
+      heroTitle: 'Ascolta. Trascrivi. Suona.',
+      heroText: 'Importa una registrazione, ricava la linea di basso e studiala sul manico. Audio, trascrizione e correzioni restano sul tuo dispositivo.',
+      privacy: 'Nessun upload. Tutto avviene nel browser.', dropTitle: 'Porta qui il tuo brano',
+      dropText: 'MP3, WAV, M4A, AAC, OGG o FLAC', choose: 'Scegli un file',
+      yourTracks: 'I tuoi brani', yourTracksHint: 'Riapri una trascrizione e continua da dove eri rimasto.',
+      examples: 'Esercizi inclusi', examplesHint: 'Linee essenziali pronte per provare il flusso.',
+      empty: 'Non hai ancora importato brani.', open: 'Apri', remove: 'Elimina',
+      confirmDelete: 'Eliminare questo brano e il suo audio?', notes: 'note', storage: 'Spazio locale',
+      unavailable: 'non disponibile', saved: 'Salvato sul dispositivo', demo: 'Esercizio incluso',
+      previous: 'precedente', current: 'adesso', upcoming: 'in arrivo', now: 'Adesso',
+      nextNotes: 'Prossime note', study: 'Studio', tuning: 'Accordatura', frets: 'Tasti',
+      lookahead: 'Note in anticipo', speed: 'Velocità', loop: 'Loop', setA: 'Imposta A',
+      setB: 'Imposta B', clearLoop: 'Azzera', noLoop: 'nessun loop', correction: 'Correggi la nota',
+      semitoneDown: '− semitono', semitoneUp: '+ semitono', deleteNote: 'Elimina nota',
+      splitNote: 'Dividi nota', export: 'Esporta', exportTab: 'Scarica TAB',
+      exportProject: 'Scarica progetto', confidence: 'confidenza', string: 'corda', fret: 'tasto',
+      position: 'Posizione', automatic: 'Automatica', locked: 'bloccata', notPlayable: 'fuori manico',
+      analyseTitle: 'Trascrivi la linea di basso',
+      analyseHint: 'Il file resta sul dispositivo. La trascrizione è una stima e può essere corretta dopo l’importazione.',
+      sensitivity: 'Sensibilità agli attacchi', startAnalysis: 'Trascrivi e salva', cancel: 'Annulla',
+      preparing: 'Preparazione del segnale…', analysing: 'Riconoscimento delle note…',
+      decoding: 'Decodifica dell’audio…', saving: 'Salvataggio locale…',
+      failed: 'Non sono riuscito a trascrivere questo file.',
+      noNotes: 'Non ho trovato note affidabili. Prova con una sensibilità più alta o con un mix dove il basso è più presente.',
+      persistentYes: 'archiviazione persistente', persistentNo: 'il browser può liberare spazio automaticamente',
+      importedLine: 'Linea di basso trascritta',
+      keys: 'Spazio: play/pausa · frecce: nota precedente/successiva',
+      audioMissing: 'L’audio salvato non è più disponibile, ma la trascrizione è rimasta.',
+      migrated: 'Ottave e posizioni riallineate', version: `Versione ${Core.VERSION}`
+    },
+    en: {
+      product: 'Bass Transcriber', import: 'Import audio', eyebrow: 'From the track to your fingers',
+      heroTitle: 'Listen. Transcribe. Play.',
+      heroText: 'Import a recording, extract the bass line and practise it on the fretboard. Audio, transcription and corrections stay on your device.',
+      privacy: 'No upload. Everything happens in your browser.', dropTitle: 'Drop your track here',
+      dropText: 'MP3, WAV, M4A, AAC, OGG or FLAC', choose: 'Choose a file',
+      yourTracks: 'Your tracks', yourTracksHint: 'Reopen a transcription and continue where you left off.',
+      examples: 'Included exercises', examplesHint: 'Essential lines ready to demonstrate the workflow.',
+      empty: 'You have not imported a track yet.', open: 'Open', remove: 'Delete',
+      confirmDelete: 'Delete this track and its stored audio?', notes: 'notes', storage: 'Local storage',
+      unavailable: 'unavailable', saved: 'Saved on device', demo: 'Included exercise',
+      previous: 'previous', current: 'now', upcoming: 'coming next', now: 'Now',
+      nextNotes: 'Next notes', study: 'Practice', tuning: 'Tuning', frets: 'Frets',
+      lookahead: 'Look-ahead notes', speed: 'Speed', loop: 'Loop', setA: 'Set A',
+      setB: 'Set B', clearLoop: 'Clear', noLoop: 'no loop', correction: 'Correct note',
+      semitoneDown: '− semitone', semitoneUp: '+ semitone', deleteNote: 'Delete note',
+      splitNote: 'Split note', export: 'Export', exportTab: 'Download TAB',
+      exportProject: 'Download project', confidence: 'confidence', string: 'string', fret: 'fret',
+      position: 'Position', automatic: 'Automatic', locked: 'locked', notPlayable: 'outside fretboard',
+      analyseTitle: 'Transcribe the bass line',
+      analyseHint: 'The file stays on your device. The transcription is an estimate and can be corrected after import.',
+      sensitivity: 'Attack sensitivity', startAnalysis: 'Transcribe and save', cancel: 'Cancel',
+      preparing: 'Preparing the signal…', analysing: 'Recognising notes…', decoding: 'Decoding audio…',
+      saving: 'Saving locally…', failed: 'This file could not be transcribed.',
+      noNotes: 'No reliable notes were found. Try a higher sensitivity or a mix with a more prominent bass.',
+      persistentYes: 'persistent storage', persistentNo: 'the browser may reclaim storage automatically',
+      importedLine: 'Transcribed bass line',
+      keys: 'Space: play/pause · arrows: previous/next note',
+      audioMissing: 'The stored audio is no longer available, but the transcription remains.',
+      migrated: 'Octaves and positions realigned', version: `Version ${Core.VERSION}`
+    }
+  };
+
+  const state = {
+    lang: 'it', tracks: [], track: null, currentIndex: 0, pendingFile: null,
+    cancelled: false, audioUrl: null, playing: false, animation: 0,
+    demoTimer: 0, demoClock: 0, saveTimer: 0, persistent: false, synth: null
+  };
+
+  const t = key => COPY[state.lang][key] ?? key;
+
+  function readLanguage() {
+    try {
+      const saved = localStorage.getItem('manico-language');
+      if (saved === 'en' || saved === 'it') return saved;
+    } catch (error) {}
+    return (navigator.language || '').toLowerCase().startsWith('en') ? 'en' : 'it';
+  }
+
+  function applyLanguage() {
+    document.documentElement.lang = state.lang;
+    document.querySelectorAll('[data-i18n]').forEach(element => {
+      const value = t(element.dataset.i18n);
+      if (value !== undefined) element.textContent = value;
+    });
+    $('langIt').classList.toggle('on', state.lang === 'it');
+    $('langEn').classList.toggle('on', state.lang === 'en');
+    $('versionLabel').textContent = t('version');
+    renderHome();
+    if (state.track) renderStudio(true);
+  }
+
+  function setLanguage(language) {
+    state.lang = language;
+    try { localStorage.setItem('manico-language', language); } catch (error) {}
+    applyLanguage();
+  }
+
+  function show(view) {
+    $('homeView').hidden = view !== 'home';
+    $('studioView').hidden = view !== 'studio';
+  }
+
+  function bytes(value) {
+    if (!value) return '0 MB';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let amount = value;
+    let index = 0;
+    while (amount >= 1024 && index < units.length - 1) { amount /= 1024; index += 1; }
+    return `${amount.toFixed(index > 1 ? 1 : 0)} ${units[index]}`;
+  }
+
+  async function refreshStorage() {
+    const estimate = await Store.estimate();
+    const suffix = state.persistent ? t('persistentYes') : t('persistentNo');
+    $('storageLabel').textContent = estimate.quota
+      ? `${t('storage')}: ${bytes(estimate.usage)} / ${bytes(estimate.quota)} · ${suffix}`
+      : `${t('storage')}: ${t('unavailable')} · ${suffix}`;
+  }
+
+  function tuning() {
+    return Core.TUNINGS[state.track?.settings?.tuning || '4'] || Core.TUNINGS['4'];
+  }
+
+  function stringName(index) {
+    return index !== null && tuning().open[index] !== undefined
+      ? Core.noteName(tuning().open[index]).replace(/-?\d+$/, '')
+      : '?';
+  }
+
+  function safeName(value) {
+    return String(value || 'bass-line').trim().replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '') || 'bass-line';
+  }
+
+  function download(name, text, type = 'text/plain') {
+    const url = URL.createObjectURL(new Blob([text], { type }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = name;
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 500);
+  }
+
+  function trackCard(track) {
+    const article = document.createElement('article');
+    article.className = 'track-card';
+    const cover = document.createElement('div');
+    cover.className = 'cover';
+    cover.textContent = track.demo ? track.style.slice(0, 2).toUpperCase() : 'MP3';
+    const info = document.createElement('div');
+    const title = document.createElement('h3');
+    const meta = document.createElement('div');
+    title.textContent = track.title;
+    meta.className = 'meta';
+    meta.textContent = `${track.events?.length || 0} ${t('notes')} · ${Core.formatTime(track.duration)}${track.demo ? ` · ${track.style}` : ''}`;
+    info.append(title, meta);
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+    const open = document.createElement('button');
+    open.className = 'icon-button';
+    open.textContent = '▶';
+    open.title = t('open');
+    open.onclick = () => openTrack(track.id, Boolean(track.demo));
+    actions.append(open);
+    if (!track.demo) {
+      const remove = document.createElement('button');
+      remove.className = 'icon-button danger';
+      remove.textContent = '×';
+      remove.title = t('remove');
+      remove.onclick = async event => {
+        event.stopPropagation();
+        if (!confirm(t('confirmDelete'))) return;
+        await Store.remove(track.id);
+        await loadLibrary();
+        await refreshStorage();
+      };
+      actions.append(remove);
+    }
+    article.append(cover, info, actions);
+    return article;
+  }
+
+  function renderHome() {
+    const list = $('trackList');
+    if (!list) return;
+    list.replaceChildren();
+    if (!state.tracks.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-card';
+      empty.textContent = t('empty');
+      list.append(empty);
+    } else {
+      state.tracks.forEach(track => list.append(trackCard(track)));
+    }
+    const demos = $('demoList');
+    demos.replaceChildren();
+    Core.DEMOS.forEach(definition => demos.append(trackCard(Core.createDemoTrack(definition))));
+  }
+
+  async function loadLibrary() {
+    state.tracks = await Store.list();
+    renderHome();
+  }
+
+  function stopAudio() {
+    cancelAnimationFrame(state.animation);
+    clearTimeout(state.demoTimer);
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+    if (state.audioUrl) URL.revokeObjectURL(state.audioUrl);
+    state.audioUrl = null;
+    state.playing = false;
+  }
+
+  function ensureTrackIntegrity(track) {
+    track.settings = {
+      tuning: '4', frets: 15, lookahead: 3, speed: 1, loopA: null, loopB: null,
+      ...(track.settings || {})
+    };
+    let events = Core.normalizeEvents(track.events || [], track.duration || 0);
+    let migrated = false;
+    if (!track.demo && Number(track.analysisVersion || 0) < 2) {
+      events = Core.stabilizeOctaves(events);
+      track.analysisVersion = 2;
+      migrated = true;
+    }
+    const open = (Core.TUNINGS[track.settings.tuning] || Core.TUNINGS['4']).open;
+    events.forEach(event => {
+      if (event.lockedPosition && !Core.positionMatchesMidi(event, open, track.settings.frets)) {
+        event.lockedPosition = false;
+        event.string = null;
+        event.fret = null;
+      }
+    });
+    track.events = Core.optimiseFingering(events, open, track.settings.frets);
+    return migrated;
+  }
+
+  async function openTrack(id, demo = false) {
+    stopAudio();
+    const track = demo
+      ? Core.createDemoTrack(Core.DEMOS.find(item => item.id === id) || Core.DEMOS[0])
+      : await Store.get(id);
+    if (!track) return;
+    const migrated = ensureTrackIntegrity(track);
+    state.track = track;
+    state.currentIndex = 0;
+    state.demoClock = 0;
+    if (track.audioBlob) {
+      state.audioUrl = URL.createObjectURL(track.audioBlob);
+      audio.src = state.audioUrl;
+      audio.preload = 'metadata';
+      audio.playbackRate = track.settings.speed || 1;
+    }
+    show('studio');
+    renderStudio(true);
+    startAnimation();
+    if (migrated) {
+      $('savedLabel').textContent = t('migrated');
+      scheduleSave();
+    }
+  }
+
+  function scheduleSave() {
+    if (!state.track || state.track.demo) return;
+    clearTimeout(state.saveTimer);
+    state.saveTimer = setTimeout(async () => {
+      state.track.updatedAt = Date.now();
+      await Store.save(state.track);
+      $('savedLabel').textContent = t('saved');
+      await loadLibrary();
+    }, 420);
+  }
+
+  function currentTime() {
+    return state.track?.demo ? state.demoClock : (audio.currentTime || 0);
+  }
+
+  function setTime(value) {
+    if (!state.track) return;
+    const time = Core.clamp(value, 0, state.track.duration || 0);
+    if (state.track.demo) {
+      state.demoClock = time;
+      state.currentIndex = Core.currentEventIndex(state.track.events, time, state.currentIndex);
+      if (state.playing) scheduleDemo();
+    } else {
+      audio.currentTime = time;
+      updatePlayback(true);
+    }
+  }
+
+  const selected = () => state.track?.events?.[state.currentIndex] || null;
+  const preview = () => Core.previewWindow(state.track?.events || [], state.currentIndex, state.track?.settings?.lookahead || 3);
+
+  function selectEvent(index, seek = true) {
+    if (!state.track?.events?.length) return;
+    state.currentIndex = Core.clamp(index, 0, state.track.events.length - 1);
+    if (seek) setTime(state.track.events[state.currentIndex].start);
+    renderStudio(true);
+  }
+
+  function renderTimeline() {
+    const box = $('phraseStrip');
+    box.replaceChildren();
+    const events = state.track.events;
+    const window = preview();
+    const start = Math.max(0, window.index - 7);
+    const end = Math.min(events.length, window.index + 22);
+    const futureIds = new Set(window.upcoming.map(event => event.id));
+
+    for (let index = start; index < end; index += 1) {
+      const event = events[index];
+      const button = document.createElement('button');
+      button.className = `phrase-note${event === window.current ? ' current' : futureIds.has(event.id) ? ' next' : ''}`;
+      button.dataset.eventId = event.id;
+      const strong = document.createElement('strong');
+      const small = document.createElement('small');
+      strong.textContent = Core.noteName(event.midi);
+      small.textContent = `${Core.formatTime(event.start)} · ${event.string === null ? '—' : `${stringName(event.string)}${event.fret}`}`;
+      button.append(strong, small);
+      button.onclick = () => selectEvent(index);
+      box.append(button);
+    }
+    requestAnimationFrame(() => box.querySelector('.current')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }));
+  }
+
+  function neckGeometry(strings, frets) {
+    const width = 1400;
+    const height = Math.max(430, 160 + strings * 62);
+    const nut = 282;
+    const bridge = 1326;
+    const nutTop = 94;
+    const nutBottom = height - 94;
+    const bridgeTop = 44;
+    const bridgeBottom = height - 44;
+    const topAt = x => nutTop + (bridgeTop - nutTop) * ((x - nut) / (bridge - nut));
+    const bottomAt = x => nutBottom + (bridgeBottom - nutBottom) * ((x - nut) / (bridge - nut));
+    const fretX = fret => nut + Core.fretPosition(fret, frets) * (bridge - nut);
+    const fretCenter = fret => fret === 0 ? nut - 39 : (fretX(fret - 1) + fretX(fret)) / 2;
+    const stringY = (string, x) => {
+      const display = strings - 1 - string;
+      const ratio = strings <= 1 ? 0.5 : display / (strings - 1);
+      return topAt(x) + (bottomAt(x) - topAt(x)) * ratio;
+    };
+    return { width, height, nut, bridge, nutTop, nutBottom, bridgeTop, bridgeBottom, topAt, bottomAt, fretX, fretCenter, stringY };
+  }
+
+  function markerPoint(event, geometry, strings) {
+    if (!event || event.string === null || event.fret === null) return null;
+    const x = geometry.fretCenter(event.fret);
+    return { x, y: geometry.stringY(event.string, x), key: `${event.string}:${event.fret}` };
+  }
+
+  function renderMarkerGroup(entries, point) {
+    const current = entries.find(entry => entry.kind === 'current');
+    const past = entries.find(entry => entry.kind === 'past');
+    const anchor = current || entries.find(entry => entry.kind === 'future') || past;
+    if (!anchor) return '';
+    const event = anchor.event;
+    const isCurrent = anchor.kind === 'current';
+    const isPast = anchor.kind === 'past' && !current;
+    const color = isPast ? 'var(--past)' : isCurrent ? 'var(--accent)' : 'var(--future)';
+    const radius = isCurrent ? 31 : 25;
+    const fill = isPast ? 'rgba(17,16,14,.72)' : color;
+    const textColor = isCurrent ? '#211608' : isPast ? 'var(--past)' : '#10201b';
+    let svg = `<g class="neck-marker ${anchor.kind}">`;
+    svg += `<circle cx="${point.x}" cy="${point.y}" r="${radius + 8}" fill="none" stroke="${color}" stroke-opacity=".16" stroke-width="8"/>`;
+    svg += `<circle cx="${point.x}" cy="${point.y}" r="${radius}" fill="${fill}" stroke="${color}" stroke-width="${isPast ? 4 : 2.5}"/>`;
+    svg += `<text x="${point.x}" y="${point.y + 6}" text-anchor="middle" class="marker-note" fill="${textColor}">${Core.noteName(event.midi)}</text>`;
+
+    const future = entries.filter(entry => entry.kind === 'future');
+    future.forEach((entry, index) => {
+      const offsetX = radius + 18 + index * 27;
+      const badgeX = point.x + offsetX;
+      const badgeY = point.y - radius - 10 - (index % 2) * 8;
+      svg += `<line x1="${point.x + radius * 0.55}" y1="${point.y - radius * 0.55}" x2="${badgeX - 10}" y2="${badgeY + 3}" stroke="var(--future)" stroke-opacity=".55" stroke-width="1.5"/>`;
+      svg += `<circle cx="${badgeX}" cy="${badgeY}" r="13" fill="var(--future)" stroke="#10201b" stroke-width="1.5"/>`;
+      svg += `<text x="${badgeX}" y="${badgeY + 4.5}" text-anchor="middle" class="marker-order" fill="#10201b">${entry.order}</text>`;
+    });
+    svg += '</g>';
+    return svg;
+  }
+
+  function renderFretboard() {
+    const svg = $('fretboard');
+    const track = state.track;
+    const open = tuning().open;
+    const strings = open.length;
+    const frets = track.settings.frets;
+    const geometry = neckGeometry(strings, frets);
+    const window = preview();
+    svg.setAttribute('viewBox', `0 0 ${geometry.width} ${geometry.height}`);
+
+    const boardPath = [
+      `M ${geometry.nut} ${geometry.nutTop}`,
+      `L ${geometry.bridge} ${geometry.bridgeTop}`,
+      `L ${geometry.bridge} ${geometry.bridgeBottom}`,
+      `L ${geometry.nut} ${geometry.nutBottom}`,
+      'Z'
+    ].join(' ');
+
+    let html = `
+      <defs>
+        <linearGradient id="neckWood" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#6d4931"/><stop offset=".5" stop-color="#4b3021"/><stop offset="1" stop-color="#2d1d15"/>
+        </linearGradient>
+        <linearGradient id="headWood" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#7a5238"/><stop offset="1" stop-color="#332117"/>
+        </linearGradient>
+        <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#faf4e8"/><stop offset=".45" stop-color="#9c9488"/><stop offset="1" stop-color="#4d4944"/>
+        </linearGradient>
+        <filter id="neckShadow" x="-20%" y="-30%" width="150%" height="170%">
+          <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000" flood-opacity=".55"/>
+        </filter>
+        <filter id="noteGlow" x="-80%" y="-80%" width="260%" height="260%">
+          <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#f1b54a" flood-opacity=".72"/>
+        </filter>
+        <marker id="routeArrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+          <path d="M0,0 L0,7 L8,3.5 z" fill="var(--future)" opacity=".75"/>
+        </marker>
+      </defs>`;
+
+    html += `<g filter="url(#neckShadow)">`;
+    html += `<path d="M 24 ${geometry.height * 0.34} Q 58 ${geometry.height * 0.23} 121 ${geometry.height * 0.28} L ${geometry.nut} ${geometry.nutTop + 9} L ${geometry.nut} ${geometry.nutBottom - 9} L 121 ${geometry.height * 0.72} Q 58 ${geometry.height * 0.77} 24 ${geometry.height * 0.66} Q 7 ${geometry.height * 0.5} 24 ${geometry.height * 0.34} Z" fill="url(#headWood)" stroke="#8a654b" stroke-width="3"/>`;
+    html += `<path d="M ${geometry.bridge - 16} ${geometry.bridgeTop - 25} Q ${geometry.width - 8} ${geometry.height * 0.2} ${geometry.width - 12} ${geometry.height * 0.5} Q ${geometry.width - 8} ${geometry.height * 0.8} ${geometry.bridge - 16} ${geometry.bridgeBottom + 25} Z" fill="#281b15" stroke="#4d3529" stroke-width="3"/>`;
+    html += `<path d="${boardPath}" fill="url(#neckWood)" stroke="#9b7254" stroke-width="3"/>`;
+    html += `<path d="M ${geometry.nut} ${geometry.nutTop + 7} L ${geometry.bridge} ${geometry.bridgeTop + 7}" stroke="#d8b38c" stroke-opacity=".28" stroke-width="3"/>`;
+    html += `<path d="M ${geometry.nut} ${geometry.nutBottom - 7} L ${geometry.bridge} ${geometry.bridgeBottom - 7}" stroke="#1a100c" stroke-opacity=".72" stroke-width="4"/>`;
+
+    for (let fret = 1; fret <= frets; fret += 1) {
+      const x = geometry.fretX(fret);
+      html += `<line x1="${x}" y1="${geometry.topAt(x)}" x2="${x}" y2="${geometry.bottomAt(x)}" stroke="#e1d8ca" stroke-opacity=".22" stroke-width="6"/>`;
+      html += `<line x1="${x - 1.4}" y1="${geometry.topAt(x)}" x2="${x - 1.4}" y2="${geometry.bottomAt(x)}" stroke="url(#metal)" stroke-width="3"/>`;
+    }
+
+    html += `<line x1="${geometry.nut}" y1="${geometry.nutTop - 1}" x2="${geometry.nut}" y2="${geometry.nutBottom + 1}" stroke="#f5ead8" stroke-width="9"/>`;
+    html += `<line x1="${geometry.nut + 3}" y1="${geometry.nutTop}" x2="${geometry.nut + 3}" y2="${geometry.nutBottom}" stroke="#796f63" stroke-opacity=".55" stroke-width="2"/>`;
+
+    [3, 5, 7, 9, 12, 15, 17, 19, 21, 24].filter(fret => fret <= frets).forEach(fret => {
+      const x = geometry.fretCenter(fret);
+      const y = (geometry.topAt(x) + geometry.bottomAt(x)) / 2;
+      if (fret % 12 === 0) {
+        html += `<circle cx="${x}" cy="${y - 27}" r="8" fill="#c5a97e" opacity=".78"/>`;
+        html += `<circle cx="${x}" cy="${y + 27}" r="8" fill="#c5a97e" opacity=".78"/>`;
+      } else {
+        html += `<circle cx="${x}" cy="${y}" r="8" fill="#c5a97e" opacity=".7"/>`;
+      }
+    });
+
+    open.forEach((openMidi, string) => {
+      const pegY = geometry.stringY(string, geometry.nut) + (string % 2 === 0 ? -18 : 18);
+      const pegX = 65 + (string % 2) * 62 + Math.floor(string / 2) * 18;
+      const nutY = geometry.stringY(string, geometry.nut);
+      const bridgeY = geometry.stringY(string, geometry.bridge);
+      const thickness = 1.8 + (strings - string) * 0.72;
+      html += `<line x1="${pegX}" y1="${pegY}" x2="${geometry.nut}" y2="${nutY}" stroke="#d9ccb9" stroke-opacity=".72" stroke-width="${thickness}"/>`;
+      html += `<line x1="${geometry.nut}" y1="${nutY}" x2="${geometry.bridge + 22}" y2="${bridgeY}" stroke="#e7dccb" stroke-opacity=".82" stroke-width="${thickness}"/>`;
+      html += `<circle cx="${pegX}" cy="${pegY}" r="11" fill="url(#metal)" stroke="#25211d" stroke-width="2"/>`;
+      html += `<rect x="${pegX - 17}" y="${pegY - 5}" width="12" height="10" rx="3" fill="url(#metal)"/>`;
+      html += `<text x="${geometry.nut - 24}" y="${nutY + 5}" text-anchor="end" class="string-label">${Core.noteName(openMidi).replace(/-?\d+$/, '')}</text>`;
+    });
+
+    html += `<rect x="${geometry.bridge + 8}" y="${geometry.height * 0.28}" width="32" height="${geometry.height * 0.44}" rx="7" fill="url(#metal)" stroke="#27231f" stroke-width="3"/>`;
+    html += `</g>`;
+
+    for (let fret = 0; fret <= frets; fret += 1) {
+      const x = geometry.fretCenter(fret);
+      html += `<text x="${x}" y="${geometry.height - 9}" text-anchor="middle" class="fret-number">${fret}</text>`;
+    }
+
+    const entries = [];
+    if (window.previous) entries.push({ event: window.previous, kind: 'past', order: 0 });
+    if (window.current) entries.push({ event: window.current, kind: 'current', order: 0 });
+    window.upcoming.forEach((event, index) => entries.push({ event, kind: 'future', order: index + 1 }));
+
+    const routePoints = [window.current, ...window.upcoming]
+      .map(event => markerPoint(event, geometry, strings))
+      .filter(Boolean);
+    if (routePoints.length > 1) {
+      const path = routePoints.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' ');
+      html += `<path d="${path}" fill="none" stroke="var(--future)" stroke-opacity=".48" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 10" marker-end="url(#routeArrow)"/>`;
+    }
+
+    const groups = new Map();
+    entries.forEach(entry => {
+      const point = markerPoint(entry.event, geometry, strings);
+      if (!point || entry.event.fret > frets) return;
+      if (!groups.has(point.key)) groups.set(point.key, { point, entries: [] });
+      groups.get(point.key).entries.push(entry);
+    });
+    groups.forEach(group => { html += renderMarkerGroup(group.entries, group.point); });
+
+    svg.innerHTML = html;
+  }
+
+  function populatePositionSelect(event) {
+    const select = $('positionSelect');
+    select.replaceChildren();
+    if (!event) {
+      select.disabled = true;
+      return;
+    }
+    select.disabled = false;
+    const candidates = Core.candidatePositions(event.midi, tuning().open, state.track.settings.frets);
+    const auto = document.createElement('option');
+    auto.value = 'auto';
+    const autoPosition = event.string === null ? t('notPlayable') : `${stringName(event.string)} · ${event.fret}`;
+    auto.textContent = `${t('automatic')} · ${autoPosition}`;
+    select.append(auto);
+    candidates.forEach(position => {
+      const option = document.createElement('option');
+      option.value = `${position.string}:${position.fret}`;
+      option.textContent = `${stringName(position.string)} · ${position.fret}`;
+      select.append(option);
+    });
+    select.value = event.lockedPosition ? `${event.string}:${event.fret}` : 'auto';
+  }
+
+  function renderSide() {
+    const window = preview();
+    const event = window.current;
+    $('nowNote').textContent = event ? Core.noteName(event.midi) : '—';
+    $('nowPosition').textContent = event && event.string !== null
+      ? `${t('string')} ${stringName(event.string)} · ${t('fret')} ${event.fret}${event.lockedPosition ? ` · ${t('locked')}` : ''}`
+      : t('notPlayable');
+    $('confidenceLabel').textContent = event ? `${t('confidence')} ${Math.round((event.confidence || 0) * 100)}%` : '';
+
+    const list = $('nextList');
+    list.replaceChildren();
+    window.upcoming.forEach((upcoming, index) => {
+      const row = document.createElement('div');
+      row.className = 'next-row';
+      const order = document.createElement('span');
+      order.className = 'order';
+      order.textContent = index + 1;
+      const name = document.createElement('b');
+      name.textContent = Core.noteName(upcoming.midi);
+      const position = document.createElement('span');
+      position.textContent = upcoming.string === null ? '—' : `${stringName(upcoming.string)}${upcoming.fret}`;
+      row.append(order, name, position);
+      list.append(row);
+    });
+
+    $('noteSelect').value = event ? String(event.midi) : '';
+    populatePositionSelect(event);
+    $('noteDown').disabled = !event;
+    $('noteUp').disabled = !event;
+    $('deleteNote').disabled = !event || state.track.events.length <= 1;
+    $('splitNote').disabled = !event || event.end - event.start < 0.12;
+  }
+
+  function renderLoop() {
+    const { loopA, loopB } = state.track.settings;
+    $('loopLabel').textContent = loopA !== null && loopB !== null
+      ? `A ${Core.formatTime(loopA)} — B ${Core.formatTime(loopB)}`
+      : t('noLoop');
+  }
+
+  function renderStudio(full = false) {
+    if (!state.track) return;
+    $('trackTitle').value = state.track.title;
+    $('trackMeta').textContent = `${state.track.demo ? t('demo') : t('importedLine')} · ${state.track.events.length} ${t('notes')} · ${tuning().label}`;
+    $('savedLabel').textContent = state.track.demo ? t('demo') : t('saved');
+    $('tuningSelect').value = state.track.settings.tuning;
+    $('fretsSelect').value = String(state.track.settings.frets);
+    $('lookaheadSelect').value = String(state.track.settings.lookahead);
+    $('speedSelect').value = String(state.track.settings.speed);
+    $('playButton').textContent = state.playing ? '❚❚' : '▶';
+    renderTimeline();
+    renderFretboard();
+    renderSide();
+    renderLoop();
+    if (full) updatePlayback(false);
+  }
+
+  function updatePlayback(force = false) {
+    if (!state.track) return;
+    const time = currentTime();
+    const duration = state.track.duration || audio.duration || 0;
+    $('seek').value = duration ? time / duration * 1000 : 0;
+    $('clock').textContent = `${Core.formatTime(time)} / ${Core.formatTime(duration)}`;
+    const index = Core.currentEventIndex(state.track.events, time, state.currentIndex);
+    if (index !== state.currentIndex || force) {
+      state.currentIndex = index;
+      renderTimeline();
+      renderFretboard();
+      renderSide();
+    }
+  }
+
+  function startAnimation() {
+    cancelAnimationFrame(state.animation);
+    const frame = () => {
+      if (!state.track) return;
+      const { loopA, loopB } = state.track.settings;
+      if (state.playing && loopA !== null && loopB !== null && currentTime() >= loopB) setTime(loopA);
+      updatePlayback(false);
+      state.animation = requestAnimationFrame(frame);
+    };
+    frame();
+  }
+
+  function pluck(midi, duration = 0.5) {
+    state.synth ||= new (window.AudioContext || window.webkitAudioContext)();
+    if (state.synth.state === 'suspended') state.synth.resume();
+    const now = state.synth.currentTime;
+    const frequency = 440 * Math.pow(2, (midi - 69) / 12);
+    const oscillator = state.synth.createOscillator();
+    const gain = state.synth.createGain();
+    const filter = state.synth.createBiquadFilter();
+    oscillator.type = 'triangle';
+    oscillator.frequency.value = frequency;
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1200, now);
+    filter.frequency.exponentialRampToValueAtTime(260, now + duration);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.28, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    oscillator.connect(filter);
+    filter.connect(gain);
+    gain.connect(state.synth.destination);
+    oscillator.start(now);
+    oscillator.stop(now + duration + 0.04);
+  }
+
+  function scheduleDemo() {
+    clearTimeout(state.demoTimer);
+    if (!state.playing || !state.track?.demo) return;
+    const event = selected();
+    if (!event) return;
+    state.demoClock = event.start;
+    pluck(event.midi, Math.min(0.8, (event.end - event.start) / state.track.settings.speed));
+    state.demoTimer = setTimeout(() => {
+      if (!state.playing) return;
+      if (state.currentIndex >= state.track.events.length - 1) {
+        state.playing = false;
+        state.currentIndex = 0;
+        state.demoClock = 0;
+        renderStudio(true);
+        return;
+      }
+      state.currentIndex += 1;
+      state.demoClock = state.track.events[state.currentIndex].start;
+      renderStudio(true);
+      scheduleDemo();
+    }, Math.max(70, (event.end - event.start) * 1000 / state.track.settings.speed));
+  }
+
+  async function togglePlay() {
+    if (!state.track) return;
+    state.playing = !state.playing;
+    if (state.track.demo) {
+      if (state.playing) scheduleDemo();
+      else clearTimeout(state.demoTimer);
+    } else if (state.track.audioBlob) {
+      try {
+        audio.playbackRate = state.track.settings.speed;
+        if (state.playing) await audio.play();
+        else audio.pause();
+      } catch (error) {
+        state.playing = false;
+      }
+    } else {
+      state.playing = false;
+      alert(t('audioMissing'));
+    }
+    renderStudio(false);
+  }
+
+  function recalc() {
+    state.track.events = Core.optimiseFingering(state.track.events, tuning().open, state.track.settings.frets);
+    scheduleSave();
+    renderStudio(true);
+  }
+
+  function changeMidi(value, absolute = false) {
+    const event = selected();
+    if (!event) return;
+    event.midi = Core.clamp(absolute ? Number(value) : event.midi + value, 23, 76);
+    event.rawMidi = event.midi;
+    event.confidence = 1;
+    event.edited = true;
+    event.lockedPosition = false;
+    event.string = null;
+    event.fret = null;
+    recalc();
+  }
+
+  function changePosition(value) {
+    const event = selected();
+    if (!event) return;
+    if (value === 'auto') {
+      event.lockedPosition = false;
+      event.string = null;
+      event.fret = null;
+    } else {
+      const [string, fret] = value.split(':').map(Number);
+      const candidate = Core.candidatePositions(event.midi, tuning().open, state.track.settings.frets)
+        .find(position => position.string === string && position.fret === fret);
+      if (!candidate) return;
+      event.string = string;
+      event.fret = fret;
+      event.lockedPosition = true;
+      event.edited = true;
+    }
+    recalc();
+  }
+
+  function deleteCurrent() {
+    if (!state.track || state.track.events.length <= 1) return;
+    state.track.events.splice(state.currentIndex, 1);
+    state.currentIndex = Core.clamp(state.currentIndex, 0, state.track.events.length - 1);
+    recalc();
+  }
+
+  function splitCurrent() {
+    const event = selected();
+    if (!event || event.end - event.start < 0.12) return;
+    const middle = (event.start + event.end) / 2;
+    const second = { ...event, id: `${event.id}-b-${Date.now()}`, start: middle };
+    event.end = middle;
+    state.track.events.splice(state.currentIndex + 1, 0, second);
+    recalc();
+  }
+
+  function setLoop(which) {
+    const time = currentTime();
+    if (which === 'A') state.track.settings.loopA = Math.min(time, state.track.settings.loopB ?? time);
+    else state.track.settings.loopB = Math.max(time, state.track.settings.loopA ?? 0);
+    if (state.track.settings.loopA !== null && state.track.settings.loopB !== null
+      && state.track.settings.loopB - state.track.settings.loopA < 0.15) {
+      state.track.settings.loopB = Math.min(state.track.duration, state.track.settings.loopA + 0.15);
+    }
+    scheduleSave();
+    renderLoop();
+  }
+
+  function clearLoop() {
+    state.track.settings.loopA = null;
+    state.track.settings.loopB = null;
+    scheduleSave();
+    renderLoop();
+  }
+
+  function exportProject() {
+    const track = state.track;
+    const project = {
+      manico: 5,
+      version: Core.VERSION,
+      title: track.title,
+      duration: track.duration,
+      settings: track.settings,
+      events: track.events.map(event => ({
+        start: event.start, end: event.end, midi: event.midi, note: Core.noteName(event.midi),
+        confidence: event.confidence, string: event.string, fret: event.fret,
+        lockedPosition: event.lockedPosition, edited: event.edited
+      }))
+    };
+    download(`${safeName(track.title)}.manico.json`, JSON.stringify(project, null, 2), 'application/json');
+  }
+
+  function openImport(file) {
+    if (!file) return;
+    state.pendingFile = file;
+    state.cancelled = false;
+    $('importFileName').textContent = file.name;
+    $('analysisStatus').textContent = t('analyseHint');
+    $('analysisProgress').style.width = '0%';
+    $('startAnalysis').disabled = false;
+    $('analysisModal').hidden = false;
+  }
+
+  async function startImport() {
+    const file = state.pendingFile;
+    if (!file) return;
+    state.cancelled = false;
+    $('startAnalysis').disabled = true;
+    try {
+      $('analysisStatus').textContent = t('decoding');
+      $('analysisProgress').style.width = '4%';
+      const buffer = await Transcriber.decode(file);
+      if (state.cancelled) return;
+      const events = await Transcriber.transcribe(buffer, {
+        sensitivity: Number($('sensitivity').value) / 100,
+        onProgress(value, stage) {
+          $('analysisProgress').style.width = `${Math.round(value * 100)}%`;
+          $('analysisStatus').textContent = stage === 'prepare' ? t('preparing') : t('analysing');
+        }
+      });
+      if (state.cancelled) return;
+      if (!events.length) throw new Error('NO_NOTES');
+      $('analysisStatus').textContent = t('saving');
+      const id = `track-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const now = Date.now();
+      const settings = { tuning: '4', frets: 15, lookahead: 3, speed: 1, loopA: null, loopB: null };
+      const track = {
+        id,
+        title: file.name.replace(/\.[^.]+$/, ''),
+        filename: file.name,
+        mime: file.type,
+        audioBlob: file,
+        duration: buffer.duration,
+        createdAt: now,
+        updatedAt: now,
+        analysisVersion: 2,
+        settings,
+        events: Core.optimiseFingering(events, Core.TUNINGS['4'].open, 15)
+      };
+      await Store.save(track);
+      $('analysisModal').hidden = true;
+      await loadLibrary();
+      await refreshStorage();
+      await openTrack(id, false);
+    } catch (error) {
+      $('startAnalysis').disabled = false;
+      $('analysisProgress').style.width = '0%';
+      $('analysisStatus').textContent = error?.message === 'NO_NOTES' ? t('noNotes') : t('failed');
+    }
+  }
+
+  function cancelImport() {
+    state.cancelled = true;
+    state.pendingFile = null;
+    $('analysisModal').hidden = true;
+  }
+
+  function populate() {
+    $('tuningSelect').innerHTML = Object.entries(Core.TUNINGS)
+      .map(([key, item]) => `<option value="${key}">${item.label}</option>`).join('');
+    $('fretsSelect').innerHTML = [12, 15, 18, 24]
+      .map(value => `<option value="${value}">${value}</option>`).join('');
+    $('lookaheadSelect').innerHTML = [2, 3, 4, 5]
+      .map(value => `<option value="${value}">${value}</option>`).join('');
+    $('speedSelect').innerHTML = [0.5, 0.65, 0.75, 0.85, 1, 1.1, 1.25]
+      .map(value => `<option value="${value}">${Math.round(value * 100)}%</option>`).join('');
+    $('noteSelect').innerHTML = Array.from({ length: 54 }, (_, index) => 23 + index)
+      .map(midi => `<option value="${midi}">${Core.noteName(midi)}</option>`).join('');
+  }
+
+  function bind() {
+    $('langIt').onclick = () => setLanguage('it');
+    $('langEn').onclick = () => setLanguage('en');
+    $('homeButton').onclick = () => { stopAudio(); state.track = null; show('home'); };
+    $('importTop').onclick = () => $('fileInput').click();
+    $('chooseFile').onclick = () => $('fileInput').click();
+    $('fileInput').onchange = () => { openImport($('fileInput').files[0]); $('fileInput').value = ''; };
+    $('startAnalysis').onclick = startImport;
+    $('cancelAnalysis').onclick = cancelImport;
+    $('sensitivity').oninput = event => { $('sensitivityValue').textContent = `${event.target.value}%`; };
+    const drop = $('dropzone');
+    drop.ondragover = event => { event.preventDefault(); drop.classList.add('over'); };
+    drop.ondragleave = () => drop.classList.remove('over');
+    drop.ondrop = event => { event.preventDefault(); drop.classList.remove('over'); openImport(event.dataTransfer.files[0]); };
+    $('backHome').onclick = () => { stopAudio(); state.track = null; show('home'); };
+    $('playButton').onclick = togglePlay;
+    $('seek').oninput = event => setTime(Number(event.target.value) / 1000 * (state.track?.duration || 0));
+    $('speedSelect').onchange = event => {
+      state.track.settings.speed = Number(event.target.value);
+      audio.playbackRate = state.track.settings.speed;
+      scheduleSave();
+      if (state.playing && state.track.demo) scheduleDemo();
+    };
+    $('tuningSelect').onchange = event => { state.track.settings.tuning = event.target.value; recalc(); };
+    $('fretsSelect').onchange = event => { state.track.settings.frets = Number(event.target.value); recalc(); };
+    $('lookaheadSelect').onchange = event => {
+      state.track.settings.lookahead = Number(event.target.value);
+      scheduleSave();
+      renderStudio(true);
+    };
+    $('setLoopA').onclick = () => setLoop('A');
+    $('setLoopB').onclick = () => setLoop('B');
+    $('clearLoop').onclick = clearLoop;
+    $('noteSelect').onchange = event => changeMidi(Number(event.target.value), true);
+    $('positionSelect').onchange = event => changePosition(event.target.value);
+    $('noteDown').onclick = () => changeMidi(-1);
+    $('noteUp').onclick = () => changeMidi(1);
+    $('deleteNote').onclick = deleteCurrent;
+    $('splitNote').onclick = splitCurrent;
+    $('exportTab').onclick = () => download(`${safeName(state.track.title)}.txt`, Core.renderTab(state.track, state.track.settings.tuning));
+    $('exportProject').onclick = exportProject;
+    $('trackTitle').onchange = event => { state.track.title = event.target.value.trim() || state.track.title; scheduleSave(); };
+    audio.onplay = () => { state.playing = true; renderStudio(false); };
+    audio.onpause = () => { state.playing = false; renderStudio(false); };
+    audio.onended = () => { state.playing = false; setTime(0); renderStudio(false); };
+    audio.onloadedmetadata = () => { if (state.track && !state.track.duration) state.track.duration = audio.duration; updatePlayback(true); };
+    document.addEventListener('keydown', event => {
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName) || $('studioView').hidden) return;
+      if (event.code === 'Space') { event.preventDefault(); togglePlay(); }
+      else if (event.key === 'ArrowRight') selectEvent(state.currentIndex + 1);
+      else if (event.key === 'ArrowLeft') selectEvent(state.currentIndex - 1);
+    });
+  }
+
+  async function init() {
+    state.lang = readLanguage();
+    populate();
+    bind();
+    state.persistent = await Store.persist();
+    await loadLibrary();
+    await refreshStorage();
+    applyLanguage();
+    show('home');
+  }
+
+  init().catch(error => {
+    $('fatalError').hidden = false;
+    $('fatalError').textContent = error?.message || String(error);
+    console.error(error);
+  });
 })(globalThis);

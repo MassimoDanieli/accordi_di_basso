@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="it" data-versione="5.0.0">
+<html lang="it" data-versione="5.1.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#11100e">
 <meta name="description" content="Importa una registrazione, trascrivi la linea di basso e studiala sul manico.">
 <title>Manico · Bass Transcriber</title>
-<link rel="stylesheet" href="assets/styles.css?v=5.0.0">
+<link rel="stylesheet" href="assets/styles.css?v=5.1.0">
 </head>
 <body>
 <div class="app-shell">
@@ -56,14 +56,14 @@
     <header class="section-head"><div><h2 data-i18n="examples">Esercizi inclusi</h2><p data-i18n="examplesHint">Linee essenziali pronte per provare il flusso.</p></div></header>
     <div id="demoList" class="track-grid"></div>
   </section>
-  <footer class="home-footer"><span id="versionLabel">Versione 5.0.0</span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
+  <footer class="home-footer"><span id="versionLabel">Versione 5.1.0</span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
 </main>
 
 <main id="studioView" class="view studio-view" hidden>
   <header class="studio-head">
     <button class="ghost icon-only" id="backHome" type="button" title="Library">←</button>
     <div class="studio-title">
-      <input id="trackTitle" type="text" aria-label="Track title" data-i18n-placeholder="rename">
+      <input id="trackTitle" type="text" aria-label="Track title">
       <p id="trackMeta"></p>
     </div>
     <span id="savedLabel" class="status-pill" data-i18n="saved">Salvato sul dispositivo</span>
@@ -80,7 +80,9 @@
         <label class="inline-control"><span data-i18n="speed">Velocità</span><select id="speedSelect"></select></label>
       </div>
       <div id="phraseStrip" class="phrase-strip" aria-label="Transcribed notes"></div>
-      <div class="board-area"><svg id="fretboard" viewBox="0 0 1200 390" role="img" aria-label="Bass fretboard"></svg></div>
+      <div class="board-area">
+        <div class="instrument-stage"><svg id="fretboard" viewBox="0 0 1400 470" role="img" aria-label="Bass fretboard"></svg></div>
+      </div>
       <div class="board-legend">
         <span><i class="legend-dot past"></i><span data-i18n="previous">precedente</span></span>
         <span><i class="legend-dot current"></i><span data-i18n="current">adesso</span></span>
@@ -108,7 +110,8 @@
       </section>
       <section class="panel-section">
         <h2 data-i18n="correction">Correggi la nota</h2>
-        <select id="noteSelect" class="note-select" aria-label="Note"></select>
+        <label class="stacked-control"><span data-i18n="correction">Nota</span><select id="noteSelect" class="note-select" aria-label="Note"></select></label>
+        <label class="stacked-control"><span data-i18n="position">Posizione</span><select id="positionSelect" class="note-select" aria-label="Position"></select></label>
         <div class="button-row edit-row"><button id="noteDown" type="button" data-i18n="semitoneDown">− semitono</button><button id="noteUp" type="button" data-i18n="semitoneUp">+ semitono</button></div>
         <div class="button-row edit-row"><button id="splitNote" type="button" data-i18n="splitNote">Dividi nota</button><button id="deleteNote" class="danger" type="button" data-i18n="deleteNote">Elimina nota</button></div>
       </section>
@@ -135,6 +138,6 @@
 <div id="fatalError" class="fatal" hidden></div>
 <audio id="audio" preload="metadata"></audio>
 </div>
-<script src="assets/app.bundle.js?v=5.0.0"></script>
+<script src="assets/app.bundle.js?v=5.1.0"></script>
 </body>
 </html>
