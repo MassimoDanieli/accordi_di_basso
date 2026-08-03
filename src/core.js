@@ -1,7 +1,7 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '5.3.0';
+  const VERSION = '6.0.0';
   const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
   const PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const TUNINGS = {
@@ -88,6 +88,79 @@
       0x4d, 0x54, 0x72, 0x6b, (length >>> 24) & 0xff, (length >>> 16) & 0xff, (length >>> 8) & 0xff, length & 0xff,
       ...data
     ]);
+  }
+
+  function frequencyToMidi(frequency) {
+    if (!Number.isFinite(frequency) || frequency <= 0) return null;
+    return 69 + 12 * Math.log2(frequency / 440);
+  }
+
+  function estimatePitch(samples, sampleRate) {
+    if (!samples?.length || !Number.isFinite(sampleRate)) return null;
+    let rms = 0;
+    for (let index = 0; index < samples.length; index += 1) rms += samples[index] * samples[index];
+    rms = Math.sqrt(rms / samples.length);
+    if (rms < 0.012) return null;
+    const minimumLag = Math.max(2, Math.floor(sampleRate / 420));
+    const maximumLag = Math.min(samples.length - 2, Math.ceil(sampleRate / 35));
+    let bestLag = -1;
+    let bestCorrelation = 0;
+    const correlations = new Float32Array(maximumLag + 1);
+    for (let lag = minimumLag; lag <= maximumLag; lag += 1) {
+      let sum = 0;
+      let leftEnergy = 0;
+      let rightEnergy = 0;
+      const count = samples.length - lag;
+      for (let index = 0; index < count; index += 2) {
+        const left = samples[index];
+        const right = samples[index + lag];
+        sum += left * right;
+        leftEnergy += left * left;
+        rightEnergy += right * right;
+      }
+      const correlation = sum / Math.sqrt(leftEnergy * rightEnergy || 1);
+      correlations[lag] = correlation;
+      if (correlation > bestCorrelation) {
+        bestCorrelation = correlation;
+        bestLag = lag;
+      }
+    }
+    if (bestLag < 0 || bestCorrelation < 0.55) return null;
+    const strongPeak = Math.max(0.72, bestCorrelation * 0.93);
+    for (let lag = minimumLag + 1; lag < bestLag; lag += 1) {
+      if (correlations[lag] >= strongPeak
+        && correlations[lag] >= correlations[lag - 1]
+        && correlations[lag] >= correlations[lag + 1]) {
+        bestLag = lag;
+        bestCorrelation = correlations[lag];
+        break;
+      }
+    }
+    const left = correlations[bestLag - 1] || bestCorrelation;
+    const right = correlations[bestLag + 1] || bestCorrelation;
+    const denominator = left - 2 * bestCorrelation + right;
+    const offset = denominator ? 0.5 * (left - right) / denominator : 0;
+    const frequency = sampleRate / (bestLag + clamp(offset, -1, 1));
+    return { frequency, midi: frequencyToMidi(frequency), clarity: bestCorrelation, rms };
+  }
+
+  function assessPerformance(events, time, detectedMidi, timingWindow = 0.4) {
+    if (!Array.isArray(events) || !events.length || !Number.isFinite(detectedMidi)) return null;
+    const nearby = events
+      .map((event, index) => ({ event, index, timing: time - event.start }))
+      .filter(item => Math.abs(item.timing) <= timingWindow || (time >= item.event.start && time < item.event.end));
+    const pitchMatches = nearby.filter(item => Math.abs(detectedMidi - item.event.midi) <= 0.55);
+    const match = pitchMatches.sort((left, right) => Math.abs(left.timing) - Math.abs(right.timing))[0];
+    if (match) {
+      const timingStatus = match.timing < -0.08 ? 'early' : match.timing > 0.16 ? 'late' : 'onTime';
+      return { ...match, correct: true, timingStatus, detectedMidi };
+    }
+    const expected = nearby.sort((left, right) => {
+      const leftActive = time >= left.event.start && time < left.event.end ? 0 : 1;
+      const rightActive = time >= right.event.start && time < right.event.end ? 0 : 1;
+      return leftActive - rightActive || Math.abs(left.timing) - Math.abs(right.timing);
+    })[0];
+    return expected ? { ...expected, correct: false, timingStatus: 'wrong', detectedMidi } : null;
   }
 
   function formatTime(seconds) {
@@ -391,7 +464,7 @@
   root.ManicoCore = {
     VERSION, NOTE_NAMES, TUNINGS, DEMOS, clamp, formatTime, noteName, parseNote,
     fretPosition, candidatePositions, positionMatchesMidi, validLoopBounds, updateEventTiming,
-    mergeWithNext, renderMidi, stabilizeOctaves,
+    mergeWithNext, renderMidi, frequencyToMidi, estimatePitch, assessPerformance, stabilizeOctaves,
     optimiseFingering, normalizeEvents, currentEventIndex, previewWindow,
     createDemoTrack, renderTab
   };

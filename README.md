@@ -1,8 +1,17 @@
-# Manico 5.3.0 · Bass Transcriber
+# Manico 6.0.0 · Bass Transcriber
 
 Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico rettangolare con anticipo visivo coerente delle note successive.
 
-La release 5.3.0 completa l'editor della trascrizione e rende il risultato riutilizzabile in software musicali esterni:
+La release 6.0.0 introduce **Suona con me**, una modalità di ascolto locale tramite microfono:
+
+- riconoscimento in tempo reale della nota suonata;
+- confronto con la nota attesa nella trascrizione;
+- indicazione di nota corretta, errata, anticipata o in ritardo;
+- punteggio basato sulle note riconosciute durante la sessione;
+- segnale analizzato soltanto in memoria, senza registrazioni o upload;
+- gestione chiara del permesso negato e consiglio di usare le cuffie.
+
+Mantiene l'editor completo e l'esportazione introdotti nella 5.3:
 
 - modifica numerica precisa di inizio e fine di ogni nota;
 - aggiunta di una nota nella posizione corrente del cursore;

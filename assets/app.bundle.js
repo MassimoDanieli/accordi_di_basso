@@ -1,7 +1,7 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '5.3.0';
+  const VERSION = '6.0.0';
   const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
   const PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const TUNINGS = {
@@ -88,6 +88,79 @@
       0x4d, 0x54, 0x72, 0x6b, (length >>> 24) & 0xff, (length >>> 16) & 0xff, (length >>> 8) & 0xff, length & 0xff,
       ...data
     ]);
+  }
+
+  function frequencyToMidi(frequency) {
+    if (!Number.isFinite(frequency) || frequency <= 0) return null;
+    return 69 + 12 * Math.log2(frequency / 440);
+  }
+
+  function estimatePitch(samples, sampleRate) {
+    if (!samples?.length || !Number.isFinite(sampleRate)) return null;
+    let rms = 0;
+    for (let index = 0; index < samples.length; index += 1) rms += samples[index] * samples[index];
+    rms = Math.sqrt(rms / samples.length);
+    if (rms < 0.012) return null;
+    const minimumLag = Math.max(2, Math.floor(sampleRate / 420));
+    const maximumLag = Math.min(samples.length - 2, Math.ceil(sampleRate / 35));
+    let bestLag = -1;
+    let bestCorrelation = 0;
+    const correlations = new Float32Array(maximumLag + 1);
+    for (let lag = minimumLag; lag <= maximumLag; lag += 1) {
+      let sum = 0;
+      let leftEnergy = 0;
+      let rightEnergy = 0;
+      const count = samples.length - lag;
+      for (let index = 0; index < count; index += 2) {
+        const left = samples[index];
+        const right = samples[index + lag];
+        sum += left * right;
+        leftEnergy += left * left;
+        rightEnergy += right * right;
+      }
+      const correlation = sum / Math.sqrt(leftEnergy * rightEnergy || 1);
+      correlations[lag] = correlation;
+      if (correlation > bestCorrelation) {
+        bestCorrelation = correlation;
+        bestLag = lag;
+      }
+    }
+    if (bestLag < 0 || bestCorrelation < 0.55) return null;
+    const strongPeak = Math.max(0.72, bestCorrelation * 0.93);
+    for (let lag = minimumLag + 1; lag < bestLag; lag += 1) {
+      if (correlations[lag] >= strongPeak
+        && correlations[lag] >= correlations[lag - 1]
+        && correlations[lag] >= correlations[lag + 1]) {
+        bestLag = lag;
+        bestCorrelation = correlations[lag];
+        break;
+      }
+    }
+    const left = correlations[bestLag - 1] || bestCorrelation;
+    const right = correlations[bestLag + 1] || bestCorrelation;
+    const denominator = left - 2 * bestCorrelation + right;
+    const offset = denominator ? 0.5 * (left - right) / denominator : 0;
+    const frequency = sampleRate / (bestLag + clamp(offset, -1, 1));
+    return { frequency, midi: frequencyToMidi(frequency), clarity: bestCorrelation, rms };
+  }
+
+  function assessPerformance(events, time, detectedMidi, timingWindow = 0.4) {
+    if (!Array.isArray(events) || !events.length || !Number.isFinite(detectedMidi)) return null;
+    const nearby = events
+      .map((event, index) => ({ event, index, timing: time - event.start }))
+      .filter(item => Math.abs(item.timing) <= timingWindow || (time >= item.event.start && time < item.event.end));
+    const pitchMatches = nearby.filter(item => Math.abs(detectedMidi - item.event.midi) <= 0.55);
+    const match = pitchMatches.sort((left, right) => Math.abs(left.timing) - Math.abs(right.timing))[0];
+    if (match) {
+      const timingStatus = match.timing < -0.08 ? 'early' : match.timing > 0.16 ? 'late' : 'onTime';
+      return { ...match, correct: true, timingStatus, detectedMidi };
+    }
+    const expected = nearby.sort((left, right) => {
+      const leftActive = time >= left.event.start && time < left.event.end ? 0 : 1;
+      const rightActive = time >= right.event.start && time < right.event.end ? 0 : 1;
+      return leftActive - rightActive || Math.abs(left.timing) - Math.abs(right.timing);
+    })[0];
+    return expected ? { ...expected, correct: false, timingStatus: 'wrong', detectedMidi } : null;
   }
 
   function formatTime(seconds) {
@@ -391,7 +464,7 @@
   root.ManicoCore = {
     VERSION, NOTE_NAMES, TUNINGS, DEMOS, clamp, formatTime, noteName, parseNote,
     fretPosition, candidatePositions, positionMatchesMidi, validLoopBounds, updateEventTiming,
-    mergeWithNext, renderMidi, stabilizeOctaves,
+    mergeWithNext, renderMidi, frequencyToMidi, estimatePitch, assessPerformance, stabilizeOctaves,
     optimiseFingering, normalizeEvents, currentEventIndex, previewWindow,
     createDemoTrack, renderTab
   };
@@ -611,7 +684,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
   const Store = root.ManicoStorage;
   if (!Core || !Store) throw new Error('Manico defaults require core and storage');
 
-  const VERSION = '5.3.0';
+  const VERSION = '6.0.0';
   const DEFAULT_FRETS = 12;
 
   // Version is exposed by the core object and read by the application at startup.
@@ -715,6 +788,10 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       confirmDelete: 'Eliminare questo brano e il suo audio?', notes: 'note', storage: 'Spazio locale',
       unavailable: 'non disponibile', saved: 'Salvato sul dispositivo', demo: 'Esercizio incluso',
       previous: 'precedente', current: 'adesso', upcoming: 'in arrivo', now: 'Adesso',
+      playAlong: 'Suona con me', micStart: 'Avvia microfono', micStop: 'Ferma microfono',
+      micReady: 'Usa cuffie per evitare che il brano rientri nel microfono.', micListening: 'In ascolto… suona la nota evidenziata.',
+      micDenied: 'Microfono non disponibile o permesso negato.', detected: 'Rilevata', score: 'Punteggio',
+      onTime: 'in tempo', early: 'in anticipo', late: 'in ritardo', wrong: 'nota errata',
       nextNotes: 'Prossime note', study: 'Studio', tuning: 'Accordatura', frets: 'Tasti',
       lookahead: 'Note in anticipo', speed: 'Velocità', loop: 'Loop', setA: 'Imposta A',
       setB: 'Imposta B', clearLoop: 'Azzera', noLoop: 'nessun loop', correction: 'Correggi la nota',
@@ -748,6 +825,10 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       confirmDelete: 'Delete this track and its stored audio?', notes: 'notes', storage: 'Local storage',
       unavailable: 'unavailable', saved: 'Saved on device', demo: 'Included exercise',
       previous: 'previous', current: 'now', upcoming: 'coming next', now: 'Now',
+      playAlong: 'Play along', micStart: 'Start microphone', micStop: 'Stop microphone',
+      micReady: 'Use headphones to keep the track out of the microphone.', micListening: 'Listening… play the highlighted note.',
+      micDenied: 'Microphone unavailable or permission denied.', detected: 'Detected', score: 'Score',
+      onTime: 'on time', early: 'early', late: 'late', wrong: 'wrong note',
       nextNotes: 'Next notes', study: 'Practice', tuning: 'Tuning', frets: 'Frets',
       lookahead: 'Look-ahead notes', speed: 'Speed', loop: 'Loop', setA: 'Set A',
       setB: 'Set B', clearLoop: 'Clear', noLoop: 'no loop', correction: 'Correct note',
@@ -773,7 +854,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
   const state = {
     lang: 'it', tracks: [], track: null, currentIndex: 0, pendingFile: null,
     cancelled: false, audioUrl: null, playing: false, animation: 0,
-    demoTimer: 0, demoClock: 0, saveTimer: 0, persistent: false, synth: null
+    demoTimer: 0, demoClock: 0, saveTimer: 0, persistent: false, synth: null, mic: null
   };
 
   const t = key => COPY[state.lang][key] ?? key;
@@ -913,6 +994,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
   }
 
   function stopAudio() {
+    stopMicrophone(true);
     cancelAnimationFrame(state.animation);
     clearTimeout(state.demoTimer);
     audio.pause();
@@ -1316,6 +1398,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     renderFretboard();
     renderSide();
     renderLoop();
+    renderPerformance();
     if (full) updatePlayback(false);
   }
 
@@ -1544,6 +1627,87 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     audio.playbackRate = speed;
   }
 
+  function renderPerformance(result = state.mic?.lastResult || null) {
+    const active = Boolean(state.mic);
+    const card = $('performanceCard');
+    card.className = `performance-card ${result?.timingStatus || (active ? 'listening' : 'idle')}`;
+    const expected = result?.event || selected();
+    $('performanceExpected').textContent = expected ? Core.noteName(expected.midi) : '—';
+    $('performanceDetected').textContent = result ? `${t('detected')} ${Core.noteName(Math.round(result.detectedMidi))}` : '—';
+    if (result) {
+      const timing = result.correct ? ` · ${result.timing >= 0 ? '+' : ''}${Math.round(result.timing * 1000)} ms` : '';
+      $('performanceStatus').textContent = `${t(result.timingStatus)}${timing}`;
+    } else $('performanceStatus').textContent = active ? t('micListening') : t('micReady');
+    const hits = state.mic?.hits?.size || 0;
+    const attempts = state.mic?.attempts?.size || 0;
+    $('performanceScore').textContent = `${t('score')}: ${hits} / ${attempts}`;
+    $('microphoneButton').textContent = active ? t('micStop') : t('micStart');
+    $('microphoneButton').classList.toggle('active', active);
+  }
+
+  function sampleMicrophone() {
+    const mic = state.mic;
+    if (!mic || !state.track) return;
+    mic.analyser.getFloatTimeDomainData(mic.buffer);
+    const pitch = Core.estimatePitch(mic.buffer, mic.context.sampleRate);
+    if (pitch) {
+      const result = Core.assessPerformance(state.track.events, currentTime(), pitch.midi);
+      if (result) {
+        mic.attempts.add(result.event.id);
+        if (result.correct) {
+          mic.hits.add(result.event.id);
+          const onset = mic.onsets.get(result.event.id);
+          if (onset) Object.assign(result, onset);
+          else mic.onsets.set(result.event.id, { timing: result.timing, timingStatus: result.timingStatus });
+        }
+        mic.lastResult = result;
+        renderPerformance(result);
+      }
+    }
+    mic.timer = setTimeout(sampleMicrophone, 80);
+  }
+
+  async function startMicrophone() {
+    if (state.mic) { stopMicrophone(false); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+      });
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const context = new AudioContext();
+      const source = context.createMediaStreamSource(stream);
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 4096;
+      analyser.smoothingTimeConstant = 0;
+      source.connect(analyser);
+      state.mic = {
+        stream, context, source, analyser, buffer: new Float32Array(analyser.fftSize),
+        timer: 0, hits: new Set(), attempts: new Set(), onsets: new Map(), lastResult: null
+      };
+      renderPerformance();
+      sampleMicrophone();
+      if (!state.playing) await togglePlay();
+    } catch (error) {
+      $('performanceStatus').textContent = t('micDenied');
+      $('performanceCard').className = 'performance-card wrong';
+    }
+  }
+
+  function stopMicrophone(reset = false) {
+    const mic = state.mic;
+    if (!mic) {
+      if (reset && $('performanceCard')) renderPerformance(null);
+      return;
+    }
+    clearTimeout(mic.timer);
+    mic.stream.getTracks().forEach(track => track.stop());
+    mic.context.close().catch(() => {});
+    const summary = reset ? null : { hits: mic.hits, attempts: mic.attempts, lastResult: mic.lastResult };
+    state.mic = null;
+    renderPerformance(summary?.lastResult || null);
+    if (summary) $('performanceScore').textContent = `${t('score')}: ${summary.hits.size} / ${summary.attempts.size}`;
+  }
+
   function exportProject() {
     const track = state.track;
     const project = {
@@ -1672,6 +1836,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     $('setLoopA').onclick = () => setLoop('A');
     $('setLoopB').onclick = () => setLoop('B');
     $('clearLoop').onclick = clearLoop;
+    $('microphoneButton').onclick = startMicrophone;
     $('noteSelect').onchange = event => changeMidi(Number(event.target.value), true);
     $('positionSelect').onchange = event => changePosition(event.target.value);
     $('noteDown').onclick = () => changeMidi(-1);
