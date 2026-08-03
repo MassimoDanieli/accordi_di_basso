@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const scripts = ['core', 'storage', 'transcriber', 'app']
+const scripts = ['core', 'storage', 'transcriber', 'defaults', 'app']
   .map(name => readFileSync(join(root, 'src', `${name}.js`), 'utf8'));
 const bundle = scripts.join('\n\n');
 writeFileSync(join(root, 'assets', 'app.bundle.js'), bundle);
