@@ -1,7 +1,7 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '5.1.0';
+  const VERSION = '5.1.1';
   const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
   const PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const TUNINGS = {
