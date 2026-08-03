@@ -27,11 +27,15 @@ for (const filename of ['help-it.html', 'help-en.html']) {
   const html = read(filename);
   expect(html.includes('href="./"'), `${filename}: link back to the app is missing`);
   expect(html.includes('help-it.html') && html.includes('help-en.html'), `${filename}: language links are incomplete`);
+  expect(html.includes("localStorage.setItem('manico-language','it')")
+    && html.includes("localStorage.setItem('manico-language','en')"), `${filename}: language preference is not synchronized`);
   for (const match of html.matchAll(/\?v=([^"'<>\s]+)/g)) {
     expect(match[1] === version, `${filename}: cache token ${match[1]} instead of ${version}`);
   }
 }
 expect(read('index.html').includes('id="helpLink"'), 'index.html: persistent help link is missing');
+expect(read('src/app.js').includes("window.location.assign(state.lang === 'en' ? 'help-en.html' : 'help-it.html')"),
+  'src/app.js: help click is not bound to the active language');
 expect(read('index.html').includes(`Versione ${version}`), `index.html: fallback label is not ${version}`);
 for (const filename of ['assets/app.bundle.js', 'dist/manico.html']) {
   const path = join(root, filename);
