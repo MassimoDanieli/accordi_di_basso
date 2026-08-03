@@ -19,6 +19,8 @@ La release 5.1.2 mantiene le correzioni musicali della 5.1 e rifinisce lo strume
 
 I brani già salvati mantengono il numero di tasti scelto dall'utente: il nuovo default a 12 viene applicato soltanto alle nuove importazioni e agli esercizi inclusi.
 
+La release è verificata anche nel browser: un esercizio nuovo apre il selettore su `12`, mostra i tasti `0–12` e carica la finitura grafica 5.1.2.
+
 ## Sviluppo
 
 ```bash
