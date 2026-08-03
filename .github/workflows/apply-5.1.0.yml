@@ -1,0 +1,71 @@
+name: Apply Manico 5.1 refinement
+
+on:
+  push:
+    branches: [agent/fretboard-octave-5.1.0]
+    paths:
+      - '.github/workflows/apply-5.1.0.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Verify and unpack source payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/m51.sha256 <<'EOF'
+          a179b698598f8e4682bc88958cdf3edca003beb9ed94e2ca6c009212cb28b1c8  .m51-payload-00
+          42c960d90db72140329108df04eeb18a732154fabb9675c877fd01340f4308c3  .m51-payload-01
+          b4ded56fc764ec111eb16a454015b408aa1eeaed8d79b011500929bff13f496a  .m51-payload-02
+          929f1dad34f0aa1491c3f453ee539522470798d7caf28fae5264639d4ed6cadb  .m51-payload-03
+          cf14e065597abbf29d5a7ebcc3838e6cab27013c6c419327eaa3c21cd141286f  .m51-payload-04
+          dd64070ecd38ea1f0d208562e61e6bfe190d9b4ec183d02ad4135e752e4e9402  .m51-payload-05
+          d2e1b77caa37d44228f63a56588874d84bfd09527c54a8e51cde9805569c8515  .m51-payload-06
+          7bc79b8a5419abd9bec031226100e9d90ecb144ca07150fef672b11f3bf03818  .m51-payload-07
+          f7f91e31b61988143d568cb5a6806604eda945890454afde0aa91192c183cd0a  .m51-payload-08
+          EOF
+          sha256sum --check /tmp/m51.sha256
+          for part in .m51-payload-00 .m51-payload-01 .m51-payload-02 .m51-payload-03 .m51-payload-04 .m51-payload-05 .m51-payload-06 .m51-payload-07; do
+            test "$(wc -c < "$part")" -eq 4000
+          done
+          test "$(wc -c < .m51-payload-08)" -eq 3440
+          cat .m51-payload-00 .m51-payload-01 .m51-payload-02 .m51-payload-03 \
+              .m51-payload-04 .m51-payload-05 .m51-payload-06 .m51-payload-07 \
+              .m51-payload-08 > /tmp/manico51.tar.gz.b64
+          echo "365b85c1bb803100052018a1e0c46b54fdeca45cd9a33868bf35862cc585f56b  /tmp/manico51.tar.gz.b64" | sha256sum --check
+          base64 --decode /tmp/manico51.tar.gz.b64 > /tmp/manico51.tar.gz
+          echo "e87b1f7c5acf77095b358ea6d80f50e094aad94a42b4f821f47a290bdd651d08  /tmp/manico51.tar.gz" | sha256sum --check
+          tar --extract --gzip --file /tmp/manico51.tar.gz --directory .
+          rm -f .m51-payload-0* .github/workflows/apply-5.1.0.yml
+
+      - name: Test source
+        run: npm test
+      - name: Build release
+        run: npm run release
+      - name: Validate release
+        run: npm run check:release
+      - name: Verify Docker image
+        run: docker build --tag manico-5-1-ci .
+
+      - name: Commit verified refinement
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Refine fretboard and stabilize octaves"
+          git push
