@@ -1,7 +1,7 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '5.2.0';
+  const VERSION = '5.3.0';
   const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
   const PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const TUNINGS = {
@@ -29,6 +29,65 @@
     const start = clamp(loopA, 0, duration);
     const end = clamp(loopB, 0, duration);
     return end - start >= minimum ? { start, end } : null;
+  }
+
+  function updateEventTiming(events, index, start, end, duration = Infinity) {
+    if (!Array.isArray(events) || !events[index]) return events || [];
+    const event = events[index];
+    const safeStart = clamp(Number(start) || 0, 0, duration);
+    const safeEnd = clamp(Math.max(safeStart + 0.04, Number(end) || safeStart + 0.25), 0.04, duration);
+    event.start = Math.min(safeStart, Math.max(0, safeEnd - 0.04));
+    event.end = Math.max(event.start + 0.04, safeEnd);
+    event.edited = true;
+    return events.sort((left, right) => left.start - right.start);
+  }
+
+  function mergeWithNext(events, index) {
+    if (!Array.isArray(events) || index < 0 || index >= events.length - 1) return events || [];
+    const event = events[index];
+    const next = events[index + 1];
+    event.end = Math.max(event.end, next.end);
+    event.edited = true;
+    events.splice(index + 1, 1);
+    return events;
+  }
+
+  function variableLength(value) {
+    let buffer = Number(value) & 0x7f;
+    const result = [];
+    while ((value >>= 7)) buffer = (buffer << 8) | ((value & 0x7f) | 0x80);
+    while (true) {
+      result.push(buffer & 0xff);
+      if (buffer & 0x80) buffer >>= 8;
+      else break;
+    }
+    return result;
+  }
+
+  function renderMidi(track, bpm = 120) {
+    const ticksPerBeat = 480;
+    const ticksPerSecond = ticksPerBeat * bpm / 60;
+    const timeline = [];
+    (track?.events || []).forEach(event => {
+      const note = clamp(Math.round(event.midi), 0, 127);
+      timeline.push({ tick: Math.round(Math.max(0, event.start) * ticksPerSecond), order: 1, bytes: [0x90, note, 96] });
+      timeline.push({ tick: Math.round(Math.max(event.start + 0.04, event.end) * ticksPerSecond), order: 0, bytes: [0x80, note, 0] });
+    });
+    timeline.sort((left, right) => left.tick - right.tick || left.order - right.order);
+    const tempo = Math.round(60000000 / bpm);
+    const data = [0x00, 0xff, 0x51, 0x03, (tempo >> 16) & 0xff, (tempo >> 8) & 0xff, tempo & 0xff];
+    let previous = 0;
+    timeline.forEach(item => {
+      data.push(...variableLength(item.tick - previous), ...item.bytes);
+      previous = item.tick;
+    });
+    data.push(0x00, 0xff, 0x2f, 0x00);
+    const length = data.length;
+    return new Uint8Array([
+      0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, (ticksPerBeat >> 8) & 0xff, ticksPerBeat & 0xff,
+      0x4d, 0x54, 0x72, 0x6b, (length >>> 24) & 0xff, (length >>> 16) & 0xff, (length >>> 8) & 0xff, length & 0xff,
+      ...data
+    ]);
   }
 
   function formatTime(seconds) {
@@ -331,7 +390,8 @@
 
   root.ManicoCore = {
     VERSION, NOTE_NAMES, TUNINGS, DEMOS, clamp, formatTime, noteName, parseNote,
-    fretPosition, candidatePositions, positionMatchesMidi, validLoopBounds, stabilizeOctaves,
+    fretPosition, candidatePositions, positionMatchesMidi, validLoopBounds, updateEventTiming,
+    mergeWithNext, renderMidi, stabilizeOctaves,
     optimiseFingering, normalizeEvents, currentEventIndex, previewWindow,
     createDemoTrack, renderTab
   };
@@ -551,7 +611,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
   const Store = root.ManicoStorage;
   if (!Core || !Store) throw new Error('Manico defaults require core and storage');
 
-  const VERSION = '5.2.0';
+  const VERSION = '5.3.0';
   const DEFAULT_FRETS = 12;
 
   // Version is exposed by the core object and read by the application at startup.
@@ -659,7 +719,8 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       lookahead: 'Note in anticipo', speed: 'Velocità', loop: 'Loop', setA: 'Imposta A',
       setB: 'Imposta B', clearLoop: 'Azzera', noLoop: 'nessun loop', correction: 'Correggi la nota',
       semitoneDown: '− semitono', semitoneUp: '+ semitono', deleteNote: 'Elimina nota',
-      splitNote: 'Dividi nota', export: 'Esporta', exportTab: 'Scarica TAB',
+      splitNote: 'Dividi nota', mergeNote: 'Unisci alla successiva', addNote: 'Aggiungi al cursore',
+      noteStart: 'Inizio (s)', noteEnd: 'Fine (s)', export: 'Esporta', exportTab: 'Scarica TAB', exportMidi: 'Scarica MIDI',
       exportProject: 'Scarica progetto', confidence: 'confidenza', string: 'corda', fret: 'tasto',
       position: 'Posizione', automatic: 'Automatica', locked: 'bloccata', notPlayable: 'fuori manico',
       analyseTitle: 'Trascrivi la linea di basso',
@@ -671,7 +732,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       noNotes: 'Non ho trovato note affidabili. Prova con una sensibilità più alta o con un mix dove il basso è più presente.',
       persistentYes: 'archiviazione persistente', persistentNo: 'il browser può liberare spazio automaticamente',
       importedLine: 'Linea di basso trascritta',
-      keys: 'Spazio: play/pausa · frecce: nota precedente/successiva',
+      keys: 'Spazio: play/pausa · frecce: nota precedente/successiva · [ A · ] B',
       audioMissing: 'L’audio salvato non è più disponibile, ma la trascrizione è rimasta.',
       migrated: 'Ottave e posizioni riallineate', version: `Versione ${Core.VERSION}`
     },
@@ -691,7 +752,8 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       lookahead: 'Look-ahead notes', speed: 'Speed', loop: 'Loop', setA: 'Set A',
       setB: 'Set B', clearLoop: 'Clear', noLoop: 'no loop', correction: 'Correct note',
       semitoneDown: '− semitone', semitoneUp: '+ semitone', deleteNote: 'Delete note',
-      splitNote: 'Split note', export: 'Export', exportTab: 'Download TAB',
+      splitNote: 'Split note', mergeNote: 'Merge with next', addNote: 'Add at cursor',
+      noteStart: 'Start (s)', noteEnd: 'End (s)', export: 'Export', exportTab: 'Download TAB', exportMidi: 'Download MIDI',
       exportProject: 'Download project', confidence: 'confidence', string: 'string', fret: 'fret',
       position: 'Position', automatic: 'Automatic', locked: 'locked', notPlayable: 'outside fretboard',
       analyseTitle: 'Transcribe the bass line',
@@ -702,7 +764,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       noNotes: 'No reliable notes were found. Try a higher sensitivity or a mix with a more prominent bass.',
       persistentYes: 'persistent storage', persistentNo: 'the browser may reclaim storage automatically',
       importedLine: 'Transcribed bass line',
-      keys: 'Space: play/pause · arrows: previous/next note',
+      keys: 'Space: play/pause · arrows: previous/next note · [ A · ] B',
       audioMissing: 'The stored audio is no longer available, but the transcription remains.',
       migrated: 'Octaves and positions realigned', version: `Version ${Core.VERSION}`
     }
@@ -1206,10 +1268,16 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
 
     $('noteSelect').value = event ? String(event.midi) : '';
     populatePositionSelect(event);
+    $('noteStart').value = event ? event.start.toFixed(2) : '';
+    $('noteEnd').value = event ? event.end.toFixed(2) : '';
+    $('noteStart').disabled = !event;
+    $('noteEnd').disabled = !event;
     $('noteDown').disabled = !event;
     $('noteUp').disabled = !event;
     $('deleteNote').disabled = !event || state.track.events.length <= 1;
     $('splitNote').disabled = !event || event.end - event.start < 0.12;
+    $('mergeNote').disabled = !event || state.currentIndex >= state.track.events.length - 1;
+    $('addNote').disabled = !state.track;
   }
 
   function renderLoop() {
@@ -1347,8 +1415,12 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     renderStudio(false);
   }
 
-  function recalc() {
+  function recalc(selectedId = selected()?.id) {
     state.track.events = Core.optimiseFingering(state.track.events, tuning().open, state.track.settings.frets);
+    if (selectedId) {
+      const index = state.track.events.findIndex(event => event.id === selectedId);
+      if (index >= 0) state.currentIndex = index;
+    }
     scheduleSave();
     renderStudio(true);
   }
@@ -1401,6 +1473,49 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     event.end = middle;
     state.track.events.splice(state.currentIndex + 1, 0, second);
     recalc();
+  }
+
+  function changeTiming() {
+    const event = selected();
+    if (!event) return;
+    Core.updateEventTiming(
+      state.track.events,
+      state.currentIndex,
+      Number($('noteStart').value),
+      Number($('noteEnd').value),
+      state.track.duration
+    );
+    recalc(event.id);
+  }
+
+  function mergeCurrent() {
+    const event = selected();
+    if (!event || state.currentIndex >= state.track.events.length - 1) return;
+    Core.mergeWithNext(state.track.events, state.currentIndex);
+    recalc(event.id);
+  }
+
+  function addAtCursor() {
+    if (!state.track) return;
+    const start = Core.clamp(currentTime(), 0, Math.max(0, state.track.duration - 0.04));
+    const next = state.track.events.find(event => event.start > start + 0.01);
+    const end = Math.min(state.track.duration, next ? next.start : start + 0.25);
+    const midi = selected()?.midi ?? 40;
+    const event = {
+      id: `added-${Date.now()}`,
+      start,
+      end: Math.max(start + 0.04, end),
+      midi,
+      rawMidi: midi,
+      confidence: 1,
+      string: null,
+      fret: null,
+      lockedPosition: false,
+      edited: true
+    };
+    state.track.events.push(event);
+    state.track.events.sort((left, right) => left.start - right.start);
+    recalc(event.id);
   }
 
   function setLoop(which) {
@@ -1563,7 +1678,12 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     $('noteUp').onclick = () => changeMidi(1);
     $('deleteNote').onclick = deleteCurrent;
     $('splitNote').onclick = splitCurrent;
+    $('noteStart').onchange = changeTiming;
+    $('noteEnd').onchange = changeTiming;
+    $('mergeNote').onclick = mergeCurrent;
+    $('addNote').onclick = addAtCursor;
     $('exportTab').onclick = () => download(`${safeName(state.track.title)}.txt`, Core.renderTab(state.track, state.track.settings.tuning));
+    $('exportMidi').onclick = () => download(`${safeName(state.track.title)}.mid`, Core.renderMidi(state.track), 'audio/midi');
     $('exportProject').onclick = exportProject;
     $('trackTitle').onchange = event => { state.track.title = event.target.value.trim() || state.track.title; scheduleSave(); };
     audio.onplay = () => { state.playing = true; renderStudio(false); };

@@ -5,7 +5,7 @@
   const Store = root.ManicoStorage;
   if (!Core || !Store) throw new Error('Manico defaults require core and storage');
 
-  const VERSION = '5.2.0';
+  const VERSION = '5.3.0';
   const DEFAULT_FRETS = 12;
 
   // Version is exposed by the core object and read by the application at startup.

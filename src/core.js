@@ -1,7 +1,7 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '5.2.0';
+  const VERSION = '5.3.0';
   const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
   const PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const TUNINGS = {
@@ -29,6 +29,65 @@
     const start = clamp(loopA, 0, duration);
     const end = clamp(loopB, 0, duration);
     return end - start >= minimum ? { start, end } : null;
+  }
+
+  function updateEventTiming(events, index, start, end, duration = Infinity) {
+    if (!Array.isArray(events) || !events[index]) return events || [];
+    const event = events[index];
+    const safeStart = clamp(Number(start) || 0, 0, duration);
+    const safeEnd = clamp(Math.max(safeStart + 0.04, Number(end) || safeStart + 0.25), 0.04, duration);
+    event.start = Math.min(safeStart, Math.max(0, safeEnd - 0.04));
+    event.end = Math.max(event.start + 0.04, safeEnd);
+    event.edited = true;
+    return events.sort((left, right) => left.start - right.start);
+  }
+
+  function mergeWithNext(events, index) {
+    if (!Array.isArray(events) || index < 0 || index >= events.length - 1) return events || [];
+    const event = events[index];
+    const next = events[index + 1];
+    event.end = Math.max(event.end, next.end);
+    event.edited = true;
+    events.splice(index + 1, 1);
+    return events;
+  }
+
+  function variableLength(value) {
+    let buffer = Number(value) & 0x7f;
+    const result = [];
+    while ((value >>= 7)) buffer = (buffer << 8) | ((value & 0x7f) | 0x80);
+    while (true) {
+      result.push(buffer & 0xff);
+      if (buffer & 0x80) buffer >>= 8;
+      else break;
+    }
+    return result;
+  }
+
+  function renderMidi(track, bpm = 120) {
+    const ticksPerBeat = 480;
+    const ticksPerSecond = ticksPerBeat * bpm / 60;
+    const timeline = [];
+    (track?.events || []).forEach(event => {
+      const note = clamp(Math.round(event.midi), 0, 127);
+      timeline.push({ tick: Math.round(Math.max(0, event.start) * ticksPerSecond), order: 1, bytes: [0x90, note, 96] });
+      timeline.push({ tick: Math.round(Math.max(event.start + 0.04, event.end) * ticksPerSecond), order: 0, bytes: [0x80, note, 0] });
+    });
+    timeline.sort((left, right) => left.tick - right.tick || left.order - right.order);
+    const tempo = Math.round(60000000 / bpm);
+    const data = [0x00, 0xff, 0x51, 0x03, (tempo >> 16) & 0xff, (tempo >> 8) & 0xff, tempo & 0xff];
+    let previous = 0;
+    timeline.forEach(item => {
+      data.push(...variableLength(item.tick - previous), ...item.bytes);
+      previous = item.tick;
+    });
+    data.push(0x00, 0xff, 0x2f, 0x00);
+    const length = data.length;
+    return new Uint8Array([
+      0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, (ticksPerBeat >> 8) & 0xff, ticksPerBeat & 0xff,
+      0x4d, 0x54, 0x72, 0x6b, (length >>> 24) & 0xff, (length >>> 16) & 0xff, (length >>> 8) & 0xff, length & 0xff,
+      ...data
+    ]);
   }
 
   function formatTime(seconds) {
@@ -331,7 +390,8 @@
 
   root.ManicoCore = {
     VERSION, NOTE_NAMES, TUNINGS, DEMOS, clamp, formatTime, noteName, parseNote,
-    fretPosition, candidatePositions, positionMatchesMidi, validLoopBounds, stabilizeOctaves,
+    fretPosition, candidatePositions, positionMatchesMidi, validLoopBounds, updateEventTiming,
+    mergeWithNext, renderMidi, stabilizeOctaves,
     optimiseFingering, normalizeEvents, currentEventIndex, previewWindow,
     createDemoTrack, renderTab
   };
