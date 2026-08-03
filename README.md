@@ -10,6 +10,9 @@ La release 5.1.1 mantiene le correzioni musicali della 5.1 e aggiorna il rendere
 - posizioni sempre coerenti con il MIDI assoluto della nota;
 - manico rettangolare a larghezza costante, senza paletta o sagome decorative;
 - legno chiaro, tasti metallici, corde differenziate e numeri dei tasti in alto;
+- proporzioni compatte su desktop, senza spazio vuoto sotto il manico;
+- scorrimento orizzontale su mobile, così tasti e note non vengono compressi;
+- apertura dello studio sempre dall'inizio della pagina;
 - scelta manuale e bloccabile di corda e tasto.
 
 ## Sviluppo
