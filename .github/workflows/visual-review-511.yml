@@ -1,19 +1,21 @@
 name: Visual review 5.1.1
 
 on:
-  push:
-    branches: [agent/rectangular-fretboard-5.1.1]
-    paths:
-      - '.github/workflows/visual-review-511.yml'
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
 
 jobs:
   capture:
+    if: github.head_ref == 'agent/rectangular-fretboard-5.1.1'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
       - uses: actions/setup-node@v6
         with:
           node-version: 22
