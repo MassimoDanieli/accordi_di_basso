@@ -16,12 +16,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+      - name: Capture source snapshot
+        run: tar --exclude=.git --exclude=node_modules --exclude='visual-review-*.png' -czf source-snapshot.tar.gz .
       - uses: actions/setup-node@v6
         with:
           node-version: 22
           package-manager-cache: false
       - name: Install browser driver
-        run: npm install --no-save --ignore-scripts playwright-core@1.55.0
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright-core@1.55.0
       - name: Start local site
         run: |
           npx --yes serve . -l 8080 > /tmp/manico-serve.log 2>&1 &
@@ -53,13 +55,14 @@ jobs:
           await page.goto('http://127.0.0.1:8080/', { waitUntil: 'networkidle' });
           await page.locator('#demoList .icon-button').first().click();
           await page.locator('#fretboard').waitFor({ state: 'visible' });
-          await page.screenshot({ path: 'visual-review-desktop.png', fullPage: true });
+          await page.screenshot({ path: 'visual-review-desktop.png' });
+          await page.locator('.instrument-stage').screenshot({ path: 'visual-review-fretboard.png' });
 
           await page.setViewportSize({ width: 390, height: 844 });
           await page.reload({ waitUntil: 'networkidle' });
           await page.locator('#demoList .icon-button').first().click();
           await page.locator('#fretboard').waitFor({ state: 'visible' });
-          await page.screenshot({ path: 'visual-review-mobile.png', fullPage: true });
+          await page.screenshot({ path: 'visual-review-mobile.png' });
           await browser.close();
           JS
           node capture-visual-review.mjs
@@ -68,7 +71,9 @@ jobs:
         with:
           name: manico-5.1.1-visual-review
           path: |
+            source-snapshot.tar.gz
             visual-review-desktop.png
+            visual-review-fretboard.png
             visual-review-mobile.png
           if-no-files-found: error
           retention-days: 3
