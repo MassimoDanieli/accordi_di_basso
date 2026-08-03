@@ -17,7 +17,9 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
       - name: Capture source snapshot
-        run: tar --exclude=.git --exclude=node_modules --exclude='visual-review-*.png' -czf source-snapshot.tar.gz .
+        run: |
+          tar --exclude=.git --exclude=node_modules --exclude='visual-review-*.png' -czf /tmp/source-snapshot.tar.gz .
+          cp /tmp/source-snapshot.tar.gz source-snapshot.tar.gz
       - uses: actions/setup-node@v6
         with:
           node-version: 22
