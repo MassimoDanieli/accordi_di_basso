@@ -40,6 +40,8 @@
     return save(track);
   };
 
+  if (typeof document === 'undefined' || !document.head) return;
+
   // A restrained finish: warm maple, lighter metal and cleaner note markers.
   const style = document.createElement('style');
   style.id = 'manico-fretboard-finish-512';
