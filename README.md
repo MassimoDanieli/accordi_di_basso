@@ -15,6 +15,8 @@ La release 5.1.1 mantiene le correzioni musicali della 5.1 e aggiorna il rendere
 - apertura dello studio sempre dall'inizio della pagina;
 - scelta manuale e bloccabile di corda e tasto.
 
+La validazione finale comprende test musicali, build della release, immagine Docker e controlli visuali automatizzati a 1440 × 980 e 390 × 844.
+
 ## Sviluppo
 
 ```bash
