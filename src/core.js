@@ -1,7 +1,10 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '6.1.1';
+  const VERSION = '6.2.0';
+  // New imports and included exercises start in the accompaniment-friendly 0-12 range;
+  // existing projects keep the range their owner chose.
+  const DEFAULT_FRETS = 12;
   const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
   const PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const TUNINGS = {
@@ -414,7 +417,7 @@
     };
   }
 
-  function createDemoTrack(definition, tuning = '4') {
+  function createDemoTrack(definition, tuning = '4', frets = DEFAULT_FRETS) {
     const beat = 60 / definition.bpm;
     let time = 0;
     const events = definition.notes.map((name, index) => {
@@ -434,8 +437,8 @@
       createdAt: 0,
       updatedAt: 0,
       analysisVersion: 2,
-      settings: { tuning, frets: 15, lookahead: 3, speed: 1, loopA: null, loopB: null },
-      events: optimiseFingering(events, TUNINGS[tuning].open, 15)
+      settings: { tuning, frets, lookahead: 3, speed: 1, loopA: null, loopB: null },
+      events: optimiseFingering(events, TUNINGS[tuning].open, frets)
     };
   }
 
@@ -462,7 +465,7 @@
   }
 
   root.ManicoCore = {
-    VERSION, NOTE_NAMES, TUNINGS, DEMOS, clamp, formatTime, noteName, parseNote,
+    VERSION, DEFAULT_FRETS, NOTE_NAMES, TUNINGS, DEMOS, clamp, formatTime, noteName, parseNote,
     fretPosition, candidatePositions, positionMatchesMidi, validLoopBounds, updateEventTiming,
     mergeWithNext, renderMidi, frequencyToMidi, estimatePitch, assessPerformance, stabilizeOctaves,
     optimiseFingering, normalizeEvents, currentEventIndex, previewWindow,

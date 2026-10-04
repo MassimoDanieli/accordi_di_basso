@@ -1,7 +1,10 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '6.1.1';
+  const VERSION = '6.2.0';
+  // New imports and included exercises start in the accompaniment-friendly 0-12 range;
+  // existing projects keep the range their owner chose.
+  const DEFAULT_FRETS = 12;
   const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
   const PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const TUNINGS = {
@@ -414,7 +417,7 @@
     };
   }
 
-  function createDemoTrack(definition, tuning = '4') {
+  function createDemoTrack(definition, tuning = '4', frets = DEFAULT_FRETS) {
     const beat = 60 / definition.bpm;
     let time = 0;
     const events = definition.notes.map((name, index) => {
@@ -434,8 +437,8 @@
       createdAt: 0,
       updatedAt: 0,
       analysisVersion: 2,
-      settings: { tuning, frets: 15, lookahead: 3, speed: 1, loopA: null, loopB: null },
-      events: optimiseFingering(events, TUNINGS[tuning].open, 15)
+      settings: { tuning, frets, lookahead: 3, speed: 1, loopA: null, loopB: null },
+      events: optimiseFingering(events, TUNINGS[tuning].open, frets)
     };
   }
 
@@ -462,7 +465,7 @@
   }
 
   root.ManicoCore = {
-    VERSION, NOTE_NAMES, TUNINGS, DEMOS, clamp, formatTime, noteName, parseNote,
+    VERSION, DEFAULT_FRETS, NOTE_NAMES, TUNINGS, DEMOS, clamp, formatTime, noteName, parseNote,
     fretPosition, candidatePositions, positionMatchesMidi, validLoopBounds, updateEventTiming,
     mergeWithNext, renderMidi, frequencyToMidi, estimatePitch, assessPerformance, stabilizeOctaves,
     optimiseFingering, normalizeEvents, currentEventIndex, previewWindow,
@@ -607,7 +610,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
 
   async function decode(file) {
     const context = new (window.AudioContext || window.webkitAudioContext)();
-    try { return await context.decodeAudioData((await file.arrayBuffer()).slice(0)); }
+    try { return await context.decodeAudioData(await file.arrayBuffer()); }
     finally { await context.close(); }
   }
 
@@ -700,93 +703,6 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
 })(globalThis);
 
 
-(function initManicoDefaults(root) {
-  'use strict';
-
-  const Core = root.ManicoCore;
-  const Store = root.ManicoStorage;
-  if (!Core || !Store) throw new Error('Manico defaults require core and storage');
-
-  const VERSION = '6.1.1';
-  const DEFAULT_FRETS = 12;
-
-  // Version is exposed by the core object and read by the application at startup.
-  Core.VERSION = VERSION;
-
-  // Included exercises start in the accompaniment-friendly 0-12 range.
-  const createDemoTrack = Core.createDemoTrack.bind(Core);
-  Core.createDemoTrack = function createTwelveFretDemo(definition, tuning = '4') {
-    const track = createDemoTrack(definition, tuning);
-    track.settings = { ...track.settings, frets: DEFAULT_FRETS };
-    const open = Core.TUNINGS[track.settings.tuning || tuning]?.open || Core.TUNINGS['4'].open;
-    track.events = Core.optimiseFingering(track.events || [], open, DEFAULT_FRETS);
-    return track;
-  };
-
-  // The importer still builds a transient track object internally. Normalize only
-  // genuinely new tracks before their first IndexedDB write; existing 15/18/24-fret
-  // projects keep the user's selected range.
-  const save = Store.save.bind(Store);
-  Store.save = async function saveWithTwelveFretDefault(track) {
-    const isNewTrack = track
-      && !track.demo
-      && Number(track.createdAt) > 0
-      && Number(track.createdAt) === Number(track.updatedAt)
-      && Number(track.settings?.frets) === 15;
-
-    if (isNewTrack) {
-      track.settings = { ...track.settings, frets: DEFAULT_FRETS };
-      const open = Core.TUNINGS[track.settings.tuning || '4']?.open || Core.TUNINGS['4'].open;
-      track.events = Core.optimiseFingering(track.events || [], open, DEFAULT_FRETS);
-    }
-    return save(track);
-  };
-
-  if (typeof document === 'undefined' || !document.head) return;
-
-  // A restrained finish: warm maple, lighter metal and cleaner note markers.
-  const style = document.createElement('style');
-  style.id = 'manico-fretboard-finish-512';
-  style.textContent = `
-    .instrument-stage {
-      background: linear-gradient(180deg, rgba(248, 231, 205, .035), rgba(0, 0, 0, .18));
-      border-color: rgba(239, 216, 181, .08);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035), 0 12px 34px rgba(0, 0, 0, .16);
-    }
-    #fretboard stop[stop-color="#efd4a1"] { stop-color: #efd7aa; }
-    #fretboard stop[stop-color="#dfbd82"] { stop-color: #d9b77d; }
-    #fretboard stop[stop-color="#c9985b"] { stop-color: #bd874f; }
-    #fretboard stop[stop-color="#6f6a62"] { stop-color: #5d5953; }
-    #fretboard stop[stop-color="#f1ede5"] { stop-color: #f7f2e9; }
-    #fretboard stop[stop-color="#756f67"] { stop-color: #68625b; }
-    #fretboard [fill="#f8f4ea"] { fill: #f3eee6; }
-    #fretboard [stroke="#96764f"] { stroke: #856b52; }
-    #fretboard [stroke="#b59b78"] { stroke: #c4ad8e; }
-    #fretboard [stroke="#8c6e4b"] { stroke: #72563e; }
-    #fretboard [stroke="#fff7e8"] { stroke: #fff8ec; }
-    #fretboard [stroke="#6f4d2f"] { stroke: #5f422d; }
-    #fretboard [fill="#8f7045"] { fill: #7d5d38; opacity: .55; }
-    #fretboard .string-label { fill: #3a3026; font-size: 22px; filter: none; }
-    #fretboard .fret-number { fill: #5f554a; font-size: 17px; font-weight: 750; }
-    #fretboard .neck-marker { filter: drop-shadow(0 3px 5px rgba(38, 25, 15, .24)); }
-    #fretboard .neck-marker.current { filter: url(#noteGlow) drop-shadow(0 4px 7px rgba(38, 25, 15, .30)); }
-    #fretboard .marker-note {
-      font-size: 15px;
-      letter-spacing: -.02em;
-      paint-order: stroke;
-      stroke: rgba(255, 255, 255, .22);
-      stroke-width: .8px;
-    }
-    #fretboard .marker-order { font-size: 11px; }
-    @media (max-width: 760px) {
-      .instrument-stage { width: 820px; min-width: 820px; }
-      #fretboard { width: 800px; min-width: 800px; }
-    }
-  `;
-  document.head.appendChild(style);
-})(globalThis);
-
-
 (function initManicoApp(root) {
   'use strict';
 
@@ -801,6 +717,8 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
   const COPY = {
     it: {
       product: 'Bass Transcriber', sister: 'Bass Chord Lab: accordi sulla tastiera', import: 'Importa audio', eyebrow: 'Dal brano alle dita',
+      library: 'Torna ai brani', trackTitle: 'Titolo del brano', transcribedNotes: 'Note trascritte', fretboard: 'Manico del basso',
+      positionLabel: 'Posizione nel brano', help: 'Aiuto',
       heroTitle: 'Ascolta. Trascrivi. Suona.',
       heroText: 'Importa una registrazione, ricava la linea di basso e studiala sul manico. Audio, trascrizione e correzioni restano sul tuo dispositivo.',
       privacy: 'Nessun upload. Tutto avviene nel browser.', dropTitle: 'Porta qui il tuo brano',
@@ -838,6 +756,8 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     },
     en: {
       product: 'Bass Transcriber', sister: 'Bass Chord Lab: chords on the fretboard', import: 'Import audio', eyebrow: 'From the track to your fingers',
+      library: 'Back to your tracks', trackTitle: 'Track title', transcribedNotes: 'Transcribed notes', fretboard: 'Bass fretboard',
+      positionLabel: 'Position in the track', help: 'Help',
       heroTitle: 'Listen. Transcribe. Play.',
       heroText: 'Import a recording, extract the bass line and practise it on the fretboard. Audio, transcription and corrections stay on your device.',
       privacy: 'No upload. Everything happens in your browser.', dropTitle: 'Drop your track here',
@@ -896,10 +816,14 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       const value = t(element.dataset.i18n);
       if (value !== undefined) element.textContent = value;
     });
+    document.querySelectorAll('[data-i18n-aria]').forEach(element => {
+      element.setAttribute('aria-label', t(element.dataset.i18nAria));
+      if (element.hasAttribute('title')) element.title = t(element.dataset.i18nAria);
+    });
     $('langIt').classList.toggle('on', state.lang === 'it');
     $('langEn').classList.toggle('on', state.lang === 'en');
     $('helpLink').href = state.lang === 'en' ? 'help-en.html' : 'help-it.html';
-    $('helpLink').title = state.lang === 'en' ? 'Help' : 'Aiuto';
+    $('helpLink').title = t('help');
     $('helpLink').setAttribute('aria-label', $('helpLink').title);
     $('versionLabel').textContent = t('version');
     renderHome();
@@ -963,7 +887,9 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     article.className = 'track-card';
     const cover = document.createElement('div');
     cover.className = 'cover';
-    cover.textContent = track.demo ? track.style.slice(0, 2).toUpperCase() : 'MP3';
+    cover.textContent = track.demo
+      ? track.style.slice(0, 2).toUpperCase()
+      : (track.filename || '').match(/\.([a-z0-9]{2,4})$/i)?.[1].toUpperCase() || 'AUDIO';
     const info = document.createElement('div');
     const title = document.createElement('h3');
     const meta = document.createElement('div');
@@ -1104,8 +1030,8 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       if (state.playing) scheduleDemo();
     } else {
       audio.currentTime = time;
-      updatePlayback(true);
     }
+    updatePlayback(true);
   }
 
   const selected = () => state.track?.events?.[state.currentIndex] || null;
@@ -1216,27 +1142,25 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     return svg;
   }
 
-  function renderFretboard() {
-    const svg = $('fretboard');
-    const track = state.track;
-    const open = tuning().open;
-    const strings = open.length;
-    const frets = track.settings.frets;
-    const geometry = neckGeometry(strings, frets);
-    const window = preview();
-    svg.setAttribute('viewBox', `0 0 ${geometry.width} ${geometry.height}`);
+  // The neck itself only depends on tuning and fret count, so it is drawn once per combination;
+  // playback then rewrites just the markers on every note.
+  const boardCache = { key: '', html: '' };
 
+  function renderBoard(open, frets, geometry) {
+    const key = `${open.join(',')}|${frets}`;
+    if (boardCache.key === key) return boardCache.html;
+    const strings = open.length;
     let html = `
       <defs>
         <linearGradient id="boardWood" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#efd4a1"/>
-          <stop offset=".48" stop-color="#dfbd82"/>
-          <stop offset="1" stop-color="#c9985b"/>
+          <stop offset="0" stop-color="#efd7aa"/>
+          <stop offset=".48" stop-color="#d9b77d"/>
+          <stop offset="1" stop-color="#bd874f"/>
         </linearGradient>
         <linearGradient id="fretMetal" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#6f6a62"/>
-          <stop offset=".42" stop-color="#f1ede5"/>
-          <stop offset="1" stop-color="#756f67"/>
+          <stop offset="0" stop-color="#5d5953"/>
+          <stop offset=".42" stop-color="#f7f2e9"/>
+          <stop offset="1" stop-color="#68625b"/>
         </linearGradient>
         <linearGradient id="stringMetal" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#fbf8f0"/>
@@ -1258,12 +1182,12 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     const boardHeight = geometry.boardBottom - geometry.boardTop;
 
     html += `<g filter="url(#boardShadow)">`;
-    html += `<rect x="${geometry.outerLeft}" y="${geometry.rulerTop}" width="${outerWidth}" height="${geometry.boardBottom - geometry.rulerTop}" rx="14" fill="#f8f4ea" stroke="#96764f" stroke-width="2.5"/>`;
-    html += `<path d="M ${geometry.outerLeft + 14} ${geometry.rulerBottom} H ${geometry.outerRight - 14}" stroke="#b59b78" stroke-width="2"/>`;
+    html += `<rect x="${geometry.outerLeft}" y="${geometry.rulerTop}" width="${outerWidth}" height="${geometry.boardBottom - geometry.rulerTop}" rx="14" fill="#f3eee6" stroke="#856b52" stroke-width="2.5"/>`;
+    html += `<path d="M ${geometry.outerLeft + 14} ${geometry.rulerBottom} H ${geometry.outerRight - 14}" stroke="#c4ad8e" stroke-width="2"/>`;
     html += `<rect x="${geometry.outerLeft}" y="${geometry.boardTop}" width="${outerWidth}" height="${boardHeight}" fill="url(#boardWood)"/>`;
-    html += `<line x1="${geometry.stringStart}" y1="${geometry.boardTop}" x2="${geometry.stringStart}" y2="${geometry.boardBottom}" stroke="#8c6e4b" stroke-opacity=".58" stroke-width="2"/>`;
-    html += `<line x1="${geometry.outerLeft}" y1="${geometry.boardTop}" x2="${geometry.outerRight}" y2="${geometry.boardTop}" stroke="#fff7e8" stroke-opacity=".7" stroke-width="2"/>`;
-    html += `<line x1="${geometry.outerLeft}" y1="${geometry.boardBottom}" x2="${geometry.outerRight}" y2="${geometry.boardBottom}" stroke="#6f4d2f" stroke-opacity=".72" stroke-width="3"/>`;
+    html += `<line x1="${geometry.stringStart}" y1="${geometry.boardTop}" x2="${geometry.stringStart}" y2="${geometry.boardBottom}" stroke="#72563e" stroke-opacity=".58" stroke-width="2"/>`;
+    html += `<line x1="${geometry.outerLeft}" y1="${geometry.boardTop}" x2="${geometry.outerRight}" y2="${geometry.boardTop}" stroke="#fff8ec" stroke-opacity=".7" stroke-width="2"/>`;
+    html += `<line x1="${geometry.outerLeft}" y1="${geometry.boardBottom}" x2="${geometry.outerRight}" y2="${geometry.boardBottom}" stroke="#5f422d" stroke-opacity=".72" stroke-width="3"/>`;
 
     for (let fret = 1; fret <= frets; fret += 1) {
       const x = geometry.fretX(fret);
@@ -1278,17 +1202,17 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       const x = geometry.fretCenter(fret);
       const y = (geometry.boardTop + geometry.boardBottom) / 2;
       if (fret % 12 === 0) {
-        html += `<circle cx="${x}" cy="${y - 29}" r="7.5" fill="#8f7045" opacity=".64"/>`;
-        html += `<circle cx="${x}" cy="${y + 29}" r="7.5" fill="#8f7045" opacity=".64"/>`;
+        html += `<circle cx="${x}" cy="${y - 29}" r="7.5" fill="#7d5d38" opacity=".55"/>`;
+        html += `<circle cx="${x}" cy="${y + 29}" r="7.5" fill="#7d5d38" opacity=".55"/>`;
       } else {
-        html += `<circle cx="${x}" cy="${y}" r="7.5" fill="#8f7045" opacity=".58"/>`;
+        html += `<circle cx="${x}" cy="${y}" r="7.5" fill="#7d5d38" opacity=".55"/>`;
       }
     });
 
     open.forEach((openMidi, string) => {
       const y = geometry.stringY(string);
       const thickness = 1.7 + (strings - string) * 0.72;
-      html += `<text x="${geometry.stringStart - 23}" y="${y + 7}" text-anchor="end" class="string-label" fill="#2b241d">${Core.noteName(openMidi).replace(/-?\d+$/, '')}</text>`;
+      html += `<text x="${geometry.stringStart - 23}" y="${y + 7}" text-anchor="end" class="string-label" fill="#3a3026">${Core.noteName(openMidi).replace(/-?\d+$/, '')}</text>`;
       html += `<line x1="${geometry.stringStart}" y1="${y + 2}" x2="${geometry.bridge}" y2="${y + 2}" stroke="#4e4033" stroke-opacity=".44" stroke-width="${thickness + 2.2}"/>`;
       html += `<line x1="${geometry.stringStart}" y1="${y}" x2="${geometry.bridge}" y2="${y}" stroke="url(#stringMetal)" stroke-width="${thickness}"/>`;
     });
@@ -1298,8 +1222,32 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       ? Array.from({ length: frets + 1 }, (_, index) => index)
       : [0, 1, 2, 3, 4, 5, 7, 9, 12, 15, 17, 19, 21, 24].filter(fret => fret <= frets);
     numberFrets.forEach(fret => {
-      html += `<text x="${geometry.fretCenter(fret)}" y="52" text-anchor="middle" class="fret-number" fill="#2d2822">${fret}</text>`;
+      html += `<text x="${geometry.fretCenter(fret)}" y="52" text-anchor="middle" class="fret-number" fill="#5f554a">${fret}</text>`;
     });
+    boardCache.key = key;
+    boardCache.html = html;
+    return html;
+  }
+
+  function renderFretboard() {
+    const svg = $('fretboard');
+    const open = tuning().open;
+    const strings = open.length;
+    const frets = state.track.settings.frets;
+    const geometry = neckGeometry(strings, frets);
+    const window = preview();
+    svg.setAttribute('viewBox', `0 0 ${geometry.width} ${geometry.height}`);
+    let neck = svg.querySelector('#neck');
+    let markers = svg.querySelector('#markers');
+    if (!neck || !markers) {
+      svg.innerHTML = '<g id="neck"></g><g id="markers"></g>';
+      neck = svg.querySelector('#neck');
+      markers = svg.querySelector('#markers');
+    }
+    const previousKey = boardCache.key;
+    const board = renderBoard(open, frets, geometry);
+    if (previousKey !== boardCache.key || !neck.childNodes.length) neck.innerHTML = board;
+    let html = '';
 
     const entries = [];
     if (window.previous) entries.push({ event: window.previous, kind: 'past', order: 0 });
@@ -1323,7 +1271,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     });
     groups.forEach(group => { html += renderMarkerGroup(group.entries, group.point); });
 
-    svg.innerHTML = html;
+    markers.innerHTML = html;
   }
 
   function populatePositionSelect(event) {
@@ -1412,7 +1360,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
 
   function renderStudio(full = false) {
     if (!state.track) return;
-    $('trackTitle').value = state.track.title;
+    if (document.activeElement !== $('trackTitle')) $('trackTitle').value = state.track.title;
     $('trackMeta').textContent = `${state.track.demo ? t('demo') : t('importedLine')} · ${state.track.events.length} ${t('notes')} · ${tuning().label}`;
     $('savedLabel').textContent = state.track.demo ? t('demo') : t('saved');
     $('tuningSelect').value = state.track.settings.tuning;
@@ -1443,6 +1391,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     }
   }
 
+  // Follows the clock while playing; a paused track is redrawn on demand instead of every frame.
   function startAnimation() {
     cancelAnimationFrame(state.animation);
     const frame = () => {
@@ -1450,7 +1399,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       const bounds = Core.validLoopBounds(state.track.settings, state.track.duration || audio.duration || Infinity);
       if (state.playing && bounds && currentTime() >= bounds.end) setTime(bounds.start);
       updatePlayback(false);
-      state.animation = requestAnimationFrame(frame);
+      state.animation = state.playing ? requestAnimationFrame(frame) : 0;
     };
     frame();
   }
@@ -1507,7 +1456,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     if (!state.playing && bounds && (currentTime() < bounds.start || currentTime() >= bounds.end)) setTime(bounds.start);
     state.playing = !state.playing;
     if (state.track.demo) {
-      if (state.playing) scheduleDemo();
+      if (state.playing) { scheduleDemo(); startAnimation(); }
       else clearTimeout(state.demoTimer);
     } else if (state.track.audioBlob) {
       try {
@@ -1587,13 +1536,13 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
   function changeTiming() {
     const event = selected();
     if (!event) return;
-    Core.updateEventTiming(
-      state.track.events,
-      state.currentIndex,
-      Number($('noteStart').value),
-      Number($('noteEnd').value),
-      state.track.duration
-    );
+    const start = Number($('noteStart').value);
+    const end = Number($('noteEnd').value);
+    if ($('noteStart').value === '' || $('noteEnd').value === '' || !Number.isFinite(start) || !Number.isFinite(end)) {
+      renderSide();
+      return;
+    }
+    Core.updateEventTiming(state.track.events, state.currentIndex, start, end, state.track.duration);
     recalc(event.id);
   }
 
@@ -1784,7 +1733,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
       $('analysisStatus').textContent = t('saving');
       const id = `track-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const now = Date.now();
-      const settings = { tuning: '4', frets: 15, lookahead: 3, speed: 1, loopA: null, loopB: null };
+      const settings = { tuning: '4', frets: Core.DEFAULT_FRETS, lookahead: 3, speed: 1, loopA: null, loopB: null };
       const track = {
         id,
         title: file.name.replace(/\.[^.]+$/, ''),
@@ -1796,7 +1745,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
         updatedAt: now,
         analysisVersion: 2,
         settings,
-        events: Core.optimiseFingering(events, Core.TUNINGS['4'].open, 15)
+        events: Core.optimiseFingering(events, Core.TUNINGS['4'].open, settings.frets)
       };
       await Store.save(track);
       $('analysisModal').hidden = true;
@@ -1881,7 +1830,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     $('exportMidi').onclick = () => download(`${safeName(state.track.title)}.mid`, Core.renderMidi(state.track), 'audio/midi');
     $('exportProject').onclick = exportProject;
     $('trackTitle').onchange = event => { state.track.title = event.target.value.trim() || state.track.title; scheduleSave(); };
-    audio.onplay = () => { state.playing = true; renderStudio(false); };
+    audio.onplay = () => { state.playing = true; renderStudio(false); startAnimation(); };
     audio.onpause = () => { state.playing = false; renderStudio(false); };
     audio.onended = () => { state.playing = false; setTime(0); renderStudio(false); };
     audio.onloadedmetadata = () => { if (state.track && !state.track.duration) state.track.duration = audio.duration; updatePlayback(true); };

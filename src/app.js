@@ -12,6 +12,8 @@
   const COPY = {
     it: {
       product: 'Bass Transcriber', sister: 'Bass Chord Lab: accordi sulla tastiera', import: 'Importa audio', eyebrow: 'Dal brano alle dita',
+      library: 'Torna ai brani', trackTitle: 'Titolo del brano', transcribedNotes: 'Note trascritte', fretboard: 'Manico del basso',
+      positionLabel: 'Posizione nel brano', help: 'Aiuto',
       heroTitle: 'Ascolta. Trascrivi. Suona.',
       heroText: 'Importa una registrazione, ricava la linea di basso e studiala sul manico. Audio, trascrizione e correzioni restano sul tuo dispositivo.',
       privacy: 'Nessun upload. Tutto avviene nel browser.', dropTitle: 'Porta qui il tuo brano',
@@ -49,6 +51,8 @@
     },
     en: {
       product: 'Bass Transcriber', sister: 'Bass Chord Lab: chords on the fretboard', import: 'Import audio', eyebrow: 'From the track to your fingers',
+      library: 'Back to your tracks', trackTitle: 'Track title', transcribedNotes: 'Transcribed notes', fretboard: 'Bass fretboard',
+      positionLabel: 'Position in the track', help: 'Help',
       heroTitle: 'Listen. Transcribe. Play.',
       heroText: 'Import a recording, extract the bass line and practise it on the fretboard. Audio, transcription and corrections stay on your device.',
       privacy: 'No upload. Everything happens in your browser.', dropTitle: 'Drop your track here',
@@ -107,10 +111,14 @@
       const value = t(element.dataset.i18n);
       if (value !== undefined) element.textContent = value;
     });
+    document.querySelectorAll('[data-i18n-aria]').forEach(element => {
+      element.setAttribute('aria-label', t(element.dataset.i18nAria));
+      if (element.hasAttribute('title')) element.title = t(element.dataset.i18nAria);
+    });
     $('langIt').classList.toggle('on', state.lang === 'it');
     $('langEn').classList.toggle('on', state.lang === 'en');
     $('helpLink').href = state.lang === 'en' ? 'help-en.html' : 'help-it.html';
-    $('helpLink').title = state.lang === 'en' ? 'Help' : 'Aiuto';
+    $('helpLink').title = t('help');
     $('helpLink').setAttribute('aria-label', $('helpLink').title);
     $('versionLabel').textContent = t('version');
     renderHome();
@@ -174,7 +182,9 @@
     article.className = 'track-card';
     const cover = document.createElement('div');
     cover.className = 'cover';
-    cover.textContent = track.demo ? track.style.slice(0, 2).toUpperCase() : 'MP3';
+    cover.textContent = track.demo
+      ? track.style.slice(0, 2).toUpperCase()
+      : (track.filename || '').match(/\.([a-z0-9]{2,4})$/i)?.[1].toUpperCase() || 'AUDIO';
     const info = document.createElement('div');
     const title = document.createElement('h3');
     const meta = document.createElement('div');
@@ -315,8 +325,8 @@
       if (state.playing) scheduleDemo();
     } else {
       audio.currentTime = time;
-      updatePlayback(true);
     }
+    updatePlayback(true);
   }
 
   const selected = () => state.track?.events?.[state.currentIndex] || null;
@@ -427,27 +437,25 @@
     return svg;
   }
 
-  function renderFretboard() {
-    const svg = $('fretboard');
-    const track = state.track;
-    const open = tuning().open;
-    const strings = open.length;
-    const frets = track.settings.frets;
-    const geometry = neckGeometry(strings, frets);
-    const window = preview();
-    svg.setAttribute('viewBox', `0 0 ${geometry.width} ${geometry.height}`);
+  // The neck itself only depends on tuning and fret count, so it is drawn once per combination;
+  // playback then rewrites just the markers on every note.
+  const boardCache = { key: '', html: '' };
 
+  function renderBoard(open, frets, geometry) {
+    const key = `${open.join(',')}|${frets}`;
+    if (boardCache.key === key) return boardCache.html;
+    const strings = open.length;
     let html = `
       <defs>
         <linearGradient id="boardWood" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#efd4a1"/>
-          <stop offset=".48" stop-color="#dfbd82"/>
-          <stop offset="1" stop-color="#c9985b"/>
+          <stop offset="0" stop-color="#efd7aa"/>
+          <stop offset=".48" stop-color="#d9b77d"/>
+          <stop offset="1" stop-color="#bd874f"/>
         </linearGradient>
         <linearGradient id="fretMetal" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#6f6a62"/>
-          <stop offset=".42" stop-color="#f1ede5"/>
-          <stop offset="1" stop-color="#756f67"/>
+          <stop offset="0" stop-color="#5d5953"/>
+          <stop offset=".42" stop-color="#f7f2e9"/>
+          <stop offset="1" stop-color="#68625b"/>
         </linearGradient>
         <linearGradient id="stringMetal" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#fbf8f0"/>
@@ -469,12 +477,12 @@
     const boardHeight = geometry.boardBottom - geometry.boardTop;
 
     html += `<g filter="url(#boardShadow)">`;
-    html += `<rect x="${geometry.outerLeft}" y="${geometry.rulerTop}" width="${outerWidth}" height="${geometry.boardBottom - geometry.rulerTop}" rx="14" fill="#f8f4ea" stroke="#96764f" stroke-width="2.5"/>`;
-    html += `<path d="M ${geometry.outerLeft + 14} ${geometry.rulerBottom} H ${geometry.outerRight - 14}" stroke="#b59b78" stroke-width="2"/>`;
+    html += `<rect x="${geometry.outerLeft}" y="${geometry.rulerTop}" width="${outerWidth}" height="${geometry.boardBottom - geometry.rulerTop}" rx="14" fill="#f3eee6" stroke="#856b52" stroke-width="2.5"/>`;
+    html += `<path d="M ${geometry.outerLeft + 14} ${geometry.rulerBottom} H ${geometry.outerRight - 14}" stroke="#c4ad8e" stroke-width="2"/>`;
     html += `<rect x="${geometry.outerLeft}" y="${geometry.boardTop}" width="${outerWidth}" height="${boardHeight}" fill="url(#boardWood)"/>`;
-    html += `<line x1="${geometry.stringStart}" y1="${geometry.boardTop}" x2="${geometry.stringStart}" y2="${geometry.boardBottom}" stroke="#8c6e4b" stroke-opacity=".58" stroke-width="2"/>`;
-    html += `<line x1="${geometry.outerLeft}" y1="${geometry.boardTop}" x2="${geometry.outerRight}" y2="${geometry.boardTop}" stroke="#fff7e8" stroke-opacity=".7" stroke-width="2"/>`;
-    html += `<line x1="${geometry.outerLeft}" y1="${geometry.boardBottom}" x2="${geometry.outerRight}" y2="${geometry.boardBottom}" stroke="#6f4d2f" stroke-opacity=".72" stroke-width="3"/>`;
+    html += `<line x1="${geometry.stringStart}" y1="${geometry.boardTop}" x2="${geometry.stringStart}" y2="${geometry.boardBottom}" stroke="#72563e" stroke-opacity=".58" stroke-width="2"/>`;
+    html += `<line x1="${geometry.outerLeft}" y1="${geometry.boardTop}" x2="${geometry.outerRight}" y2="${geometry.boardTop}" stroke="#fff8ec" stroke-opacity=".7" stroke-width="2"/>`;
+    html += `<line x1="${geometry.outerLeft}" y1="${geometry.boardBottom}" x2="${geometry.outerRight}" y2="${geometry.boardBottom}" stroke="#5f422d" stroke-opacity=".72" stroke-width="3"/>`;
 
     for (let fret = 1; fret <= frets; fret += 1) {
       const x = geometry.fretX(fret);
@@ -489,17 +497,17 @@
       const x = geometry.fretCenter(fret);
       const y = (geometry.boardTop + geometry.boardBottom) / 2;
       if (fret % 12 === 0) {
-        html += `<circle cx="${x}" cy="${y - 29}" r="7.5" fill="#8f7045" opacity=".64"/>`;
-        html += `<circle cx="${x}" cy="${y + 29}" r="7.5" fill="#8f7045" opacity=".64"/>`;
+        html += `<circle cx="${x}" cy="${y - 29}" r="7.5" fill="#7d5d38" opacity=".55"/>`;
+        html += `<circle cx="${x}" cy="${y + 29}" r="7.5" fill="#7d5d38" opacity=".55"/>`;
       } else {
-        html += `<circle cx="${x}" cy="${y}" r="7.5" fill="#8f7045" opacity=".58"/>`;
+        html += `<circle cx="${x}" cy="${y}" r="7.5" fill="#7d5d38" opacity=".55"/>`;
       }
     });
 
     open.forEach((openMidi, string) => {
       const y = geometry.stringY(string);
       const thickness = 1.7 + (strings - string) * 0.72;
-      html += `<text x="${geometry.stringStart - 23}" y="${y + 7}" text-anchor="end" class="string-label" fill="#2b241d">${Core.noteName(openMidi).replace(/-?\d+$/, '')}</text>`;
+      html += `<text x="${geometry.stringStart - 23}" y="${y + 7}" text-anchor="end" class="string-label" fill="#3a3026">${Core.noteName(openMidi).replace(/-?\d+$/, '')}</text>`;
       html += `<line x1="${geometry.stringStart}" y1="${y + 2}" x2="${geometry.bridge}" y2="${y + 2}" stroke="#4e4033" stroke-opacity=".44" stroke-width="${thickness + 2.2}"/>`;
       html += `<line x1="${geometry.stringStart}" y1="${y}" x2="${geometry.bridge}" y2="${y}" stroke="url(#stringMetal)" stroke-width="${thickness}"/>`;
     });
@@ -509,8 +517,32 @@
       ? Array.from({ length: frets + 1 }, (_, index) => index)
       : [0, 1, 2, 3, 4, 5, 7, 9, 12, 15, 17, 19, 21, 24].filter(fret => fret <= frets);
     numberFrets.forEach(fret => {
-      html += `<text x="${geometry.fretCenter(fret)}" y="52" text-anchor="middle" class="fret-number" fill="#2d2822">${fret}</text>`;
+      html += `<text x="${geometry.fretCenter(fret)}" y="52" text-anchor="middle" class="fret-number" fill="#5f554a">${fret}</text>`;
     });
+    boardCache.key = key;
+    boardCache.html = html;
+    return html;
+  }
+
+  function renderFretboard() {
+    const svg = $('fretboard');
+    const open = tuning().open;
+    const strings = open.length;
+    const frets = state.track.settings.frets;
+    const geometry = neckGeometry(strings, frets);
+    const window = preview();
+    svg.setAttribute('viewBox', `0 0 ${geometry.width} ${geometry.height}`);
+    let neck = svg.querySelector('#neck');
+    let markers = svg.querySelector('#markers');
+    if (!neck || !markers) {
+      svg.innerHTML = '<g id="neck"></g><g id="markers"></g>';
+      neck = svg.querySelector('#neck');
+      markers = svg.querySelector('#markers');
+    }
+    const previousKey = boardCache.key;
+    const board = renderBoard(open, frets, geometry);
+    if (previousKey !== boardCache.key || !neck.childNodes.length) neck.innerHTML = board;
+    let html = '';
 
     const entries = [];
     if (window.previous) entries.push({ event: window.previous, kind: 'past', order: 0 });
@@ -534,7 +566,7 @@
     });
     groups.forEach(group => { html += renderMarkerGroup(group.entries, group.point); });
 
-    svg.innerHTML = html;
+    markers.innerHTML = html;
   }
 
   function populatePositionSelect(event) {
@@ -623,7 +655,7 @@
 
   function renderStudio(full = false) {
     if (!state.track) return;
-    $('trackTitle').value = state.track.title;
+    if (document.activeElement !== $('trackTitle')) $('trackTitle').value = state.track.title;
     $('trackMeta').textContent = `${state.track.demo ? t('demo') : t('importedLine')} · ${state.track.events.length} ${t('notes')} · ${tuning().label}`;
     $('savedLabel').textContent = state.track.demo ? t('demo') : t('saved');
     $('tuningSelect').value = state.track.settings.tuning;
@@ -654,6 +686,7 @@
     }
   }
 
+  // Follows the clock while playing; a paused track is redrawn on demand instead of every frame.
   function startAnimation() {
     cancelAnimationFrame(state.animation);
     const frame = () => {
@@ -661,7 +694,7 @@
       const bounds = Core.validLoopBounds(state.track.settings, state.track.duration || audio.duration || Infinity);
       if (state.playing && bounds && currentTime() >= bounds.end) setTime(bounds.start);
       updatePlayback(false);
-      state.animation = requestAnimationFrame(frame);
+      state.animation = state.playing ? requestAnimationFrame(frame) : 0;
     };
     frame();
   }
@@ -718,7 +751,7 @@
     if (!state.playing && bounds && (currentTime() < bounds.start || currentTime() >= bounds.end)) setTime(bounds.start);
     state.playing = !state.playing;
     if (state.track.demo) {
-      if (state.playing) scheduleDemo();
+      if (state.playing) { scheduleDemo(); startAnimation(); }
       else clearTimeout(state.demoTimer);
     } else if (state.track.audioBlob) {
       try {
@@ -798,13 +831,13 @@
   function changeTiming() {
     const event = selected();
     if (!event) return;
-    Core.updateEventTiming(
-      state.track.events,
-      state.currentIndex,
-      Number($('noteStart').value),
-      Number($('noteEnd').value),
-      state.track.duration
-    );
+    const start = Number($('noteStart').value);
+    const end = Number($('noteEnd').value);
+    if ($('noteStart').value === '' || $('noteEnd').value === '' || !Number.isFinite(start) || !Number.isFinite(end)) {
+      renderSide();
+      return;
+    }
+    Core.updateEventTiming(state.track.events, state.currentIndex, start, end, state.track.duration);
     recalc(event.id);
   }
 
@@ -995,7 +1028,7 @@
       $('analysisStatus').textContent = t('saving');
       const id = `track-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const now = Date.now();
-      const settings = { tuning: '4', frets: 15, lookahead: 3, speed: 1, loopA: null, loopB: null };
+      const settings = { tuning: '4', frets: Core.DEFAULT_FRETS, lookahead: 3, speed: 1, loopA: null, loopB: null };
       const track = {
         id,
         title: file.name.replace(/\.[^.]+$/, ''),
@@ -1007,7 +1040,7 @@
         updatedAt: now,
         analysisVersion: 2,
         settings,
-        events: Core.optimiseFingering(events, Core.TUNINGS['4'].open, 15)
+        events: Core.optimiseFingering(events, Core.TUNINGS['4'].open, settings.frets)
       };
       await Store.save(track);
       $('analysisModal').hidden = true;
@@ -1092,7 +1125,7 @@
     $('exportMidi').onclick = () => download(`${safeName(state.track.title)}.mid`, Core.renderMidi(state.track), 'audio/midi');
     $('exportProject').onclick = exportProject;
     $('trackTitle').onchange = event => { state.track.title = event.target.value.trim() || state.track.title; scheduleSave(); };
-    audio.onplay = () => { state.playing = true; renderStudio(false); };
+    audio.onplay = () => { state.playing = true; renderStudio(false); startAnimation(); };
     audio.onpause = () => { state.playing = false; renderStudio(false); };
     audio.onended = () => { state.playing = false; setTime(0); renderStudio(false); };
     audio.onloadedmetadata = () => { if (state.track && !state.track.duration) state.track.duration = audio.duration; updatePlayback(true); };

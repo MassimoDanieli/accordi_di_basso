@@ -48,7 +48,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
 
   async function decode(file) {
     const context = new (window.AudioContext || window.webkitAudioContext)();
-    try { return await context.decodeAudioData((await file.arrayBuffer()).slice(0)); }
+    try { return await context.decodeAudioData(await file.arrayBuffer()); }
     finally { await context.close(); }
   }
 
