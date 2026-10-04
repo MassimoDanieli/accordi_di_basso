@@ -14,7 +14,6 @@ const validScript = (source, name) => {
 };
 
 expect(read('src/core.js').includes(`const VERSION = '${version}'`), `src/core.js: version is not ${version}`);
-expect(read('src/defaults.js').includes(`const VERSION = '${version}'`), `src/defaults.js: version is not ${version}`);
 
 for (const filename of ['index.html', 'app.html', 'index.en.html']) {
   const html = read(filename);

@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 await import('../src/core.js');
 await import('../src/storage.js');
 await import('../src/transcriber.js');
-await import('../src/defaults.js');
 const C = globalThis.ManicoCore;
 const S = globalThis.ManicoStorage;
 const T = globalThis.ManicoTranscriber;
 
-assert.equal(C.VERSION, '6.1.1');
+assert.equal(C.VERSION, '6.2.0');
+assert.equal(C.DEFAULT_FRETS, 12);
 new Function(T.workerSource());
 const adaptiveOffsets = T.analysisOffsets(1, 1.11);
 assert.ok(adaptiveOffsets.length >= 2);
@@ -109,6 +109,8 @@ assert.ok(rock.events.every(event => event.fret === null || event.fret <= 12));
 assert.ok(rock.events.every(event => C.positionMatchesMidi(event, C.TUNINGS['4'].open, 12)));
 assert.match(C.renderTab(rock, '4'), /Rock Eighths/);
 
+const fifteen = C.createDemoTrack(C.DEMOS[0], '4', 15);
+assert.equal(fifteen.settings.frets, 15, 'callers can still ask for a wider range');
 const now = Date.now();
 const imported = {
   id: 'new-import',
@@ -120,7 +122,7 @@ const imported = {
 };
 await S.save(imported);
 const stored = await S.get(imported.id);
-assert.equal(stored.settings.frets, 12, 'new audio imports must default to 12 frets');
-assert.ok(stored.events.every(event => event.fret === null || event.fret <= 12));
+assert.equal(stored.settings.frets, 15, 'storage saves what it is given: the importer sets the 12-fret default itself');
+assert.notEqual(stored, imported, 'storage keeps its own copy of a saved track');
 
-console.log('All Manico 6.1.1 smoke tests passed.');
+console.log('All Manico 6.2.0 smoke tests passed.');

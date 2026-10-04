@@ -11,7 +11,8 @@ for (const filename of ['index.html', 'app.html', 'index.en.html', 'help-it.html
   html = html
     .replace(/data-versione="[^"]+"/g, `data-versione="${version}"`)
     .replace(/assets\/styles\.css\?v=[^"']+/g, `assets/styles.css?v=${version}`)
-    .replace(/assets\/app\.bundle\.js\?v=[^"']+/g, `assets/app.bundle.js?v=${version}`);
+    .replace(/assets\/app\.bundle\.js\?v=[^"']+/g, `assets/app.bundle.js?v=${version}`)
+    .replace(/Versione \d+\.\d+\.\d+(?=<\/span>)/g, `Versione ${version}`);
   writeFileSync(path, html);
 }
 execFileSync(process.execPath, [join(root, 'tools', 'build.js')], { cwd: root, stdio: 'inherit' });
