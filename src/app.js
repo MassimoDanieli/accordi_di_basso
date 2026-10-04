@@ -11,7 +11,7 @@
 
   const COPY = {
     it: {
-      product: 'Bass Transcriber', import: 'Importa audio', eyebrow: 'Dal brano alle dita',
+      product: 'Bass Transcriber', sister: 'Bass Chord Lab: accordi sulla tastiera', import: 'Importa audio', eyebrow: 'Dal brano alle dita',
       heroTitle: 'Ascolta. Trascrivi. Suona.',
       heroText: 'Importa una registrazione, ricava la linea di basso e studiala sul manico. Audio, trascrizione e correzioni restano sul tuo dispositivo.',
       privacy: 'Nessun upload. Tutto avviene nel browser.', dropTitle: 'Porta qui il tuo brano',
@@ -48,7 +48,7 @@
       migrated: 'Ottave e posizioni riallineate', version: `Versione ${Core.VERSION}`
     },
     en: {
-      product: 'Bass Transcriber', import: 'Import audio', eyebrow: 'From the track to your fingers',
+      product: 'Bass Transcriber', sister: 'Bass Chord Lab: chords on the fretboard', import: 'Import audio', eyebrow: 'From the track to your fingers',
       heroTitle: 'Listen. Transcribe. Play.',
       heroText: 'Import a recording, extract the bass line and practise it on the fretboard. Audio, transcription and corrections stay on your device.',
       privacy: 'No upload. Everything happens in your browser.', dropTitle: 'Drop your track here',

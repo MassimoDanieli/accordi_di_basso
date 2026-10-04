@@ -1,6 +1,8 @@
-# Manico 6.1.0 · Bass Transcriber
+# Manico 6.1.1 · Bass Transcriber
 
 Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico rettangolare con anticipo visivo coerente delle note successive.
+
+La release 6.1.1 rende la pagina iniziale più compatta: importazione, brani ed esercizi sono visibili nella prima schermata, e aggiunge il collegamento a [Bass Chord Lab](https://chords.massimodanieli.com/).
 
 La release 6.1.0 migliora la qualità della trascrizione automatica:
 
