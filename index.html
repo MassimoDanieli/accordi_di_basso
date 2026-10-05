@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it" data-versione="6.2.1">
+<html lang="it" data-versione="7.0.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -7,7 +7,7 @@
 <meta name="description" content="Importa una registrazione, trascrivi la linea di basso e studiala sul manico.">
 <title>Manico · Bass Transcriber</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2311100e'/%3E%3Crect x='10' y='16' width='44' height='32' rx='7' fill='%237a5238' stroke='%238a6a50'/%3E%3Cpath d='M14 24h36M14 31h36M14 38h36M14 45h36' stroke='%23ead9c1' stroke-opacity='.6'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/styles.css?v=6.2.1">
+<link rel="stylesheet" href="assets/styles.css?v=7.0.0">
 </head>
 <body>
 <div class="app-shell">
@@ -59,7 +59,7 @@
     <header class="section-head"><div><h2 data-i18n="examples">Esercizi inclusi</h2><p data-i18n="examplesHint">Linee essenziali pronte per provare il flusso.</p></div></header>
     <div id="demoList" class="track-grid"></div>
   </section>
-  <footer class="home-footer"><span id="versionLabel">Versione 6.2.1</span><span class="footer-links"><a class="sister-link" href="https://chords.massimodanieli.com/">chords.massimodanieli.com</a><a class="sister-link" href="https://github.com/MassimoDanieli/accordi_di_basso" data-i18n="source">Codice su GitHub</a></span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
+  <footer class="home-footer"><span id="versionLabel">Versione 7.0.0</span><span class="footer-links"><a class="sister-link" href="https://chords.massimodanieli.com/">chords.massimodanieli.com</a><a class="sister-link" href="https://github.com/MassimoDanieli/accordi_di_basso" data-i18n="source">Codice su GitHub</a></span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
 </main>
 
 <main id="studioView" class="view studio-view" hidden>
@@ -82,6 +82,7 @@
         <span id="clock" class="clock">0:00 / 0:00</span>
         <label class="inline-control"><span data-i18n="speed">Velocità</span><select id="speedSelect"></select></label>
       </div>
+      <div class="listen-bar" id="listenBlock" hidden><span data-i18n="listen">Ascolto</span><div class="button-row segmented" role="group" aria-label="Ascolto" data-i18n-aria="listen"><button id="listenMix" type="button" aria-pressed="true" data-i18n="listenMix">Brano</button><button id="listenBacking" type="button" aria-pressed="false" data-i18n="listenBacking">Senza basso</button><button id="listenBass" type="button" aria-pressed="false" data-i18n="listenBass">Solo basso</button></div></div>
       <div id="phraseStrip" class="phrase-strip" aria-label="Note trascritte" data-i18n-aria="transcribedNotes"></div>
       <div class="board-area">
         <div class="instrument-stage"><svg id="fretboard" viewBox="0 0 1400 470" role="img" aria-label="Manico del basso" data-i18n-aria="fretboard"></svg></div>
@@ -114,6 +115,7 @@
           <label><span data-i18n="frets">Tasti</span><select id="fretsSelect"></select></label>
           <label><span data-i18n="lookahead">Note in anticipo</span><select id="lookaheadSelect"></select></label>
         </div>
+        <div class="loop-block" id="isolateBlock" hidden><button id="isolateExisting" type="button" data-i18n="isolateExisting">Isola il basso (AI)</button><p class="option-hint" data-i18n="isolateExistingHint">Per ascoltare il brano senza basso o il basso da solo.</p></div>
         <div class="loop-block"><div class="loop-title"><span data-i18n="loop">Loop</span><b id="loopLabel">nessun loop</b></div><div class="button-row"><button id="setLoopA" type="button" data-i18n="setA">Imposta A</button><button id="setLoopB" type="button" data-i18n="setB">Imposta B</button><button id="clearLoop" type="button" data-i18n="clearLoop">Azzera</button></div></div>
       </section>
       <section class="panel-section">
@@ -136,10 +138,12 @@
 <div id="analysisModal" class="modal" hidden>
   <div class="modal-card">
     <div class="modal-icon">♩</div>
-    <h2 data-i18n="analyseTitle">Trascrivi la linea di basso</h2>
+    <h2 id="analysisTitle" data-i18n="analyseTitle">Trascrivi la linea di basso</h2>
     <p id="importFileName" class="file-name"></p>
     <p id="analysisStatus" data-i18n="analyseHint">Il file resta sul dispositivo.</p>
     <label class="sensitivity"><span data-i18n="sensitivity">Sensibilità agli attacchi</span><input id="sensitivity" type="range" min="55" max="90" value="72"><b id="sensitivityValue">72%</b></label>
+    <label class="option" id="isolateRow" hidden><input id="isolateBass" type="checkbox" checked><span><b data-i18n="isolate">Isola il basso con l’AI (consigliato)</b><small data-i18n="isolateHint">Separa il basso dal resto del brano, qui nel browser.</small></span></label>
+    <label class="option" id="retranscribeRow" hidden><input id="retranscribe" type="checkbox" checked><span><b data-i18n="retranscribe">Ritrascrivi dal basso isolato</b><small data-i18n="retranscribeHint">Sostituisce le note attuali, comprese le correzioni fatte a mano.</small></span></label>
     <div class="progress"><i id="analysisProgress"></i></div>
     <div class="modal-actions"><button id="cancelAnalysis" type="button" data-i18n="cancel">Annulla</button><button id="startAnalysis" class="primary" type="button" data-i18n="startAnalysis">Trascrivi e salva</button></div>
   </div>
@@ -148,6 +152,6 @@
 <div id="fatalError" class="fatal" hidden></div>
 <audio id="audio" preload="metadata"></audio>
 </div>
-<script src="assets/app.bundle.js?v=6.2.1"></script>
+<script src="assets/app.bundle.js?v=7.0.0"></script>
 </body>
 </html>

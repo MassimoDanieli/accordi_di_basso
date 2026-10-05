@@ -42,6 +42,8 @@ for (const filename of ['assets/app.bundle.js', 'dist/manico.html']) {
   if (existsSync(path)) expect(statSync(path).size > 1000, `${filename}: empty`);
 }
 validScript(read('assets/app.bundle.js'), 'assets/app.bundle.js');
+expect(read('assets/app.bundle.js').includes('ManicoSeparator'), 'assets/app.bundle.js: separator module is missing');
+validScript(read('src/separator.js'), 'src/separator.js');
 const standalone = read('dist/manico.html');
 expect(standalone.includes(`data-versione="${version}"`), 'dist/manico.html: stale version');
 expect(!/<script[^>]+src="(?:assets|src)\//.test(standalone), 'dist/manico.html: external local script remains');
