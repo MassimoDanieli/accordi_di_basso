@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it" data-versione="6.2.0">
+<html lang="it" data-versione="6.2.1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -34,7 +34,7 @@
 .sister-link{color:var(--accent);font-size:12px;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}.sister-link:hover{color:var(--paper)}.sister-link:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
 .home-view{padding-top:18px}.hero{grid-template-columns:minmax(0,1fr) minmax(340px,.85fr);gap:14px}.hero-copy{padding:22px 26px}.hero .eyebrow{display:none}.hero h1{font-size:clamp(28px,3.2vw,40px);line-height:1.05;letter-spacing:-.04em;margin:0 0 10px}.hero-copy>p{font-size:15px;line-height:1.55}.hero-points{margin-top:14px;gap:8px}
 .import-card{padding:12px}.dropzone{min-height:0;padding:18px 20px}.drop-content{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:16px;text-align:left}.drop-icon{grid-row:1/3;width:48px;height:48px;border-radius:14px;margin:0;font-size:22px}.dropzone h2{font-size:19px;margin:0;align-self:end}.dropzone p{margin:0;align-self:start}.drop-content .primary{grid-column:3;grid-row:1/3}
-.library-section{margin-top:24px}.section-head{margin-bottom:10px}.section-head h2{font-size:20px}.empty-card{padding:16px}.home-footer{margin-top:32px;align-items:center}
+.library-section{margin-top:24px}.section-head{margin-bottom:10px}.section-head h2{font-size:20px}.empty-card{padding:16px}.home-footer{margin-top:32px;align-items:center}.home-footer .footer-links,.help-footer .footer-links{display:flex;flex-wrap:wrap;gap:14px}
 @media(max-width:900px){.topbar .sister-link{display:none}}
 @media(max-width:760px){.home-view{padding-top:12px}.hero{grid-template-columns:1fr;gap:10px}.hero-copy{padding:16px 18px}.hero h1{font-size:28px}.hero-copy>p{font-size:14px}.dropzone{min-height:0;padding:14px}.drop-content{grid-template-columns:auto minmax(0,1fr);row-gap:2px}.drop-content .primary{grid-column:1/-1;grid-row:3;margin-top:12px}.home-footer .sister-link{display:block;margin-top:5px}}
 
@@ -90,7 +90,7 @@
     <header class="section-head"><div><h2 data-i18n="examples">Esercizi inclusi</h2><p data-i18n="examplesHint">Linee essenziali pronte per provare il flusso.</p></div></header>
     <div id="demoList" class="track-grid"></div>
   </section>
-  <footer class="home-footer"><span id="versionLabel">Versione 6.2.0</span><a class="sister-link" href="https://chords.massimodanieli.com/">chords.massimodanieli.com</a><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
+  <footer class="home-footer"><span id="versionLabel">Versione 6.2.1</span><span class="footer-links"><a class="sister-link" href="https://chords.massimodanieli.com/">chords.massimodanieli.com</a><a class="sister-link" href="https://github.com/MassimoDanieli/accordi_di_basso" data-i18n="source">Codice su GitHub</a></span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
 </main>
 
 <main id="studioView" class="view studio-view" hidden>
@@ -183,7 +183,7 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '6.2.0';
+  const VERSION = '6.2.1';
   // New imports and included exercises start in the accompaniment-friendly 0-12 range;
   // existing projects keep the range their owner chose.
   const DEFAULT_FRETS = 12;
@@ -900,7 +900,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     it: {
       product: 'Bass Transcriber', sister: 'Bass Chord Lab: accordi sulla tastiera', import: 'Importa audio', eyebrow: 'Dal brano alle dita',
       library: 'Torna ai brani', trackTitle: 'Titolo del brano', transcribedNotes: 'Note trascritte', fretboard: 'Manico del basso',
-      positionLabel: 'Posizione nel brano', help: 'Aiuto',
+      positionLabel: 'Posizione nel brano', help: 'Aiuto', source: 'Codice su GitHub',
       heroTitle: 'Ascolta. Trascrivi. Suona.',
       heroText: 'Importa una registrazione, ricava la linea di basso e studiala sul manico. Audio, trascrizione e correzioni restano sul tuo dispositivo.',
       privacy: 'Nessun upload. Tutto avviene nel browser.', dropTitle: 'Porta qui il tuo brano',
@@ -939,7 +939,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     en: {
       product: 'Bass Transcriber', sister: 'Bass Chord Lab: chords on the fretboard', import: 'Import audio', eyebrow: 'From the track to your fingers',
       library: 'Back to your tracks', trackTitle: 'Track title', transcribedNotes: 'Transcribed notes', fretboard: 'Bass fretboard',
-      positionLabel: 'Position in the track', help: 'Help',
+      positionLabel: 'Position in the track', help: 'Help', source: 'Source on GitHub',
       heroTitle: 'Listen. Transcribe. Play.',
       heroText: 'Import a recording, extract the bass line and practise it on the fretboard. Audio, transcription and corrections stay on your device.',
       privacy: 'No upload. Everything happens in your browser.', dropTitle: 'Drop your track here',
