@@ -1,6 +1,8 @@
-# Manico 7.0.0 · Bass Transcriber
+# Manico 7.1.0 · Bass Transcriber
 
 Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico rettangolare con anticipo visivo coerente delle note successive.
+
+La release 7.1.0 mette sopra il manico una tablatura che scorre a tempo con il brano, al posto della striscia di caselle: la nota da suonare è quella sotto la linea, un clic su un numero la seleziona e un clic altrove sposta l'ascolto. Il manico mostra soltanto la nota da suonare adesso.
 
 La release 7.0.0 isola il basso dalla registrazione con un modello di separazione (Demucs) che gira nel browser:
 

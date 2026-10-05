@@ -13,7 +13,7 @@
   const COPY = {
     it: {
       product: 'Bass Transcriber', sister: 'Bass Chord Lab: accordi sulla tastiera', import: 'Importa audio', eyebrow: 'Dal brano alle dita',
-      library: 'Torna ai brani', trackTitle: 'Titolo del brano', transcribedNotes: 'Note trascritte', fretboard: 'Manico del basso',
+      library: 'Torna ai brani', trackTitle: 'Titolo del brano', transcribedNotes: 'Tablatura: scorre a tempo con il brano', fretboard: 'Manico del basso',
       positionLabel: 'Posizione nel brano', help: 'Aiuto', source: 'Codice su GitHub',
       heroTitle: 'Ascolta. Trascrivi. Suona.',
       heroText: 'Importa una registrazione, ricava la linea di basso e studiala sul manico. Audio, trascrizione e correzioni restano sul tuo dispositivo.',
@@ -64,7 +64,7 @@
     },
     en: {
       product: 'Bass Transcriber', sister: 'Bass Chord Lab: chords on the fretboard', import: 'Import audio', eyebrow: 'From the track to your fingers',
-      library: 'Back to your tracks', trackTitle: 'Track title', transcribedNotes: 'Transcribed notes', fretboard: 'Bass fretboard',
+      library: 'Back to your tracks', trackTitle: 'Track title', transcribedNotes: 'Tablature: scrolls in time with the track', fretboard: 'Bass fretboard',
       positionLabel: 'Position in the track', help: 'Help', source: 'Source on GitHub',
       heroTitle: 'Listen. Transcribe. Play.',
       heroText: 'Import a recording, extract the bass line and practise it on the fretboard. Audio, transcription and corrections stay on your device.',
@@ -397,34 +397,153 @@
     renderStudio(true);
   }
 
-  function renderTimeline() {
-    const box = $('phraseStrip');
-    box.replaceChildren();
-    const events = state.track.events;
-    const window = preview();
-    const start = Math.max(0, window.index - 7);
-    const end = Math.min(events.length, window.index + 22);
-    const futureIds = new Set(window.upcoming.map(event => event.id));
+  // The tablature above the fretboard. Time runs left to right at a fixed scale and the sheet
+  // slides under a playhead that stays put, so the number under the line is the note to play now.
+  const TAB = { row: 24, top: 26, bottom: 24, label: 30, scale: 120, key: null };
 
-    for (let index = start; index < end; index += 1) {
-      const event = events[index];
-      const button = document.createElement('button');
-      button.className = `phrase-note${event === window.current ? ' current' : futureIds.has(event.id) ? ' next' : ''}`;
-      button.dataset.eventId = event.id;
-      const strong = document.createElement('strong');
-      const small = document.createElement('small');
-      strong.textContent = Core.noteName(event.midi);
-      small.textContent = `${Core.formatTime(event.start)} · ${event.string === null ? '—' : `${stringName(event.string)}${event.fret}`}`;
-      button.append(strong, small);
-      button.onclick = () => selectEvent(index);
-      box.append(button);
+  /** Pixels per second: wide enough that the fastest passages do not pile their numbers up. */
+  function tabScale(events) {
+    if (TAB.key === events && TAB.count === events.length) return TAB.scale;
+    const gaps = [];
+    for (let index = 1; index < events.length; index += 1) gaps.push(events[index].start - events[index - 1].start);
+    gaps.sort((left, right) => left - right);
+    const typical = gaps.length ? gaps[Math.floor(gaps.length * 0.25)] : 0.5;
+    TAB.scale = Core.clamp(24 / Math.max(0.05, typical), 70, 240);
+    TAB.key = events;
+    TAB.count = events.length;
+    return TAB.scale;
+  }
+
+  function tabLayout() {
+    const canvas = $('tabStrip');
+    const strings = tuning().open.length;
+    const width = canvas.clientWidth || 600;
+    const height = TAB.top + (strings - 1) * TAB.row + TAB.bottom + 12;
+    return {
+      canvas, strings, width, height,
+      playhead: Math.max(TAB.label + 60, Math.round(width * 0.27)),
+      scale: tabScale(state.track.events),
+      // The highest string is the top line, as on paper.
+      y: string => TAB.top + 6 + (strings - 1 - string) * TAB.row
+    };
+  }
+
+  function renderTimeline() {
+    if (!state.track) return;
+    const layout = tabLayout();
+    const { canvas, strings, width, height, playhead, scale } = layout;
+    const ratio = window.devicePixelRatio || 1;
+    if (canvas.width !== Math.round(width * ratio) || canvas.height !== Math.round(height * ratio)) {
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      canvas.style.height = `${height}px`;
     }
-    requestAnimationFrame(() => {
-      const current = box.querySelector('.current');
-      if (!current) return;
-      const left = current.offsetLeft - (box.clientWidth - current.offsetWidth) / 2;
-      box.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+    const style = getComputedStyle(canvas);
+    const color = name => style.getPropertyValue(name).trim();
+    const mono = color('--mono') || 'monospace';
+    const context = canvas.getContext('2d');
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.clearRect(0, 0, width, height);
+    const events = state.track.events;
+    const time = currentTime();
+    const x = seconds => playhead + (seconds - time) * scale;
+    const from = time - (playhead + 40) / scale;
+    const to = time + (width - playhead + 40) / scale;
+
+    // Seconds along the top.
+    context.font = `10px ${mono}`;
+    context.textBaseline = 'middle';
+    context.textAlign = 'center';
+    context.fillStyle = color('--faint');
+    context.strokeStyle = color('--line');
+    context.lineWidth = 1;
+    const every = scale >= 100 ? 1 : 2;
+    for (let second = Math.max(0, Math.ceil(from / every) * every); second <= Math.min(to, state.track.duration || to); second += every) {
+      const position = Math.round(x(second)) + 0.5;
+      context.beginPath();
+      context.moveTo(position, TAB.top - 8);
+      context.lineTo(position, layout.y(0) + 4);
+      context.stroke();
+      context.fillText(Core.formatTime(second), position, 9);
+    }
+    // The strings.
+    context.strokeStyle = color('--line-2');
+    for (let string = 0; string < strings; string += 1) {
+      context.beginPath();
+      context.moveTo(0, layout.y(string) + 0.5);
+      context.lineTo(width, layout.y(string) + 0.5);
+      context.stroke();
+    }
+
+    // The playhead, behind the numbers.
+    context.strokeStyle = color('--accent');
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(playhead, TAB.top - 10);
+    context.lineTo(playhead, layout.y(0) + 12);
+    context.stroke();
+    context.lineWidth = 1;
+    const upcoming = new Set(preview().upcoming.map(event => event.id));
+    const current = selected();
+    let first = state.currentIndex;
+    while (first > 0 && events[first - 1].end > from) first -= 1;
+    let lastName = -Infinity;
+    for (let index = first; index < events.length && events[index].start < to; index += 1) {
+      const event = events[index];
+      const left = x(event.start);
+      const playable = event.string !== null && event.string !== undefined && event.string < strings;
+      const row = playable ? layout.y(event.string) : layout.y(strings - 1) - TAB.row * 0.7;
+      const text = playable ? String(event.fret) : '?';
+      const tone = event === current ? color('--accent') : upcoming.has(event.id) ? color('--future')
+        : event.end <= time ? color('--faint') : color('--paper');
+      // How long the note lasts, as a faint bar on its string.
+      const length = Math.max(0, (event.end - event.start) * scale - 4);
+      context.globalAlpha = event === current ? 0.5 : 0.22;
+      context.fillStyle = tone;
+      context.fillRect(left, row - 2, length, 4);
+      context.globalAlpha = 1;
+      context.font = `${event === current ? 800 : 700} ${event === current ? 17 : 15}px ${mono}`;
+      const half = context.measureText(text).width / 2 + 3;
+      context.fillStyle = color('--panel');
+      context.fillRect(left - half, row - 10, half * 2, 20);
+      context.fillStyle = tone;
+      context.fillText(text, left, row + 1);
+      // Note names underneath, where there is room for them.
+      if (left - lastName > 30) {
+        context.font = `10px ${mono}`;
+        context.fillStyle = event === current ? color('--accent') : color('--faint');
+        context.fillText(Core.noteName(event.midi), left, height - 12);
+        lastName = left;
+      }
+    }
+
+    // String names stay at the left edge, over the sliding sheet.
+    context.fillStyle = color('--panel');
+    context.fillRect(0, 0, TAB.label, height);
+    context.font = `700 12px ${mono}`;
+    context.fillStyle = color('--muted');
+    for (let string = 0; string < strings; string += 1) context.fillText(stringName(string), TAB.label / 2, layout.y(string) + 1);
+  }
+
+  /** A click on a number selects that note; a click elsewhere on the sheet moves the playhead there. */
+  function clickTab(event) {
+    if (!state.track) return;
+    const layout = tabLayout();
+    const bounds = layout.canvas.getBoundingClientRect();
+    const px = event.clientX - bounds.left;
+    const py = event.clientY - bounds.top;
+    if (px < TAB.label) return;
+    const time = currentTime();
+    const events = state.track.events;
+    let best = -1;
+    let distance = 16;
+    events.forEach((item, index) => {
+      const dx = Math.abs(layout.playhead + (item.start - time) * layout.scale - px);
+      const onRow = item.string === null || item.string === undefined || Math.abs(layout.y(item.string) - py) <= TAB.row / 2;
+      if (onRow && dx < distance) { best = index; distance = dx; }
     });
+    if (best >= 0) selectEvent(best);
+    else setTime(time + (px - layout.playhead) / layout.scale);
   }
 
   function neckGeometry(strings, frets) {
@@ -602,18 +721,8 @@
     if (previousKey !== boardCache.key || !neck.childNodes.length) neck.innerHTML = board;
     let html = '';
 
-    const entries = [];
-    if (window.previous) entries.push({ event: window.previous, kind: 'past', order: 0 });
-    if (window.current) entries.push({ event: window.current, kind: 'current', order: 0 });
-    window.upcoming.forEach((event, index) => entries.push({ event, kind: 'future', order: index + 1 }));
-
-    const routePoints = [window.current, ...window.upcoming]
-      .map(event => markerPoint(event, geometry, strings))
-      .filter(Boolean);
-    if (routePoints.length > 1) {
-      const path = routePoints.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' ');
-      html += `<path d="${path}" fill="none" stroke="var(--future)" stroke-opacity=".45" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 10" marker-end="url(#routeArrow)"/>`;
-    }
+    // Only the note to play now: what comes next is read on the tablature above.
+    const entries = window.current ? [{ event: window.current, kind: 'current', order: 0 }] : [];
 
     const groups = new Map();
     entries.forEach(entry => {
@@ -745,10 +854,10 @@
     const index = Core.currentEventIndex(state.track.events, time, state.currentIndex);
     if (index !== state.currentIndex || force) {
       state.currentIndex = index;
-      renderTimeline();
       renderFretboard();
       renderSide();
     }
+    renderTimeline();
   }
 
   // Follows the clock while playing; a paused track is redrawn on demand instead of every frame.
@@ -1233,6 +1342,8 @@
     drop.ondrop = event => { event.preventDefault(); drop.classList.remove('over'); openImport(event.dataTransfer.files[0]); };
     $('backHome').onclick = () => { stopAudio(); state.track = null; show('home'); };
     $('playButton').onclick = togglePlay;
+    $('tabStrip').onclick = clickTab;
+    window.addEventListener('resize', () => { if (state.track && !$('studioView').hidden) renderTimeline(); });
     $('seek').oninput = event => setTime(Number(event.target.value) / 1000 * (state.track?.duration || 0));
     $('speedSelect').onchange = event => {
       state.track.settings.speed = Number(event.target.value);

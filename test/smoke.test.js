@@ -7,7 +7,7 @@ const C = globalThis.ManicoCore;
 const S = globalThis.ManicoStorage;
 const T = globalThis.ManicoTranscriber;
 
-assert.equal(C.VERSION, '7.0.0');
+assert.equal(C.VERSION, '7.1.0');
 assert.equal(C.DEFAULT_FRETS, 12);
 new Function(T.workerSource());
 const adaptiveOffsets = T.analysisOffsets(1, 1.11);
