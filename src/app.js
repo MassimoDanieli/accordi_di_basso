@@ -5,7 +5,7 @@
   const Store = root.ManicoStorage;
   const Transcriber = root.ManicoTranscriber;
   const Separator = root.ManicoSeparator;
-  if (!Core || !Store || !Transcriber || !Separator) throw new Error('Manico modules missing');
+  if (!Core || !Store || !Transcriber || !Separator || !root.ManicoRhythm) throw new Error('Manico modules missing');
 
   const $ = id => document.getElementById(id);
   const audio = $('audio');
@@ -13,7 +13,7 @@
   const COPY = {
     it: {
       product: 'Bass Transcriber', sister: 'Bass Chord Lab: accordi sulla tastiera', import: 'Importa audio', eyebrow: 'Dal brano alle dita',
-      library: 'Torna ai brani', trackTitle: 'Titolo del brano', transcribedNotes: 'Tablatura: scorre a tempo con il brano', fretboard: 'Manico del basso',
+      library: 'Torna ai brani', trackTitle: 'Titolo del brano', transcribedNotes: 'Tablatura con battute e valori ritmici: scorre a tempo con il brano', fretboard: 'Manico del basso',
       positionLabel: 'Posizione nel brano', help: 'Aiuto', source: 'Codice su GitHub',
       heroTitle: 'Ascolta. Trascrivi. Suona.',
       heroText: 'Importa una registrazione, ricava la linea di basso e studiala sul manico. Audio, trascrizione e correzioni restano sul tuo dispositivo.',
@@ -53,6 +53,11 @@
       isolateExistingHint: 'Per ascoltare il brano senza basso o il basso da solo.',
       retranscribe: 'Ritrascrivi dal basso isolato',
       retranscribeHint: 'Sostituisce le note attuali, comprese le correzioni fatte a mano.',
+      retranscribeTitle: 'Ritrascrivi la linea di basso', retranscribeStart: 'Ritrascrivi',
+      retranscribeTrack: 'Ritrascrivi le note', retranscribeTrackHint: 'Rilegge le note dal brano, con la sensibilità che scegli. Sostituisce le correzioni fatte a mano.',
+      findingBeat: 'Cerco il tempo e le battute…', bars: 'Battute',
+      barEarlier: '◀ Battuta', barLater: 'Battuta ▶', tempoHalf: 'Tempo ÷2', tempoDouble: 'Tempo ×2',
+      barsHint: 'Se le stanghette cadono nel punto sbagliato, spostale di un beat; se i valori sembrano il doppio o la metà, cambia il tempo.',
       modelDownload: 'Scarico il modello', modelStart: 'Avvio del modello…', separating: 'Separazione del basso',
       encoding: 'Preparo le tracce da ascoltare…',
       separationFailed: 'Non sono riuscito a isolare il basso su questo dispositivo.',
@@ -64,7 +69,7 @@
     },
     en: {
       product: 'Bass Transcriber', sister: 'Bass Chord Lab: chords on the fretboard', import: 'Import audio', eyebrow: 'From the track to your fingers',
-      library: 'Back to your tracks', trackTitle: 'Track title', transcribedNotes: 'Tablature: scrolls in time with the track', fretboard: 'Bass fretboard',
+      library: 'Back to your tracks', trackTitle: 'Track title', transcribedNotes: 'Tablature with bars and note values: scrolls in time with the track', fretboard: 'Bass fretboard',
       positionLabel: 'Position in the track', help: 'Help', source: 'Source on GitHub',
       heroTitle: 'Listen. Transcribe. Play.',
       heroText: 'Import a recording, extract the bass line and practise it on the fretboard. Audio, transcription and corrections stay on your device.',
@@ -103,6 +108,11 @@
       isolateExistingHint: 'To listen to the track without bass, or to the bass alone.',
       retranscribe: 'Transcribe again from the isolated bass',
       retranscribeHint: 'Replaces the current notes, including corrections made by hand.',
+      retranscribeTitle: 'Transcribe the bass line again', retranscribeStart: 'Transcribe again',
+      retranscribeTrack: 'Transcribe the notes again', retranscribeTrackHint: 'Reads the notes from the track again, with the sensitivity you choose. Replaces corrections made by hand.',
+      findingBeat: 'Finding the tempo and the bars…', bars: 'Bars',
+      barEarlier: '◀ Bar line', barLater: 'Bar line ▶', tempoHalf: 'Tempo ÷2', tempoDouble: 'Tempo ×2',
+      barsHint: 'If the bar lines fall in the wrong place, move them by a beat; if the note values look doubled or halved, change the tempo.',
       modelDownload: 'Downloading the model', modelStart: 'Starting the model…', separating: 'Separating the bass',
       encoding: 'Preparing the tracks to listen to…',
       separationFailed: 'The bass could not be isolated on this device.',
@@ -118,7 +128,7 @@
     lang: 'it', tracks: [], track: null, currentIndex: 0, pendingFile: null,
     cancelled: false, audioUrl: null, playing: false, animation: 0,
     demoTimer: 0, demoClock: 0, saveTimer: 0, persistent: false, synth: null, mic: null,
-    separable: false, job: null, pendingTrack: null, listen: 'mix', switching: false
+    separable: false, job: null, pendingTrack: null, pendingMode: 'import', listen: 'mix', switching: false
   };
 
   const t = key => COPY[state.lang][key] ?? key;
@@ -353,10 +363,40 @@
     show('studio');
     renderStudio(true);
     startAnimation();
+    ensureRhythm(track);
     if (migrated) {
       $('savedLabel').textContent = t('migrated');
       scheduleSave();
     }
+  }
+
+  /** A track imported before bars existed gets its pulse the first time it is opened. */
+  async function ensureRhythm(track) {
+    if (track.demo || track.rhythm || !track.audioBlob) return;
+    try {
+      const rhythm = Rhythm.analyse(await Transcriber.decode(track.audioBlob));
+      if (!rhythm || track.rhythm) return;
+      track.rhythm = rhythm;
+      await Store.save(track);
+      if (state.track === track) renderStudio(true);
+    } catch (error) {
+      console.warn('Manico: the beat could not be found', error);
+    }
+  }
+
+  /** Corrections to the pulse that only a listener can make: where the bar starts, the level of the beat, the meter. */
+  function adjustRhythm(change) {
+    const track = state.track;
+    if (!track) return;
+    const rhythm = { ...rhythmOf(track) };
+    if (change === 'earlier') rhythm.downbeat = (rhythm.downbeat + rhythm.perBar - 1) % rhythm.perBar;
+    else if (change === 'later') rhythm.downbeat = (rhythm.downbeat + 1) % rhythm.perBar;
+    else if (change === 'half' || change === 'double') Object.assign(rhythm, Rhythm.rescale(rhythm, change === 'double' ? 2 : 0.5));
+    else if (change === 'meter') { rhythm.perBar = rhythm.perBar === 4 ? 3 : 4; rhythm.downbeat %= rhythm.perBar; }
+    if (rhythm.beats.length < 4) return;
+    if (track.demo) track.fallbackRhythm = rhythm;
+    else { track.rhythm = rhythm; scheduleSave(); }
+    renderStudio(true);
   }
 
   function scheduleSave() {
@@ -397,41 +437,157 @@
     renderStudio(true);
   }
 
-  // The tablature above the fretboard. Time runs left to right at a fixed scale and the sheet
-  // slides under a playhead that stays put, so the number under the line is the note to play now.
-  const TAB = { row: 24, top: 26, bottom: 24, label: 30, scale: 120, key: null };
+  // The tablature above the fretboard, written as tablature is: a line per string with the
+  // highest on top, fret numbers, bar lines, and under the staff the stems, beams and flags
+  // that say how long each note lasts. A held note is written once; where it runs on into the
+  // next beat or bar it is tied, never repeated. The sheet slides under a playhead that stays put.
+  const TAB = { row: 22, top: 30, label: 34, stem: 30, score: null, key: '' };
+  const Rhythm = root.ManicoRhythm;
 
-  /** Pixels per second: wide enough that the fastest passages do not pile their numbers up. */
-  function tabScale(events) {
-    if (TAB.key === events && TAB.count === events.length) return TAB.scale;
-    const gaps = [];
-    for (let index = 1; index < events.length; index += 1) gaps.push(events[index].start - events[index - 1].start);
-    gaps.sort((left, right) => left - right);
-    const typical = gaps.length ? gaps[Math.floor(gaps.length * 0.25)] : 0.5;
-    TAB.scale = Core.clamp(24 / Math.max(0.05, typical), 70, 240);
-    TAB.key = events;
-    TAB.count = events.length;
-    return TAB.scale;
+  /** The pulse of the open track: found in the recording, known for an exercise, or a plain guess until then. */
+  function rhythmOf(track) {
+    if (track.rhythm?.beats?.length >= 2) return track.rhythm;
+    if (!track.fallbackRhythm) track.fallbackRhythm = Rhythm.steady(track.bpm || 120, track.duration || 60);
+    return track.fallbackRhythm;
+  }
+
+  /** The written music for the open track, worked out again only when its notes or its pulse change. */
+  function scoreOf(track) {
+    const rhythm = rhythmOf(track);
+    let sum = 0;
+    for (const event of track.events) sum += event.start + event.end * 3;
+    const key = [track.id, track.events.length, sum.toFixed(3), rhythm.beats.length, rhythm.beats[1], rhythm.downbeat, rhythm.perBar].join('|');
+    if (TAB.key === key) return TAB.score;
+    const { bars, barSlots, placed } = Rhythm.notate(rhythm, track.events);
+    const symbols = [];
+    const lastPiece = new Map();
+    let fast = 0;
+    [...bars.keys()].sort((left, right) => left - right).forEach(bar => {
+      for (const piece of bars.get(bar)) {
+        const symbol = { ...piece, bar, position: (bar * barSlots + piece.slot) / Rhythm.DIVISION };
+        if (symbol.tied) symbol.from = lastPiece.get(symbol.index);
+        if (!symbol.rest) lastPiece.set(symbol.index, symbol.position);
+        if (!symbol.rest && (symbol.value === 1 || symbol.slot % 2)) fast += 1;
+        symbols.push(symbol);
+      }
+    });
+    TAB.key = key;
+    TAB.score = {
+      rhythm, symbols, barSlots,
+      shift: Rhythm.calibrate(rhythm, track.events),
+      // Sixteenths need more room than eighths to stay readable.
+      beatWidth: fast > placed.length * 0.05 ? 104 : 72,
+      firstBar: bars.size ? Math.min(...bars.keys()) : 0,
+      lastBar: bars.size ? Math.max(...bars.keys()) : 0
+    };
+    return TAB.score;
   }
 
   function tabLayout() {
     const canvas = $('tabStrip');
     const strings = tuning().open.length;
     const width = canvas.clientWidth || 600;
-    const height = TAB.top + (strings - 1) * TAB.row + TAB.bottom + 12;
+    const score = scoreOf(state.track);
+    const staffBottom = TAB.top + (strings - 1) * TAB.row;
     return {
-      canvas, strings, width, height,
-      playhead: Math.max(TAB.label + 60, Math.round(width * 0.27)),
-      scale: tabScale(state.track.events),
+      canvas, strings, width, score, staffBottom,
+      height: staffBottom + TAB.stem + 26,
+      beatWidth: score.beatWidth * (width < 520 ? 0.8 : 1),
+      playhead: Math.max(TAB.label + 50, Math.round(width * 0.25)),
+      now: Rhythm.positionOf(score.rhythm, currentTime()) - score.shift,
       // The highest string is the top line, as on paper.
-      y: string => TAB.top + 6 + (strings - 1 - string) * TAB.row
+      y: string => TAB.top + (strings - 1 - string) * TAB.row
     };
+  }
+
+  function drawRest(context, value, x, layout) {
+    const middle = (TAB.top + layout.staffBottom) / 2;
+    context.lineWidth = 1.6;
+    if (value >= 8) {
+      // Whole and half rests: a block hanging from a line, or sitting on it.
+      const line = layout.y(Math.min(layout.strings - 1, Math.ceil(layout.strings / 2)));
+      context.fillRect(x - 6, value >= 16 ? line : line - 5, 12, 5);
+    } else if (value >= 4) {
+      context.beginPath();
+      context.moveTo(x - 3, middle - 11);
+      context.lineTo(x + 3, middle - 4);
+      context.lineTo(x - 3, middle + 1);
+      context.lineTo(x + 3, middle + 7);
+      context.quadraticCurveTo(x - 5, middle + 5, x - 1, middle + 12);
+      context.stroke();
+    } else {
+      const flags = value >= 2 ? 1 : 2;
+      context.beginPath();
+      context.moveTo(x + 4, middle - 8);
+      context.lineTo(x - 2, middle + 9);
+      context.stroke();
+      for (let flag = 0; flag < flags; flag += 1) {
+        context.beginPath();
+        context.arc(x - 3 - flag, middle - 6 + flag * 6, 2.2, 0, Math.PI * 2);
+        context.fill();
+        context.beginPath();
+        context.moveTo(x - 2 - flag, middle - 5 + flag * 6);
+        context.lineTo(x + 3.5 - flag * 2, middle - 7 + flag * 6);
+        context.stroke();
+      }
+    }
+  }
+
+  /** Stems, beams, flags and dots under the staff for the notes of one beat. */
+  function drawRhythm(context, group, layout, x) {
+    const top = layout.staffBottom + 12;
+    const bottom = layout.staffBottom + TAB.stem;
+    const beamed = group.length > 1 && group.every(symbol => symbol.value <= 3);
+    context.lineWidth = 1.4;
+    group.forEach((symbol, order) => {
+      const at = Math.round(x(symbol.position)) + 0.5;
+      if (symbol.value < 16) {
+        context.beginPath();
+        context.moveTo(at, symbol.value >= 8 ? bottom - 9 : top);
+        context.lineTo(at, bottom);
+        context.stroke();
+      }
+      if (symbol.value % 3 === 0) {
+        context.beginPath();
+        context.arc(at + 5, bottom - 4, 1.5, 0, Math.PI * 2);
+        context.fill();
+      }
+      if (symbol.value > 3) return;
+      const flags = symbol.value === 1 ? 2 : 1;
+      if (!beamed) {
+        for (let flag = 0; flag < flags; flag += 1) {
+          context.beginPath();
+          context.moveTo(at, bottom - flag * 5);
+          context.quadraticCurveTo(at + 7, bottom - 3 - flag * 5, at + 7, bottom - 10 - flag * 5);
+          context.stroke();
+        }
+        return;
+      }
+      // A sixteenth shares its second beam with a neighbouring sixteenth, or carries a stub towards its neighbour.
+      if (symbol.value === 1) {
+        const next = group[order + 1];
+        const previous = group[order - 1];
+        context.lineWidth = 3;
+        context.beginPath();
+        if (next && next.value === 1) { context.moveTo(at, bottom - 6); context.lineTo(Math.round(x(next.position)) + 0.5, bottom - 6); }
+        else if (!(previous && previous.value === 1)) { context.moveTo(at, bottom - 6); context.lineTo(at + (previous ? -7 : 7), bottom - 6); }
+        context.stroke();
+        context.lineWidth = 1.4;
+      }
+    });
+    if (beamed) {
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(Math.round(x(group[0].position)) + 0.5, bottom);
+      context.lineTo(Math.round(x(group.at(-1).position)) + 0.5, bottom);
+      context.stroke();
+    }
   }
 
   function renderTimeline() {
     if (!state.track) return;
     const layout = tabLayout();
-    const { canvas, strings, width, height, playhead, scale } = layout;
+    const { canvas, strings, width, height, playhead, score, now, beatWidth, staffBottom } = layout;
     const ratio = window.devicePixelRatio || 1;
     if (canvas.width !== Math.round(width * ratio) || canvas.height !== Math.round(height * ratio)) {
       canvas.width = Math.round(width * ratio);
@@ -444,29 +600,22 @@
     const context = canvas.getContext('2d');
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     context.clearRect(0, 0, width, height);
-    const events = state.track.events;
-    const time = currentTime();
-    const x = seconds => playhead + (seconds - time) * scale;
-    const from = time - (playhead + 40) / scale;
-    const to = time + (width - playhead + 40) / scale;
-
-    // Seconds along the top.
-    context.font = `10px ${mono}`;
     context.textBaseline = 'middle';
     context.textAlign = 'center';
-    context.fillStyle = color('--faint');
-    context.strokeStyle = color('--line');
+    const events = state.track.events;
+    const perBar = score.rhythm.perBar;
+    const x = position => playhead + (position - now) * beatWidth;
+    const from = now - (playhead + 60) / beatWidth;
+    const to = now + (width - playhead + 60) / beatWidth;
+
+    // Nothing of the sliding sheet is drawn under the string names.
+    context.save();
+    context.beginPath();
+    context.rect(TAB.label, 0, width - TAB.label, height);
+    context.clip();
+
+    // The strings, then the bar lines with their numbers.
     context.lineWidth = 1;
-    const every = scale >= 100 ? 1 : 2;
-    for (let second = Math.max(0, Math.ceil(from / every) * every); second <= Math.min(to, state.track.duration || to); second += every) {
-      const position = Math.round(x(second)) + 0.5;
-      context.beginPath();
-      context.moveTo(position, TAB.top - 8);
-      context.lineTo(position, layout.y(0) + 4);
-      context.stroke();
-      context.fillText(Core.formatTime(second), position, 9);
-    }
-    // The strings.
     context.strokeStyle = color('--line-2');
     for (let string = 0; string < strings; string += 1) {
       context.beginPath();
@@ -474,55 +623,107 @@
       context.lineTo(width, layout.y(string) + 0.5);
       context.stroke();
     }
-
+    context.font = `10px ${mono}`;
+    for (let bar = Math.max(score.firstBar, Math.floor(from / perBar)); bar <= Math.min(score.lastBar + 1, Math.ceil(to / perBar)); bar += 1) {
+      // The line sits a little before the first note of its bar, as it does in print.
+      const line = Math.round(x(bar * perBar) - beatWidth / Rhythm.DIVISION / 2 - 3) + 0.5;
+      context.strokeStyle = color('--muted');
+      context.lineWidth = 1.2;
+      context.beginPath();
+      context.moveTo(line, TAB.top);
+      context.lineTo(line, staffBottom);
+      context.stroke();
+      if (bar >= 0 && bar <= score.lastBar) {
+        context.fillStyle = color('--faint');
+        context.textAlign = 'left';
+        context.fillText(String(bar + 1), line + 4, TAB.top - 14);
+        context.textAlign = 'center';
+      }
+    }
     // The playhead, behind the numbers.
     context.strokeStyle = color('--accent');
     context.lineWidth = 2;
     context.beginPath();
-    context.moveTo(playhead, TAB.top - 10);
-    context.lineTo(playhead, layout.y(0) + 12);
+    context.moveTo(playhead, TAB.top - 8);
+    context.lineTo(playhead, staffBottom + TAB.stem + 4);
     context.stroke();
-    context.lineWidth = 1;
+
+    const symbols = score.symbols;
+    let low = 0;
+    let high = symbols.length;
+    while (low < high) {
+      const middle = (low + high) >> 1;
+      if (symbols[middle].position < from - perBar) low = middle + 1; else high = middle;
+    }
     const upcoming = new Set(preview().upcoming.map(event => event.id));
     const current = selected();
-    let first = state.currentIndex;
-    while (first > 0 && events[first - 1].end > from) first -= 1;
-    let lastName = -Infinity;
-    for (let index = first; index < events.length && events[index].start < to; index += 1) {
-      const event = events[index];
-      const left = x(event.start);
-      const playable = event.string !== null && event.string !== undefined && event.string < strings;
-      const row = playable ? layout.y(event.string) : layout.y(strings - 1) - TAB.row * 0.7;
-      const text = playable ? String(event.fret) : '?';
-      const tone = event === current ? color('--accent') : upcoming.has(event.id) ? color('--future')
-        : event.end <= time ? color('--faint') : color('--paper');
-      // How long the note lasts, as a faint bar on its string.
-      const length = Math.max(0, (event.end - event.start) * scale - 4);
-      context.globalAlpha = event === current ? 0.5 : 0.22;
-      context.fillStyle = tone;
-      context.fillRect(left, row - 2, length, 4);
-      context.globalAlpha = 1;
-      context.font = `${event === current ? 800 : 700} ${event === current ? 17 : 15}px ${mono}`;
-      const half = context.measureText(text).width / 2 + 3;
-      context.fillStyle = color('--panel');
-      context.fillRect(left - half, row - 10, half * 2, 20);
-      context.fillStyle = tone;
-      context.fillText(text, left, row + 1);
-      // Note names underneath, where there is room for them.
-      if (left - lastName > 30) {
-        context.font = `10px ${mono}`;
-        context.fillStyle = event === current ? color('--accent') : color('--faint');
-        context.fillText(Core.noteName(event.midi), left, height - 12);
-        lastName = left;
+    const time = currentTime();
+    const toneOf = event => event === current ? color('--accent') : upcoming.has(event.id) ? color('--future')
+      : event.end <= time ? color('--faint') : color('--paper');
+    let group = [];
+    let groupBeat = null;
+    const flush = () => {
+      if (!group.length) return;
+      context.strokeStyle = context.fillStyle = color('--muted');
+      drawRhythm(context, group, layout, x);
+      group = [];
+    };
+    for (let index = low; index < symbols.length && symbols[index].position < to; index += 1) {
+      const symbol = symbols[index];
+      const at = x(symbol.position);
+      const beat = Math.floor(symbol.position + 1e-6);
+      if (symbol.rest) {
+        flush();
+        context.strokeStyle = context.fillStyle = color('--faint');
+        // Long rests sit in the middle of the space they fill.
+        drawRest(context, symbol.value, symbol.value >= 8 ? at + (symbol.value / Rhythm.DIVISION * beatWidth) / 2 - beatWidth / 8 : at, layout);
+        continue;
       }
+      if (beat !== groupBeat || symbol.value > 3) flush();
+      groupBeat = beat;
+      group.push(symbol);
+      if (symbol.value > 3) flush();
+      const event = events[symbol.index];
+      if (!event) continue;
+      const playable = event.string !== null && event.string !== undefined && event.string < strings;
+      const row = playable ? layout.y(event.string) : TAB.top - 12;
+      const tone = toneOf(event);
+      if (symbol.tied) {
+        // The same note still sounding: an arc from where it was last written, and in a new bar the fret again in brackets.
+        const start = Math.max(x(symbol.from), TAB.label);
+        context.strokeStyle = tone;
+        context.globalAlpha = 0.7;
+        context.lineWidth = 1.4;
+        context.beginPath();
+        context.moveTo(start + 7, row + 9);
+        context.quadraticCurveTo((start + at) / 2, row + 17, at - (symbol.barStart ? 9 : 2), row + 9);
+        context.stroke();
+        context.globalAlpha = 1;
+        if (!symbol.barStart) continue;
+      }
+      const text = playable ? (symbol.tied ? `(${event.fret})` : String(event.fret)) : '?';
+      context.font = `${event === current ? 800 : 700} ${symbol.tied ? 12 : event === current ? 17 : 15}px ${mono}`;
+      const half = context.measureText(text).width / 2 + 2;
+      context.fillStyle = color('--panel');
+      context.fillRect(at - half, row - 9, half * 2, 18);
+      context.fillStyle = tone;
+      context.globalAlpha = symbol.tied ? 0.75 : 1;
+      context.fillText(text, at, row + 1);
+      context.globalAlpha = 1;
     }
+    flush();
+    context.restore();
 
-    // String names stay at the left edge, over the sliding sheet.
-    context.fillStyle = color('--panel');
-    context.fillRect(0, 0, TAB.label, height);
+    // String names stay at the left edge.
     context.font = `700 12px ${mono}`;
     context.fillStyle = color('--muted');
-    for (let string = 0; string < strings; string += 1) context.fillText(stringName(string), TAB.label / 2, layout.y(string) + 1);
+    for (let string = 0; string < strings; string += 1) context.fillText(stringName(string), TAB.label / 2 - 2, layout.y(string) + 1);
+    context.strokeStyle = color('--muted');
+    context.lineWidth = 1.2;
+    context.beginPath();
+    context.moveTo(TAB.label - 4.5, TAB.top);
+    context.lineTo(TAB.label - 4.5, staffBottom);
+    context.stroke();
   }
 
   /** A click on a number selects that note; a click elsewhere on the sheet moves the playhead there. */
@@ -533,17 +734,19 @@
     const px = event.clientX - bounds.left;
     const py = event.clientY - bounds.top;
     if (px < TAB.label) return;
-    const time = currentTime();
     const events = state.track.events;
     let best = -1;
-    let distance = 16;
-    events.forEach((item, index) => {
-      const dx = Math.abs(layout.playhead + (item.start - time) * layout.scale - px);
+    let distance = 14;
+    for (const symbol of layout.score.symbols) {
+      if (symbol.rest || symbol.tied) continue;
+      const item = events[symbol.index];
+      if (!item) continue;
+      const dx = Math.abs(layout.playhead + (symbol.position - layout.now) * layout.beatWidth - px);
       const onRow = item.string === null || item.string === undefined || Math.abs(layout.y(item.string) - py) <= TAB.row / 2;
-      if (onRow && dx < distance) { best = index; distance = dx; }
-    });
+      if (onRow && dx < distance) { best = symbol.index; distance = dx; }
+    }
     if (best >= 0) selectEvent(best);
-    else setTime(time + (px - layout.playhead) / layout.scale);
+    else setTime(Rhythm.timeOf(layout.score.rhythm, layout.now + layout.score.shift + (px - layout.playhead) / layout.beatWidth));
   }
 
   function neckGeometry(strings, frets) {
@@ -831,6 +1034,11 @@
       $(id).setAttribute('aria-pressed', String(state.listen === mode));
     }
     $('isolateBlock').hidden = stems || !state.separable || Boolean(state.track.demo) || !state.track.audioBlob;
+    $('retranscribeBlock').hidden = Boolean(state.track.demo) || !state.track.audioBlob;
+    const pulse = rhythmOf(state.track);
+    $('tempoLabel').textContent = state.track.demo || state.track.rhythm
+      ? `${Math.round(Rhythm.tempoOf(pulse))} BPM · ${pulse.perBar}/4` : t('findingBeat');
+    $('meterToggle').textContent = pulse.perBar === 4 ? '3/4' : '4/4';
     $('savedLabel').textContent = state.track.demo ? t('demo') : t('saved');
     $('tuningSelect').value = state.track.settings.tuning;
     $('fretsSelect').value = String(state.track.settings.frets);
@@ -1170,18 +1378,25 @@
     download(`${safeName(track.title)}.manico.json`, JSON.stringify(project, null, 2), 'application/json');
   }
 
-  /** Opens the dialog for a new file, or for a saved track whose bass is to be isolated afterwards. */
-  function openImport(file, track = null) {
+  /**
+   * Opens the dialog. `mode` is 'import' for a new file; for a saved track, 'isolate' separates
+   * its bass and 'retranscribe' reads its notes again.
+   */
+  function openImport(file, track = null, mode = 'import') {
     if (!file) return;
     state.pendingFile = file;
     state.pendingTrack = track;
+    state.pendingMode = track ? mode : 'import';
     state.cancelled = false;
+    const titles = { import: 'analyseTitle', isolate: 'isolateTitle', retranscribe: 'retranscribeTitle' };
+    const actions = { import: 'startAnalysis', isolate: 'isolateStart', retranscribe: 'retranscribeStart' };
+    const hints = { import: 'analyseHint', isolate: 'isolateHint', retranscribe: 'retranscribeHint' };
     $('importFileName').textContent = track ? track.title : file.name;
-    $('analysisTitle').textContent = t(track ? 'isolateTitle' : 'analyseTitle');
-    $('startAnalysis').textContent = t(track ? 'isolateStart' : 'startAnalysis');
-    $('isolateRow').hidden = Boolean(track) || !state.separable;
-    $('retranscribeRow').hidden = !track;
-    $('analysisStatus').textContent = t(track ? 'isolateHint' : 'analyseHint');
+    $('analysisTitle').textContent = t(titles[state.pendingMode]);
+    $('startAnalysis').textContent = t(actions[state.pendingMode]);
+    $('isolateRow').hidden = state.pendingMode !== 'import' || !state.separable;
+    $('retranscribeRow').hidden = state.pendingMode !== 'isolate';
+    $('analysisStatus').textContent = t(hints[state.pendingMode]);
     $('analysisProgress').style.width = '0%';
     $('startAnalysis').disabled = false;
     $('analysisModal').hidden = false;
@@ -1198,10 +1413,12 @@
   async function startImport() {
     const file = state.pendingFile;
     const existing = state.pendingTrack;
+    const mode = state.pendingMode;
     if (!file) return;
     state.cancelled = false;
     $('startAnalysis').disabled = true;
-    const isolate = existing ? true : state.separable && $('isolateBass').checked;
+    const isolate = mode === 'isolate' || (mode === 'import' && state.separable && $('isolateBass').checked);
+    const readNotes = mode !== 'isolate' || $('retranscribe').checked;
     const progress = (value, text) => {
       $('analysisProgress').style.width = `${Math.round(Core.clamp(value, 0, 1) * 100)}%`;
       if (text) $('analysisStatus').textContent = text;
@@ -1209,57 +1426,70 @@
     let wakeLock = null;
     try {
       progress(0.03, t('decoding'));
-      let buffer;
+      let mix;
       let source;
       let stems = null;
+      let isolated = false;
       if (isolate) {
         // Minutes of work: keep the screen from sleeping where the browser allows it.
         try { wakeLock = await navigator.wakeLock?.request('screen'); } catch (error) { wakeLock = null; }
-        buffer = await Separator.decode(file);
+        mix = await Separator.decode(file);
         if (state.cancelled) return;
         try {
-          state.job = Separator.separate(buffer, data => progress(0.05 + data.value * 0.77, separationStatus(data)));
+          state.job = Separator.separate(mix, data => progress(0.05 + data.value * 0.77, separationStatus(data)));
           const result = await state.job.promise;
           stems = { backing: result.backing, bass: result.bassAudio };
           source = result.bass;
+          isolated = true;
         } catch (error) {
           if (state.cancelled || error?.message === 'CANCELLED') return;
           // A new import still gets its transcription, from the full mix as before.
           if (existing) throw new Error('SEPARATION_FAILED');
           console.warn('Manico: bass separation failed', error);
-          source = buffer;
+          source = mix;
         } finally {
           state.job = null;
         }
       } else {
-        buffer = await Transcriber.decode(file);
-        source = buffer;
+        mix = await Transcriber.decode(file);
+        source = mix;
+        // A track separated earlier is read again from its bass alone.
+        if (existing?.stems?.bass) {
+          source = await Transcriber.decode(existing.stems.bass);
+          isolated = true;
+        }
       }
       if (state.cancelled) return;
       let events = null;
-      if (!existing || $('retranscribe').checked) {
+      if (readNotes) {
         const base = isolate ? 0.84 : 0.05;
         events = await Transcriber.transcribe(source, {
+          isolated,
           sensitivity: Number($('sensitivity').value) / 100,
           onProgress(value, stage) {
-            progress(base + value * (1 - base), stage === 'prepare' ? t('preparing') : t('analysing'));
+            progress(base + value * (0.97 - base), stage === 'prepare' ? t('preparing') : t('analysing'));
           }
         });
         if (state.cancelled) return;
         if (!events.length) throw new Error('NO_NOTES');
       }
+      progress(0.98, t('findingBeat'));
+      await new Promise(resolve => setTimeout(resolve, 0));
+      const rhythm = Rhythm.analyse(mix);
+      if (state.cancelled) return;
       progress(1, t('saving'));
       const now = Date.now();
       let id;
       if (existing) {
         id = existing.id;
-        existing.stems = stems;
+        if (stems) existing.stems = stems;
         if (events) {
           const open = (Core.TUNINGS[existing.settings.tuning] || Core.TUNINGS['4']).open;
           existing.events = Core.optimiseFingering(events, open, existing.settings.frets);
-          existing.analysisVersion = 2;
-          existing.source = 'bass';
+          existing.analysisVersion = 3;
+          existing.source = isolated ? 'bass' : 'mix';
         }
+        if (rhythm && !existing.rhythm) existing.rhythm = rhythm;
         existing.updatedAt = now;
         clearTimeout(state.saveTimer);
         await Store.save(existing);
@@ -1272,15 +1502,16 @@
           filename: file.name,
           mime: file.type,
           audioBlob: file,
-          duration: buffer.duration,
+          duration: mix.duration,
           createdAt: now,
           updatedAt: now,
-          analysisVersion: 2,
-          source: stems ? 'bass' : 'mix',
+          analysisVersion: 3,
+          source: isolated ? 'bass' : 'mix',
           settings,
           events: Core.optimiseFingering(events, Core.TUNINGS['4'].open, settings.frets)
         };
         if (stems) track.stems = stems;
+        if (rhythm) track.rhythm = rhythm;
         await Store.save(track);
       }
       const skipped = isolate && !stems;
@@ -1365,12 +1596,19 @@
     $('listenMix').onclick = () => setListen('mix');
     $('listenBacking').onclick = () => setListen('backing');
     $('listenBass').onclick = () => setListen('bass');
-    $('isolateExisting').onclick = () => {
-      const track = state.track;
-      if (!track?.audioBlob) return;
-      if (state.playing) togglePlay();
-      openImport(track.audioBlob, track);
-    };
+    for (const [id, mode] of [['isolateExisting', 'isolate'], ['retranscribeTrack', 'retranscribe']]) {
+      $(id).onclick = () => {
+        const track = state.track;
+        if (!track?.audioBlob) return;
+        if (state.playing) togglePlay();
+        openImport(track.audioBlob, track, mode);
+      };
+    }
+    $('barEarlier').onclick = () => adjustRhythm('earlier');
+    $('barLater').onclick = () => adjustRhythm('later');
+    $('tempoHalf').onclick = () => adjustRhythm('half');
+    $('tempoDouble').onclick = () => adjustRhythm('double');
+    $('meterToggle').onclick = () => adjustRhythm('meter');
     $('noteSelect').onchange = event => changeMidi(Number(event.target.value), true);
     $('positionSelect').onchange = event => changePosition(event.target.value);
     $('noteDown').onclick = () => changeMidi(-1);

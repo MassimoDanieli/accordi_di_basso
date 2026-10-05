@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it" data-versione="7.1.0">
+<html lang="it" data-versione="7.2.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -7,7 +7,7 @@
 <meta name="description" content="Importa una registrazione, trascrivi la linea di basso e studiala sul manico.">
 <title>Manico · Bass Transcriber</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2311100e'/%3E%3Crect x='10' y='16' width='44' height='32' rx='7' fill='%237a5238' stroke='%238a6a50'/%3E%3Cpath d='M14 24h36M14 31h36M14 38h36M14 45h36' stroke='%23ead9c1' stroke-opacity='.6'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/styles.css?v=7.1.0">
+<link rel="stylesheet" href="assets/styles.css?v=7.2.0">
 </head>
 <body>
 <div class="app-shell">
@@ -59,7 +59,7 @@
     <header class="section-head"><div><h2 data-i18n="examples">Esercizi inclusi</h2><p data-i18n="examplesHint">Linee essenziali pronte per provare il flusso.</p></div></header>
     <div id="demoList" class="track-grid"></div>
   </section>
-  <footer class="home-footer"><span id="versionLabel">Versione 7.1.0</span><span class="footer-links"><a class="sister-link" href="https://chords.massimodanieli.com/">chords.massimodanieli.com</a><a class="sister-link" href="https://github.com/MassimoDanieli/accordi_di_basso" data-i18n="source">Codice su GitHub</a></span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
+  <footer class="home-footer"><span id="versionLabel">Versione 7.2.0</span><span class="footer-links"><a class="sister-link" href="https://chords.massimodanieli.com/">chords.massimodanieli.com</a><a class="sister-link" href="https://github.com/MassimoDanieli/accordi_di_basso" data-i18n="source">Codice su GitHub</a></span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
 </main>
 
 <main id="studioView" class="view studio-view" hidden>
@@ -110,6 +110,8 @@
           <label><span data-i18n="frets">Tasti</span><select id="fretsSelect"></select></label>
           <label><span data-i18n="lookahead">Note in anticipo</span><select id="lookaheadSelect"></select></label>
         </div>
+        <div class="loop-block" id="rhythmBlock"><div class="loop-title"><span data-i18n="bars">Battute</span><b id="tempoLabel">—</b></div><div class="button-row"><button id="barEarlier" type="button" data-i18n="barEarlier">◀ Battuta</button><button id="barLater" type="button" data-i18n="barLater">Battuta ▶</button><button id="tempoHalf" type="button" data-i18n="tempoHalf">Tempo ÷2</button><button id="tempoDouble" type="button" data-i18n="tempoDouble">Tempo ×2</button><button id="meterToggle" type="button">3/4</button></div><p class="option-hint" data-i18n="barsHint">Se le stanghette cadono nel punto sbagliato, spostale di un beat.</p></div>
+        <div class="loop-block" id="retranscribeBlock" hidden><button id="retranscribeTrack" type="button" data-i18n="retranscribeTrack">Ritrascrivi le note</button><p class="option-hint" data-i18n="retranscribeTrackHint">Rilegge le note dal brano.</p></div>
         <div class="loop-block" id="isolateBlock" hidden><button id="isolateExisting" type="button" data-i18n="isolateExisting">Isola il basso (AI)</button><p class="option-hint" data-i18n="isolateExistingHint">Per ascoltare il brano senza basso o il basso da solo.</p></div>
         <div class="loop-block"><div class="loop-title"><span data-i18n="loop">Loop</span><b id="loopLabel">nessun loop</b></div><div class="button-row"><button id="setLoopA" type="button" data-i18n="setA">Imposta A</button><button id="setLoopB" type="button" data-i18n="setB">Imposta B</button><button id="clearLoop" type="button" data-i18n="clearLoop">Azzera</button></div></div>
       </section>
@@ -147,6 +149,6 @@
 <div id="fatalError" class="fatal" hidden></div>
 <audio id="audio" preload="metadata"></audio>
 </div>
-<script src="assets/app.bundle.js?v=7.1.0"></script>
+<script src="assets/app.bundle.js?v=7.2.0"></script>
 </body>
 </html>
