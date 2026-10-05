@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it" data-versione="7.0.0">
+<html lang="it" data-versione="7.1.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -7,7 +7,7 @@
 <meta name="description" content="Importa una registrazione, trascrivi la linea di basso e studiala sul manico.">
 <title>Manico · Bass Transcriber</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2311100e'/%3E%3Crect x='10' y='16' width='44' height='32' rx='7' fill='%237a5238' stroke='%238a6a50'/%3E%3Cpath d='M14 24h36M14 31h36M14 38h36M14 45h36' stroke='%23ead9c1' stroke-opacity='.6'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/styles.css?v=7.0.0">
+<link rel="stylesheet" href="assets/styles.css?v=7.1.0">
 </head>
 <body>
 <div class="app-shell">
@@ -59,7 +59,7 @@
     <header class="section-head"><div><h2 data-i18n="examples">Esercizi inclusi</h2><p data-i18n="examplesHint">Linee essenziali pronte per provare il flusso.</p></div></header>
     <div id="demoList" class="track-grid"></div>
   </section>
-  <footer class="home-footer"><span id="versionLabel">Versione 7.0.0</span><span class="footer-links"><a class="sister-link" href="https://chords.massimodanieli.com/">chords.massimodanieli.com</a><a class="sister-link" href="https://github.com/MassimoDanieli/accordi_di_basso" data-i18n="source">Codice su GitHub</a></span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
+  <footer class="home-footer"><span id="versionLabel">Versione 7.1.0</span><span class="footer-links"><a class="sister-link" href="https://chords.massimodanieli.com/">chords.massimodanieli.com</a><a class="sister-link" href="https://github.com/MassimoDanieli/accordi_di_basso" data-i18n="source">Codice su GitHub</a></span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
 </main>
 
 <main id="studioView" class="view studio-view" hidden>
@@ -83,14 +83,9 @@
         <label class="inline-control"><span data-i18n="speed">Velocità</span><select id="speedSelect"></select></label>
       </div>
       <div class="listen-bar" id="listenBlock" hidden><span data-i18n="listen">Ascolto</span><div class="button-row segmented" role="group" aria-label="Ascolto" data-i18n-aria="listen"><button id="listenMix" type="button" aria-pressed="true" data-i18n="listenMix">Brano</button><button id="listenBacking" type="button" aria-pressed="false" data-i18n="listenBacking">Senza basso</button><button id="listenBass" type="button" aria-pressed="false" data-i18n="listenBass">Solo basso</button></div></div>
-      <div id="phraseStrip" class="phrase-strip" aria-label="Note trascritte" data-i18n-aria="transcribedNotes"></div>
+      <div class="tab-strip"><canvas id="tabStrip" role="img" aria-label="Tablatura: scorre a tempo con il brano" data-i18n-aria="transcribedNotes"></canvas></div>
       <div class="board-area">
         <div class="instrument-stage"><svg id="fretboard" viewBox="0 0 1400 470" role="img" aria-label="Manico del basso" data-i18n-aria="fretboard"></svg></div>
-      </div>
-      <div class="board-legend">
-        <span><i class="legend-dot past"></i><span data-i18n="previous">precedente</span></span>
-        <span><i class="legend-dot current"></i><span data-i18n="current">adesso</span></span>
-        <span><i class="legend-dot future"></i><span data-i18n="upcoming">in arrivo</span></span>
       </div>
     </section>
 
@@ -152,6 +147,6 @@
 <div id="fatalError" class="fatal" hidden></div>
 <audio id="audio" preload="metadata"></audio>
 </div>
-<script src="assets/app.bundle.js?v=7.0.0"></script>
+<script src="assets/app.bundle.js?v=7.1.0"></script>
 </body>
 </html>
