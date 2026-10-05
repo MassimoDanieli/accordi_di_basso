@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 await import('../src/core.js');
 await import('../src/storage.js');
 await import('../src/transcriber.js');
+await import('../src/separator.js');
 const C = globalThis.ManicoCore;
 const S = globalThis.ManicoStorage;
 const T = globalThis.ManicoTranscriber;
 
-assert.equal(C.VERSION, '6.2.1');
+assert.equal(C.VERSION, '7.0.0');
 assert.equal(C.DEFAULT_FRETS, 12);
 new Function(T.workerSource());
 const adaptiveOffsets = T.analysisOffsets(1, 1.11);
@@ -125,4 +126,24 @@ const stored = await S.get(imported.id);
 assert.equal(stored.settings.frets, 15, 'storage saves what it is given: the importer sets the 12-fret default itself');
 assert.notEqual(stored, imported, 'storage keeps its own copy of a saved track');
 
-console.log('All Manico 6.2.1 smoke tests passed.');
+// Bass separation: optional engine, absent outside a browser.
+const Sep = globalThis.ManicoSeparator;
+assert.equal(await Sep.available(), false, 'no separation engine outside a web page');
+const mono = Sep.bufferOf(new Float32Array(44100), 44100);
+assert.equal(mono.duration, 1);
+assert.equal(mono.numberOfChannels, 1);
+assert.equal(mono.getChannelData(0).length, 44100);
+const firstRun = { downloaded: false };
+assert.ok(Math.abs(Sep.progressOf({ stage: 'model', loaded: 87, total: 174 }, firstRun).value - .1) < 1e-9);
+assert.ok(Math.abs(Sep.progressOf({ stage: 'separate', step: 0, total: 10 }, firstRun).value - .23) < 1e-9, 'after a download the passes start at 23%');
+const cachedRun = { downloaded: false };
+assert.ok(Math.abs(Sep.progressOf({ stage: 'separate', step: 5, total: 10 }, cachedRun).value - .48) < 1e-9, 'with the model cached the passes fill the bar from the start');
+let last = 0;
+for (const data of [{ stage: 'model', loaded: 1, total: 4 }, { stage: 'model', loaded: 4, total: 4 }, { stage: 'start' },
+  { stage: 'separate', step: 1, total: 3 }, { stage: 'separate', step: 3, total: 3 }, { stage: 'encode' }]) {
+  const { value } = Sep.progressOf(data, firstRun);
+  assert.ok(value >= last && value <= 1, 'progress never goes backwards');
+  last = value;
+}
+
+console.log(`All Manico ${C.VERSION} smoke tests passed.`);

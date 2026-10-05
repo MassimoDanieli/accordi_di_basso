@@ -4,7 +4,8 @@
   const Core = root.ManicoCore;
   const Store = root.ManicoStorage;
   const Transcriber = root.ManicoTranscriber;
-  if (!Core || !Store || !Transcriber) throw new Error('Manico modules missing');
+  const Separator = root.ManicoSeparator;
+  if (!Core || !Store || !Transcriber || !Separator) throw new Error('Manico modules missing');
 
   const $ = id => document.getElementById(id);
   const audio = $('audio');
@@ -44,7 +45,19 @@
       failed: 'Non sono riuscito a trascrivere questo file.',
       noNotes: 'Non ho trovato note affidabili. Prova con una sensibilità più alta o con un mix dove il basso è più presente.',
       persistentYes: 'archiviazione persistente', persistentNo: 'il browser può liberare spazio automaticamente',
-      importedLine: 'Linea di basso trascritta',
+      importedLine: 'Linea di basso trascritta', isolatedLine: 'Trascritta dal basso isolato',
+      isolate: 'Isola il basso con l’AI (consigliato)',
+      isolateHint: 'Separa il basso dal resto del brano, qui nel browser: la trascrizione è molto più precisa e puoi ascoltare il brano senza basso. La prima volta scarica un modello di 174 MB; un brano richiede qualche minuto.',
+      isolateTitle: 'Isola il basso', isolateStart: 'Isola il basso',
+      isolateExisting: 'Isola il basso (AI)',
+      isolateExistingHint: 'Per ascoltare il brano senza basso o il basso da solo.',
+      retranscribe: 'Ritrascrivi dal basso isolato',
+      retranscribeHint: 'Sostituisce le note attuali, comprese le correzioni fatte a mano.',
+      modelDownload: 'Scarico il modello', modelStart: 'Avvio del modello…', separating: 'Separazione del basso',
+      encoding: 'Preparo le tracce da ascoltare…',
+      separationFailed: 'Non sono riuscito a isolare il basso su questo dispositivo.',
+      separationSkipped: 'Basso non isolato: trascritto dal brano intero',
+      listen: 'Ascolto', listenMix: 'Brano', listenBacking: 'Senza basso', listenBass: 'Solo basso',
       keys: 'Spazio: play/pausa · frecce: nota precedente/successiva · [ A · ] B',
       audioMissing: 'L’audio salvato non è più disponibile, ma la trascrizione è rimasta.',
       migrated: 'Ottave e posizioni riallineate', version: `Versione ${Core.VERSION}`
@@ -82,7 +95,19 @@
       saving: 'Saving locally…', failed: 'This file could not be transcribed.',
       noNotes: 'No reliable notes were found. Try a higher sensitivity or a mix with a more prominent bass.',
       persistentYes: 'persistent storage', persistentNo: 'the browser may reclaim storage automatically',
-      importedLine: 'Transcribed bass line',
+      importedLine: 'Transcribed bass line', isolatedLine: 'Transcribed from the isolated bass',
+      isolate: 'Isolate the bass with AI (recommended)',
+      isolateHint: 'Separates the bass from the rest of the track, here in the browser: the transcription is far more accurate and you can listen to the track without bass. The first time it downloads a 174 MB model; a track takes a few minutes.',
+      isolateTitle: 'Isolate the bass', isolateStart: 'Isolate the bass',
+      isolateExisting: 'Isolate the bass (AI)',
+      isolateExistingHint: 'To listen to the track without bass, or to the bass alone.',
+      retranscribe: 'Transcribe again from the isolated bass',
+      retranscribeHint: 'Replaces the current notes, including corrections made by hand.',
+      modelDownload: 'Downloading the model', modelStart: 'Starting the model…', separating: 'Separating the bass',
+      encoding: 'Preparing the tracks to listen to…',
+      separationFailed: 'The bass could not be isolated on this device.',
+      separationSkipped: 'Bass not isolated: transcribed from the full track',
+      listen: 'Listen to', listenMix: 'Track', listenBacking: 'No bass', listenBass: 'Bass only',
       keys: 'Space: play/pause · arrows: previous/next note · [ A · ] B',
       audioMissing: 'The stored audio is no longer available, but the transcription remains.',
       migrated: 'Octaves and positions realigned', version: `Version ${Core.VERSION}`
@@ -92,7 +117,8 @@
   const state = {
     lang: 'it', tracks: [], track: null, currentIndex: 0, pendingFile: null,
     cancelled: false, audioUrl: null, playing: false, animation: 0,
-    demoTimer: 0, demoClock: 0, saveTimer: 0, persistent: false, synth: null, mic: null
+    demoTimer: 0, demoClock: 0, saveTimer: 0, persistent: false, synth: null, mic: null,
+    separable: false, job: null, pendingTrack: null, listen: 'mix', switching: false
   };
 
   const t = key => COPY[state.lang][key] ?? key;
@@ -252,6 +278,42 @@
     state.playing = false;
   }
 
+  /** The audio for a listening mode: the track as imported, without its bass, or the bass alone. */
+  function listenBlob(mode) {
+    const track = state.track;
+    if (mode === 'backing') return track.stems?.backing || null;
+    if (mode === 'bass') return track.stems?.bass || null;
+    return track.audioBlob || null;
+  }
+
+  /** Points the player at one of the three recordings, keeping the place, the speed and whether it was playing. */
+  function loadAudio(mode, time = 0, play = false) {
+    const wanted = listenBlob(mode) ? mode : 'mix';
+    const blob = listenBlob(wanted);
+    state.listen = wanted;
+    if (!blob) return;
+    if (state.audioUrl) URL.revokeObjectURL(state.audioUrl);
+    state.audioUrl = URL.createObjectURL(blob);
+    state.switching = play;
+    audio.src = state.audioUrl;
+    audio.preload = play || time ? 'auto' : 'metadata';
+    setAudioSpeed(state.track.settings.speed || 1);
+    if (time) audio.currentTime = time;
+    if (play) {
+      audio.play()
+        .catch(() => { state.playing = false; })
+        .finally(() => { state.switching = false; renderStudio(false); });
+    }
+  }
+
+  function setListen(mode) {
+    if (!state.track || state.track.demo || mode === state.listen || !listenBlob(mode)) return;
+    state.track.settings.listen = mode;
+    loadAudio(mode, audio.currentTime || 0, state.playing);
+    scheduleSave();
+    renderStudio(false);
+  }
+
   function ensureTrackIntegrity(track) {
     track.settings = {
       tuning: '4', frets: 15, lookahead: 3, speed: 1, loopA: null, loopB: null,
@@ -286,12 +348,8 @@
     state.track = track;
     state.currentIndex = 0;
     state.demoClock = 0;
-    if (track.audioBlob) {
-      state.audioUrl = URL.createObjectURL(track.audioBlob);
-      audio.src = state.audioUrl;
-      audio.preload = 'metadata';
-      setAudioSpeed(track.settings.speed || 1);
-    }
+    state.listen = 'mix';
+    if (track.audioBlob) loadAudio(track.settings.listen || 'mix');
     show('studio');
     renderStudio(true);
     startAnimation();
@@ -656,7 +714,14 @@
   function renderStudio(full = false) {
     if (!state.track) return;
     if (document.activeElement !== $('trackTitle')) $('trackTitle').value = state.track.title;
-    $('trackMeta').textContent = `${state.track.demo ? t('demo') : t('importedLine')} · ${state.track.events.length} ${t('notes')} · ${tuning().label}`;
+    const origin = state.track.demo ? t('demo') : t(state.track.source === 'bass' ? 'isolatedLine' : 'importedLine');
+    $('trackMeta').textContent = `${origin} · ${state.track.events.length} ${t('notes')} · ${tuning().label}`;
+    const stems = Boolean(state.track.stems?.backing && state.track.stems?.bass);
+    $('listenBlock').hidden = !stems;
+    for (const [id, mode] of [['listenMix', 'mix'], ['listenBacking', 'backing'], ['listenBass', 'bass']]) {
+      $(id).setAttribute('aria-pressed', String(state.listen === mode));
+    }
+    $('isolateBlock').hidden = stems || !state.separable || Boolean(state.track.demo) || !state.track.audioBlob;
     $('savedLabel').textContent = state.track.demo ? t('demo') : t('saved');
     $('tuningSelect').value = state.track.settings.tuning;
     $('fretsSelect').value = String(state.track.settings.frets);
@@ -891,6 +956,7 @@
   }
 
   function setAudioSpeed(speed) {
+    audio.defaultPlaybackRate = speed;
     audio.preservesPitch = true;
     audio.webkitPreservesPitch = true;
     audio.mozPreservesPitch = true;
@@ -995,68 +1061,142 @@
     download(`${safeName(track.title)}.manico.json`, JSON.stringify(project, null, 2), 'application/json');
   }
 
-  function openImport(file) {
+  /** Opens the dialog for a new file, or for a saved track whose bass is to be isolated afterwards. */
+  function openImport(file, track = null) {
     if (!file) return;
     state.pendingFile = file;
+    state.pendingTrack = track;
     state.cancelled = false;
-    $('importFileName').textContent = file.name;
-    $('analysisStatus').textContent = t('analyseHint');
+    $('importFileName').textContent = track ? track.title : file.name;
+    $('analysisTitle').textContent = t(track ? 'isolateTitle' : 'analyseTitle');
+    $('startAnalysis').textContent = t(track ? 'isolateStart' : 'startAnalysis');
+    $('isolateRow').hidden = Boolean(track) || !state.separable;
+    $('retranscribeRow').hidden = !track;
+    $('analysisStatus').textContent = t(track ? 'isolateHint' : 'analyseHint');
     $('analysisProgress').style.width = '0%';
     $('startAnalysis').disabled = false;
     $('analysisModal').hidden = false;
   }
 
+  function separationStatus(data) {
+    const megabytes = value => Math.round(value / 1048576);
+    if (data.stage === 'model') return `${t('modelDownload')}… ${megabytes(data.loaded)}${data.total ? ` / ${megabytes(data.total)}` : ''} MB`;
+    if (data.stage === 'start') return t('modelStart');
+    if (data.stage === 'separate') return `${t('separating')}… ${data.step} / ${data.total}`;
+    return t('encoding');
+  }
+
   async function startImport() {
     const file = state.pendingFile;
+    const existing = state.pendingTrack;
     if (!file) return;
     state.cancelled = false;
     $('startAnalysis').disabled = true;
+    const isolate = existing ? true : state.separable && $('isolateBass').checked;
+    const progress = (value, text) => {
+      $('analysisProgress').style.width = `${Math.round(Core.clamp(value, 0, 1) * 100)}%`;
+      if (text) $('analysisStatus').textContent = text;
+    };
+    let wakeLock = null;
     try {
-      $('analysisStatus').textContent = t('decoding');
-      $('analysisProgress').style.width = '4%';
-      const buffer = await Transcriber.decode(file);
-      if (state.cancelled) return;
-      const events = await Transcriber.transcribe(buffer, {
-        sensitivity: Number($('sensitivity').value) / 100,
-        onProgress(value, stage) {
-          $('analysisProgress').style.width = `${Math.round(value * 100)}%`;
-          $('analysisStatus').textContent = stage === 'prepare' ? t('preparing') : t('analysing');
+      progress(0.03, t('decoding'));
+      let buffer;
+      let source;
+      let stems = null;
+      if (isolate) {
+        // Minutes of work: keep the screen from sleeping where the browser allows it.
+        try { wakeLock = await navigator.wakeLock?.request('screen'); } catch (error) { wakeLock = null; }
+        buffer = await Separator.decode(file);
+        if (state.cancelled) return;
+        try {
+          state.job = Separator.separate(buffer, data => progress(0.05 + data.value * 0.77, separationStatus(data)));
+          const result = await state.job.promise;
+          stems = { backing: result.backing, bass: result.bassAudio };
+          source = result.bass;
+        } catch (error) {
+          if (state.cancelled || error?.message === 'CANCELLED') return;
+          // A new import still gets its transcription, from the full mix as before.
+          if (existing) throw new Error('SEPARATION_FAILED');
+          console.warn('Manico: bass separation failed', error);
+          source = buffer;
+        } finally {
+          state.job = null;
         }
-      });
+      } else {
+        buffer = await Transcriber.decode(file);
+        source = buffer;
+      }
       if (state.cancelled) return;
-      if (!events.length) throw new Error('NO_NOTES');
-      $('analysisStatus').textContent = t('saving');
-      const id = `track-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      let events = null;
+      if (!existing || $('retranscribe').checked) {
+        const base = isolate ? 0.84 : 0.05;
+        events = await Transcriber.transcribe(source, {
+          sensitivity: Number($('sensitivity').value) / 100,
+          onProgress(value, stage) {
+            progress(base + value * (1 - base), stage === 'prepare' ? t('preparing') : t('analysing'));
+          }
+        });
+        if (state.cancelled) return;
+        if (!events.length) throw new Error('NO_NOTES');
+      }
+      progress(1, t('saving'));
       const now = Date.now();
-      const settings = { tuning: '4', frets: Core.DEFAULT_FRETS, lookahead: 3, speed: 1, loopA: null, loopB: null };
-      const track = {
-        id,
-        title: file.name.replace(/\.[^.]+$/, ''),
-        filename: file.name,
-        mime: file.type,
-        audioBlob: file,
-        duration: buffer.duration,
-        createdAt: now,
-        updatedAt: now,
-        analysisVersion: 2,
-        settings,
-        events: Core.optimiseFingering(events, Core.TUNINGS['4'].open, settings.frets)
-      };
-      await Store.save(track);
+      let id;
+      if (existing) {
+        id = existing.id;
+        existing.stems = stems;
+        if (events) {
+          const open = (Core.TUNINGS[existing.settings.tuning] || Core.TUNINGS['4']).open;
+          existing.events = Core.optimiseFingering(events, open, existing.settings.frets);
+          existing.analysisVersion = 2;
+          existing.source = 'bass';
+        }
+        existing.updatedAt = now;
+        clearTimeout(state.saveTimer);
+        await Store.save(existing);
+      } else {
+        id = `track-${now}-${Math.random().toString(36).slice(2, 8)}`;
+        const settings = { tuning: '4', frets: Core.DEFAULT_FRETS, lookahead: 3, speed: 1, loopA: null, loopB: null };
+        const track = {
+          id,
+          title: file.name.replace(/\.[^.]+$/, ''),
+          filename: file.name,
+          mime: file.type,
+          audioBlob: file,
+          duration: buffer.duration,
+          createdAt: now,
+          updatedAt: now,
+          analysisVersion: 2,
+          source: stems ? 'bass' : 'mix',
+          settings,
+          events: Core.optimiseFingering(events, Core.TUNINGS['4'].open, settings.frets)
+        };
+        if (stems) track.stems = stems;
+        await Store.save(track);
+      }
+      const skipped = isolate && !stems;
+      state.pendingFile = null;
+      state.pendingTrack = null;
       $('analysisModal').hidden = true;
       await loadLibrary();
       await refreshStorage();
       await openTrack(id, false);
+      if (skipped) $('savedLabel').textContent = t('separationSkipped');
     } catch (error) {
       $('startAnalysis').disabled = false;
       $('analysisProgress').style.width = '0%';
-      $('analysisStatus').textContent = error?.message === 'NO_NOTES' ? t('noNotes') : t('failed');
+      $('analysisStatus').textContent = t({ NO_NOTES: 'noNotes', SEPARATION_FAILED: 'separationFailed' }[error?.message] || 'failed');
+    } finally {
+      try { await wakeLock?.release(); } catch (error) { /* already released */ }
     }
   }
 
   function cancelImport() {
     state.cancelled = true;
+    state.job?.cancel();
+    state.job = null;
     state.pendingFile = null;
+    state.pendingTrack = null;
     $('analysisModal').hidden = true;
   }
 
@@ -1111,6 +1251,15 @@
     $('setLoopB').onclick = () => setLoop('B');
     $('clearLoop').onclick = clearLoop;
     $('microphoneButton').onclick = startMicrophone;
+    $('listenMix').onclick = () => setListen('mix');
+    $('listenBacking').onclick = () => setListen('backing');
+    $('listenBass').onclick = () => setListen('bass');
+    $('isolateExisting').onclick = () => {
+      const track = state.track;
+      if (!track?.audioBlob) return;
+      if (state.playing) togglePlay();
+      openImport(track.audioBlob, track);
+    };
     $('noteSelect').onchange = event => changeMidi(Number(event.target.value), true);
     $('positionSelect').onchange = event => changePosition(event.target.value);
     $('noteDown').onclick = () => changeMidi(-1);
@@ -1126,7 +1275,7 @@
     $('exportProject').onclick = exportProject;
     $('trackTitle').onchange = event => { state.track.title = event.target.value.trim() || state.track.title; scheduleSave(); };
     audio.onplay = () => { state.playing = true; renderStudio(false); startAnimation(); };
-    audio.onpause = () => { state.playing = false; renderStudio(false); };
+    audio.onpause = () => { if (state.switching) return; state.playing = false; renderStudio(false); };
     audio.onended = () => { state.playing = false; setTime(0); renderStudio(false); };
     audio.onloadedmetadata = () => { if (state.track && !state.track.duration) state.track.duration = audio.duration; updatePlayback(true); };
     document.addEventListener('keydown', event => {
@@ -1144,6 +1293,7 @@
     populate();
     bind();
     state.persistent = await Store.persist();
+    state.separable = await Separator.available();
     await loadLibrary();
     await refreshStorage();
     applyLanguage();

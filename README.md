@@ -1,6 +1,16 @@
-# Manico 6.2.1 · Bass Transcriber
+# Manico 7.0.0 · Bass Transcriber
 
 Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico rettangolare con anticipo visivo coerente delle note successive.
+
+La release 7.0.0 isola il basso dalla registrazione con un modello di separazione (Demucs) che gira nel browser:
+
+- la trascrizione viene fatta sul basso isolato invece che sul mix intero, con molti meno errori sui brani densi;
+- **Ascolto** passa dal brano intero al brano senza basso, per suonare sopra la band vera, al solo basso;
+- un brano importato prima si può separare dopo, scegliendo se ritrascriverlo;
+- niente upload: il modello (174 MB) si scarica una volta e resta nella cache del browser; con WebGPU (Chrome, Edge e Safari recenti) un brano richiede pochi minuti, senza WebGPU circa tre o quattro volte la sua durata;
+- se il motore non è disponibile, o la separazione fallisce, Manico trascrive dal mix come prima.
+
+Il motore non è nel repository: `node tools/build-separator.js` lo costruisce in `assets/separator/` da pacchetti npm con versione fissata ([demucs-js](https://github.com/bakkot/demucs-js) di Kevin Gibbons, MIT, e ONNX Runtime Web). I pesi del modello derivano da quelli pubblicati da Meta, resi disponibili per uso personale e di ricerca (vedi `DEMUCS-LICENSE.md` nella stessa cartella). Il sito viene pubblicato dal workflow `Deploy site`, che esegue quel passo.
 
 La release 6.2.1 aggiunge il collegamento al repository GitHub nel piè di pagina dell'app e delle pagine di aiuto.
 
@@ -64,4 +74,11 @@ La release è verificata anche nel browser: un esercizio nuovo apre il selettore
 npm test
 npm run release
 npm run check:release
+```
+
+Per provare in locale la separazione del basso (scarica circa 100 MB da npm, una volta):
+
+```bash
+node tools/build-separator.js
+npm run dev
 ```
