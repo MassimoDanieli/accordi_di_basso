@@ -6,7 +6,7 @@ const C = globalThis.ManicoCore;
 const S = globalThis.ManicoStorage;
 const T = globalThis.ManicoTranscriber;
 
-assert.equal(C.VERSION, '6.2.0');
+assert.equal(C.VERSION, '6.2.1');
 assert.equal(C.DEFAULT_FRETS, 12);
 new Function(T.workerSource());
 const adaptiveOffsets = T.analysisOffsets(1, 1.11);
@@ -125,4 +125,4 @@ const stored = await S.get(imported.id);
 assert.equal(stored.settings.frets, 15, 'storage saves what it is given: the importer sets the 12-fret default itself');
 assert.notEqual(stored, imported, 'storage keeps its own copy of a saved track');
 
-console.log('All Manico 6.2.0 smoke tests passed.');
+console.log('All Manico 6.2.1 smoke tests passed.');

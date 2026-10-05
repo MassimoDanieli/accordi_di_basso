@@ -1,6 +1,8 @@
-# Manico 6.2.0 · Bass Transcriber
+# Manico 6.2.1 · Bass Transcriber
 
 Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico rettangolare con anticipo visivo coerente delle note successive.
+
+La release 6.2.1 aggiunge il collegamento al repository GitHub nel piè di pagina dell'app e delle pagine di aiuto.
 
 La release 6.2.0 è una revisione del codice: il manico statico viene disegnato una volta sola per accordatura e numero di tasti, l'animazione si ferma quando il brano è in pausa, l'importazione non copia più due volte il file audio, i colori del manico sono nel foglio di stile invece che in uno stile iniettato da JavaScript, le etichette accessibili sono tradotte e il titolo non viene sovrascritto mentre lo si modifica.
 

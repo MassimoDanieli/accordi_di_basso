@@ -1,7 +1,7 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '6.2.0';
+  const VERSION = '6.2.1';
   // New imports and included exercises start in the accompaniment-friendly 0-12 range;
   // existing projects keep the range their owner chose.
   const DEFAULT_FRETS = 12;
@@ -718,7 +718,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     it: {
       product: 'Bass Transcriber', sister: 'Bass Chord Lab: accordi sulla tastiera', import: 'Importa audio', eyebrow: 'Dal brano alle dita',
       library: 'Torna ai brani', trackTitle: 'Titolo del brano', transcribedNotes: 'Note trascritte', fretboard: 'Manico del basso',
-      positionLabel: 'Posizione nel brano', help: 'Aiuto',
+      positionLabel: 'Posizione nel brano', help: 'Aiuto', source: 'Codice su GitHub',
       heroTitle: 'Ascolta. Trascrivi. Suona.',
       heroText: 'Importa una registrazione, ricava la linea di basso e studiala sul manico. Audio, trascrizione e correzioni restano sul tuo dispositivo.',
       privacy: 'Nessun upload. Tutto avviene nel browser.', dropTitle: 'Porta qui il tuo brano',
@@ -757,7 +757,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration}=message.d
     en: {
       product: 'Bass Transcriber', sister: 'Bass Chord Lab: chords on the fretboard', import: 'Import audio', eyebrow: 'From the track to your fingers',
       library: 'Back to your tracks', trackTitle: 'Track title', transcribedNotes: 'Transcribed notes', fretboard: 'Bass fretboard',
-      positionLabel: 'Position in the track', help: 'Help',
+      positionLabel: 'Position in the track', help: 'Help', source: 'Source on GitHub',
       heroTitle: 'Listen. Transcribe. Play.',
       heroText: 'Import a recording, extract the bass line and practise it on the fretboard. Audio, transcription and corrections stay on your device.',
       privacy: 'No upload. Everything happens in your browser.', dropTitle: 'Drop your track here',
