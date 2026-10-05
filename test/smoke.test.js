@@ -3,11 +3,12 @@ await import('../src/core.js');
 await import('../src/storage.js');
 await import('../src/transcriber.js');
 await import('../src/separator.js');
+await import('../src/rhythm.js');
 const C = globalThis.ManicoCore;
 const S = globalThis.ManicoStorage;
 const T = globalThis.ManicoTranscriber;
 
-assert.equal(C.VERSION, '7.1.0');
+assert.equal(C.VERSION, '7.2.0');
 assert.equal(C.DEFAULT_FRETS, 12);
 new Function(T.workerSource());
 const adaptiveOffsets = T.analysisOffsets(1, 1.11);
@@ -125,6 +126,86 @@ await S.save(imported);
 const stored = await S.get(imported.id);
 assert.equal(stored.settings.frets, 15, 'storage saves what it is given: the importer sets the 12-fret default itself');
 assert.notEqual(stored, imported, 'storage keeps its own copy of a saved track');
+
+// An isolated bass is read by following the note: a held note is one note however long it lasts.
+const RATE = 5512;
+const isolatedNotes = signal => {
+  let events = null;
+  const scope = { postMessage: message => { if (message.type === 'result') events = message.events; } };
+  new Function('self', T.workerSource())(scope);
+  scope.onmessage({ data: { signal, sampleRate: RATE, sensitivity: .72, duration: signal.length / RATE, isolated: true } });
+  return events;
+};
+const tone = (frequency, seconds, shape) => Float32Array.from({ length: Math.round(seconds * RATE) }, (_, index) => {
+  const time = index / RATE;
+  return shape(time) * (Math.sin(2 * Math.PI * frequency * time) + .4 * Math.sin(4 * Math.PI * frequency * time));
+});
+const join = (...parts) => {
+  const out = new Float32Array(parts.reduce((sum, part) => sum + part.length, 0));
+  let offset = 0;
+  for (const part of parts) { out.set(part, offset); offset += part.length; }
+  return out;
+};
+const silence = seconds => new Float32Array(Math.round(seconds * RATE));
+const held = isolatedNotes(join(silence(.3), tone(55, 4, time => .25 + .2 * Math.min(1, time / 2)), silence(.3)));
+assert.equal(held.length, 1, 'a note held for four seconds, swelling slowly, is one note');
+assert.equal(held[0].midi, 33);
+assert.ok(held[0].end - held[0].start > 3.7);
+const plucked = isolatedNotes(join(silence(.3), ...Array.from({ length: 8 }, () => tone(55, .25, time => .4 * Math.exp(-time * 9))), silence(.3)));
+assert.equal(plucked.length, 8, 'eight plucks of the same note are eight notes');
+assert.ok(plucked.every(event => event.midi === 33));
+const slurred = isolatedNotes(join(silence(.3), tone(55, .8, () => .3), tone(65.41, .8, () => .3), silence(.3)));
+assert.deepEqual(slurred.map(event => event.midi), [33, 36], 'a change of pitch without a new attack starts a new note');
+assert.ok(Math.abs(slurred[1].start - 1.1) < .06);
+assert.equal(isolatedNotes(silence(2)).length, 0);
+
+// Rhythm: the beat of a recording, and the notes written against it.
+const Rh = globalThis.ManicoRhythm;
+const clickTrack = (() => {
+  const rate = 11025, seconds = 24, bpm = 100;
+  const data = new Float32Array(rate * seconds);
+  let seed = 1;
+  const noise = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647 - .5; };
+  for (let beat = 0; beat * 60 / bpm < seconds - .1; beat += 1) {
+    const start = Math.round((.2 + beat * 60 / bpm) * rate);
+    for (let index = 0; index < 400; index += 1) data[start + index] += (beat % 4 ? .5 : 1) * noise() * Math.exp(-index / 80);
+  }
+  return { sampleRate: rate, length: data.length, duration: seconds, numberOfChannels: 1, getChannelData: () => data };
+})();
+const pulse = Rh.analyse(clickTrack);
+assert.ok(Math.abs(Rh.tempoOf(pulse) - 100) < 1.5, `tempo of a 100 BPM click, found ${Rh.tempoOf(pulse)}`);
+assert.ok(pulse.beats.every((time, index) => index === 0 || Math.abs(time - pulse.beats[index - 1] - .6) < .04), 'beats are evenly spaced');
+assert.ok(Math.abs(((pulse.beats[0] - .2) / .6 + .5) % 1 - .5) < .08, 'beats fall on the clicks');
+const even = Rh.steady(120, 16);
+assert.equal(Rh.tempoOf(even), 120);
+assert.equal(Rh.positionOf(even, 1), 2);
+assert.equal(Rh.positionOf({ ...even, downbeat: 1 }, 1), 1, 'positions count from the first bar line');
+assert.ok(Math.abs(Rh.timeOf(even, Rh.positionOf(even, 3.21)) - 3.21) < 1e-9);
+assert.ok(Math.abs(Rh.positionOf(even, -1) + 2) < 1e-9, 'the pulse carries on before the first beat');
+assert.equal(Rh.tempoOf(Rh.rescale(even, 2)), 240);
+assert.equal(Rh.tempoOf(Rh.rescale(even, .5)), 60);
+const values = (start, length, rest) => Rh.splitValues(start, length, 16, rest).map(piece => piece.value);
+assert.deepEqual(values(0, 16), [16]);
+assert.deepEqual(values(0, 12), [12]);
+assert.deepEqual(values(0, 6), [6]);
+assert.deepEqual(values(2, 4), [4], 'a quarter on the off-beat stays a quarter');
+assert.deepEqual(values(1, 3), [3]);
+assert.deepEqual(values(3, 6), [1, 4, 1], 'a value that straddles beats is split at them');
+assert.deepEqual(values(4, 12), [4, 8], 'three beats from beat two: a quarter tied to a half');
+assert.deepEqual(values(2, 6), [2, 4]);
+assert.deepEqual(values(4, 6), [6]);
+assert.deepEqual(values(0, 12, true), [8, 4], 'rests are never dotted');
+assert.deepEqual(values(2, 6, true), [2, 4]);
+// One note held for three bars is written once and tied, never repeated.
+const longNote = Rh.notate(even, [{ start: 0, end: 6 }, { start: 6, end: 6.25 }, { start: 6.25, end: 6.5 }]);
+const written = [...longNote.bars.values()].flat();
+assert.equal(written.filter(symbol => symbol.index === 0 && !symbol.tied).length, 1);
+assert.deepEqual(written.filter(symbol => symbol.index === 0).map(symbol => [symbol.value, symbol.tied]), [[16, false], [16, true], [16, true]]);
+assert.deepEqual(longNote.bars.get(3).map(symbol => [symbol.rest ? 'rest' : symbol.index, symbol.value]), [[1, 2], [2, 2], ['rest', 4], ['rest', 8]]);
+// Notes played a little late are still written on the beat they belong to.
+const late = Array.from({ length: 16 }, (_, index) => ({ start: index * .25 + .04, end: index * .25 + .27 }));
+assert.ok(Math.abs(Rh.calibrate(even, late) - .08) < .01);
+assert.deepEqual(Rh.quantize(even, late).map(note => [note.slot, note.slots]), late.map((_, index) => [index * 2, 2]));
 
 // Bass separation: optional engine, absent outside a browser.
 const Sep = globalThis.ManicoSeparator;

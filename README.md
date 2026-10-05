@@ -1,6 +1,13 @@
-# Manico 7.1.0 · Bass Transcriber
+# Manico 7.2.0 · Bass Transcriber
 
 Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico rettangolare con anticipo visivo coerente delle note successive.
+
+La release 7.2.0 riscrive la tablatura e il modo in cui si leggono le note dal basso isolato:
+
+- **una nota tenuta è una nota sola**: sul basso isolato le note non si cercano più negli scatti di energia (che spezzavano una nota lunga in tanti attacchi finti) ma seguendo la nota stessa: un nuovo attacco è un calo di livello che risale in pochi centesimi di secondo, oppure un cambio di altezza che regge;
+- **tempo e battute** sono ricavati dalla registrazione (flusso spettrale e inseguimento del beat) e si correggono a mano: stanghetta avanti o indietro di un beat, tempo doppio o dimezzato, 4/4 o 3/4;
+- **tablatura vera**: battute numerate, valori ritmici sotto il rigo (gambi, travi, codette, punti), pause, legature di valore con il tasto ripetuto tra parentesi a inizio battuta;
+- **Ritrascrivi le note** rilegge un brano già importato, dal basso isolato se c'è, con la sensibilità scelta.
 
 La release 7.1.0 mette sopra il manico una tablatura che scorre a tempo con il brano, al posto della striscia di caselle: la nota da suonare è quella sotto la linea, un clic su un numero la seleziona e un clic altrove sposta l'ascolto. Il manico mostra soltanto la nota da suonare adesso.
 
