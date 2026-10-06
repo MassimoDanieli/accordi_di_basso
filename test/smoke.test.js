@@ -1,15 +1,19 @@
 import assert from 'node:assert/strict';
+await import('../src/pieces.js');
 await import('../src/core.js');
 await import('../src/storage.js');
 await import('../src/reader.js');
 await import('../src/transcriber.js');
 await import('../src/separator.js');
 await import('../src/rhythm.js');
+await import('../src/chords.js');
+await import('../src/sheet.js');
+await import('../src/pitch.js');
 const C = globalThis.ManicoCore;
 const S = globalThis.ManicoStorage;
 const T = globalThis.ManicoTranscriber;
 
-assert.equal(C.VERSION, '7.3.0');
+assert.equal(C.VERSION, '7.4.0');
 assert.equal(C.DEFAULT_FRETS, 12);
 new Function(T.workerSource());
 const adaptiveOffsets = T.analysisOffsets(1, 1.11);
@@ -105,12 +109,14 @@ assert.strictEqual(preview.upcoming[0], fingered[2]);
 assert.strictEqual(preview.upcoming[1], fingered[3]);
 assert.equal(C.currentEventIndex(fingered, .6), 2);
 
-const rock = C.createDemoTrack(C.DEMOS.find(demo => demo.id === 'demo-eighths'));
-assert.equal(rock.events.length, 16);
-assert.equal(rock.settings.frets, 12, 'included exercises must default to 12 frets');
+assert.equal(C.DEMOS.length, 5, 'five pieces come with the app');
+const rock = C.createDemoTrack(C.DEMOS.find(demo => demo.id === 'demo-rock'));
+assert.equal(rock.events.length, 128);
+assert.equal(rock.settings.frets, 12, 'included pieces must default to 12 frets');
 assert.ok(rock.events.every(event => event.fret === null || event.fret <= 12));
 assert.ok(rock.events.every(event => C.positionMatchesMidi(event, C.TUNINGS['4'].open, 12)));
-assert.match(C.renderTab(rock, '4'), /Rock Eighths/);
+assert.ok(rock.chords.length > 4 && rock.chords.every(chord => chord.end > chord.start && chord.root >= 0 && chord.root < 12));
+assert.match(C.renderTab(rock, '4'), /Rock/);
 
 const fifteen = C.createDemoTrack(C.DEMOS[0], '4', 15);
 assert.equal(fifteen.settings.frets, 15, 'callers can still ask for a wider range');
@@ -260,5 +266,91 @@ assert.notDeepEqual(C.stabilizeOctaves(C.normalizeEvents(turns.map(({ sure, ...n
   'without that, quick octave turns at middling confidence are smoothed away');
 // The worker carries the same reader.
 assert.ok(T.workerSource().includes('isolatedNotes') && T.workerSource().includes('Reader.loudLevel'));
+
+
+// Bars of their own length: every bar line after one moves, and the notes are written against the new lines.
+{
+  const R = globalThis.ManicoRhythm;
+  const pulse = R.steady(120, 20);
+  const odd = R.setBeatsIn(pulse, 1, 2);
+  assert.equal(R.beatsIn(odd, 1), 2);
+  assert.equal(R.barStart(odd, 2), 6, 'the bar after a bar of two starts two beats earlier');
+  assert.equal(R.barAt(odd, 5.5), 1);
+  assert.equal(R.barAt(odd, 6), 2);
+  assert.equal(R.barAt(odd, -0.5), -1, 'a pickup falls in the bar before the first');
+  assert.deepEqual(R.setBeatsIn(odd, 1, 4).odd, [], 'the usual length takes the bar off the list');
+  const notes = [0, 2, 3, 5].map((start, index) => ({ start, end: start + 0.5, midi: 40 + index }));
+  const { bars } = R.notate(odd, notes);
+  const at = index => [...bars].flatMap(([bar, pieces]) => pieces.filter(piece => piece.index === index && !piece.tied).map(piece => [bar, piece.slot]))[0];
+  assert.deepEqual(at(1), [1, 0], 'second 2 is beat 4: the first of the short bar');
+  assert.deepEqual(at(2), [2, 0], 'second 3 is beat 6: the first of the bar after it');
+  assert.deepEqual(at(3), [3, 0]);
+  const half = R.halfway(pulse);
+  assert.equal(half.beats[0], 0.25, 'half a beat later');
+  assert.equal(half.beats.length, pulse.beats.length);
+}
+// Chords: names, the one sounding, and the reading of a recording made of plain triads.
+{
+  const K = globalThis.ManicoChords;
+  const R = globalThis.ManicoRhythm;
+  assert.equal(K.nameOf({ root: 10, quality: 'm7' }), 'Bbm7');
+  assert.equal(K.indexAt([{ start: 0, end: 2 }, { start: 2, end: 4 }], 2.5), 1);
+  assert.equal(K.indexAt([{ start: 0, end: 2 }], 3), -1);
+  const rate = 22050;
+  const seconds = 16;
+  const data = new Float32Array(rate * seconds);
+  const triads = [[60, 64, 67], [65, 69, 72], [67, 71, 74], [57, 60, 64]]; // C F G Am, two seconds each, twice
+  for (let i = 0; i < data.length; i += 1) {
+    const time = i / rate;
+    const triad = triads[Math.floor(time / 2) % 4];
+    let sample = 0;
+    for (const midi of triad) for (let h = 1; h <= 3; h += 1) sample += Math.sin(2 * Math.PI * 440 * Math.pow(2, (midi - 69) / 12) * h * time) / h;
+    data[i] = sample * 0.1 * Math.min(1, (time % 2) * 20);
+  }
+  const buffer = { sampleRate: rate, numberOfChannels: 1, length: data.length, duration: seconds, getChannelData: () => data };
+  const roots = [36, 41, 43, 45];
+  const bass = Array.from({ length: 8 }, (_, index) => ({ start: index * 2, end: index * 2 + 1.9, midi: roots[index % 4] }));
+  const found = K.find(buffer, R.steady(120, seconds), bass);
+  assert.deepEqual(found.map(K.nameOf), ['C', 'F', 'G', 'Am', 'C', 'F', 'G', 'Am']);
+  assert.ok(found.every((chord, index) => Math.abs(chord.start - index * 2) < 0.01), 'each chord starts on its bar');
+}
+// The page: MusicXML and PDF, with chords, a section and a bar of its own length.
+{
+  const P = globalThis.ManicoSheet;
+  const R = globalThis.ManicoRhythm;
+  const piece = C.createDemoTrack(C.DEMOS[0]);
+  piece.sections = [{ start: piece.chords[0].start, kind: 'verse', name: 'Strofa' }];
+  const pulse = R.setBeatsIn(R.steady(piece.bpm, piece.duration), 3, 2);
+  const xml = P.musicXML(piece, pulse);
+  assert.ok(xml.startsWith('<?xml') && xml.includes('<score-partwise'));
+  assert.ok(xml.includes('<harmony') && xml.includes('Strofa') && xml.includes('<beats>2</beats>'));
+  assert.equal((xml.match(/<measure /g) || []).length, P.layout(piece, pulse).bars.length);
+  const pdf = P.pdf(piece, pulse);
+  const text = new TextDecoder('latin1').decode(pdf);
+  assert.ok(text.startsWith('%PDF-1.4') && text.trimEnd().endsWith('%%EOF'));
+  assert.ok(text.includes('(STROFA)') && text.includes('(E7)') && text.includes('(2/4)'));
+  const xref = Number(text.match(/startxref\n(\d+)/)[1]);
+  assert.equal(text.slice(xref, xref + 4), 'xref', 'the table of the file is where the file says');
+}
+// Another key: the recording shorter or longer by the right amount, the notes kept on the instrument.
+{
+  const P = globalThis.ManicoPitch;
+  const rate = 8000;
+  const tone = Float32Array.from({ length: rate }, (_, i) => Math.sin(2 * Math.PI * 200 * i / rate));
+  const up = P.repitch(tone, P.factorOf(12));
+  assert.equal(up.length, rate / 2);
+  let crossings = 0;
+  for (let i = 101; i < up.length - 100; i += 1) if (up[i - 1] < 0 && up[i] >= 0) crossings += 1;
+  assert.ok(Math.abs(crossings / ((up.length - 201) / rate) - 400) < 4, 'an octave up is twice the frequency');
+  assert.equal(P.repitch(tone, 1), tone);
+  const wav = P.wavOf([tone, tone], rate);
+  assert.equal(new TextDecoder().decode(wav.slice(0, 4)), 'RIFF');
+  assert.equal(wav.length, 44 + rate * 4);
+  const open = C.TUNINGS['4'].open;
+  const moved = P.shiftEvents([{ midi: 28 }, { midi: 40 }, { midi: 55 }], -2, open, 12);
+  assert.deepEqual(moved.map(event => event.midi), [38, 38, 53], 'a note under the lowest string goes up an octave');
+  assert.ok(P.shiftEvents([{ midi: 55 }], 3, open, 12)[0].midi <= open[3] + 12);
+  assert.deepEqual(P.shiftChords([{ root: 11, quality: 'm' }], 2), [{ root: 1, quality: 'm' }]);
+}
 
 console.log(`All Manico ${C.VERSION} smoke tests passed.`);

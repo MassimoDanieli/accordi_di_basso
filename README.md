@@ -1,6 +1,19 @@
-# Manico 7.3.0 · Bass Transcriber
+# Manico 7.4.0 · Bass Transcriber
 
 Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico rettangolare con anticipo visivo coerente delle note successive.
+
+La release 7.4.0 porta in Manico il resto di quello che nel frattempo è nato in [C_bass](https://github.com/MassimoDanieli/C_bass):
+
+- **accordi**: nei brani con il basso isolato vengono letti dal brano senza basso (cromagramma, un accordo per beat, con la linea di basso come indizio per la fondamentale) e scritti sopra la tablatura; si correggono a mano. Il codice è quello di C_bass riga per riga (`src/chords.js`): su sei brani di prova scrive gli stessi accordi;
+- **prima battuta dall'armonia**: all'importazione, tra il beat scelto dalla batteria e quello a mezza battuta di distanza vince quello dove cambiano più accordi;
+- **battute di lunghezza propria**: una battuta può avere un beat in più o in meno, e tutte le stanghette dopo si spostano; **+½ beat** per quando il tempo è stato seguito sui levare;
+- **sezioni** (intro, strofa, ritornello…) dalla battuta corrente, con il loop sulla sezione intera;
+- **tonalità**: fino a sei semitoni su o giù per audio, note e accordi. La registrazione viene ricampionata una volta (`src/pitch.js`) e poi suonata più lenta o più veloce di altrettanto dal lettore del browser, che mantiene l'intonazione;
+- **conta una battuta** prima di partire e **metronomo** sui beat trovati nel brano;
+- **PDF e MusicXML** della parte, con tablatura, valori ritmici, accordi e sezioni (`src/sheet.js`);
+- **cinque brani inclusi**, gli stessi di C_bass (blues, funk, bossa nova, walking, rock), suonati dal suo sintetizzatore: basso, batteria e accordi, con l'ascolto senza basso e a solo basso. Le registrazioni sono in `assets/pieces/` (3,7 MB), le note e gli accordi in `src/pieces.js`; li scrive `go run ./tools/pieces` nel repository di C_bass. Dove le registrazioni non si possono scaricare (la versione in un solo file, `dist/manico.html`) le note vengono suonate una per una come prima.
+
+Limiti noti: gli accordi sono verificati per uguaglianza con C_bass e sui brani inclusi, non su un insieme di brani veri con accordi scritti; senza basso isolato non vengono letti. Il metronomo segue l'orologio del lettore audio del browser: l'allineamento all'ascolto va giudicato a orecchio, come la qualità dell'audio trasposto.
 
 La release 7.3.0 porta in Manico il lettore delle note di [C_bass](https://github.com/MassimoDanieli/C_bass), il programma nato da Manico, dove nel frattempo è stato rifatto e misurato:
 
