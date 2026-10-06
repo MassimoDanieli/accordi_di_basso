@@ -2,6 +2,8 @@
   'use strict';
 
   const Core = root.ManicoCore;
+  // The version of the reader of notes: tracks read by an earlier one are read again when opened.
+  const READER = 4;
   const Store = root.ManicoStorage;
   const Transcriber = root.ManicoTranscriber;
   const Separator = root.ManicoSeparator;
@@ -44,6 +46,8 @@
       decoding: 'Decodifica dell’audio…', saving: 'Salvataggio locale…',
       failed: 'Non sono riuscito a trascrivere questo file.',
       noNotes: 'Non ho trovato note affidabili. Prova con una sensibilità più alta o con un mix dove il basso è più presente.',
+      noBass: 'In questo brano non ho trovato un basso: forse è una base per suonarci sopra.',
+      reread: 'Note rilette con il lettore nuovo',
       persistentYes: 'archiviazione persistente', persistentNo: 'il browser può liberare spazio automaticamente',
       importedLine: 'Linea di basso trascritta', isolatedLine: 'Trascritta dal basso isolato',
       isolate: 'Isola il basso con l’AI (consigliato)',
@@ -99,6 +103,8 @@
       preparing: 'Preparing the signal…', analysing: 'Recognising notes…', decoding: 'Decoding audio…',
       saving: 'Saving locally…', failed: 'This file could not be transcribed.',
       noNotes: 'No reliable notes were found. Try a higher sensitivity or a mix with a more prominent bass.',
+      noBass: 'No bass was found in this recording: it may be a backing track to play over.',
+      reread: 'Notes read again with the new reader',
       persistentYes: 'persistent storage', persistentNo: 'the browser may reclaim storage automatically',
       importedLine: 'Transcribed bass line', isolatedLine: 'Transcribed from the isolated bass',
       isolate: 'Isolate the bass with AI (recommended)',
@@ -364,9 +370,40 @@
     renderStudio(true);
     startAnimation();
     ensureRhythm(track);
+    ensureReader(track);
     if (migrated) {
       $('savedLabel').textContent = t('migrated');
       scheduleSave();
+    }
+  }
+
+  /**
+   * A track whose bass was isolated and read by an earlier reader is read again, from that bass,
+   * the first time it is opened. One with notes corrected by hand is left as it is: what a
+   * person wrote is not read over.
+   */
+  async function ensureReader(track) {
+    if (track.demo || !track.stems?.bass || !track.audioBlob || Number(track.analysisVersion || 0) >= READER) return;
+    if ((track.events || []).some(event => event.edited)) return;
+    try {
+      const open = (Core.TUNINGS[track.settings.tuning] || Core.TUNINGS['4']).open;
+      const events = await Transcriber.transcribe(await Transcriber.decode(track.stems.bass), {
+        isolated: true,
+        mix: await Transcriber.decode(track.audioBlob),
+        lowest: open[0]
+      });
+      if (!events.length || (track.events || []).some(event => event.edited)) return;
+      track.events = Core.optimiseFingering(events, open, track.settings.frets);
+      track.analysisVersion = READER;
+      track.source = 'bass';
+      await Store.save(track);
+      if (state.track === track) {
+        state.currentIndex = 0;
+        renderStudio(true);
+        $('savedLabel').textContent = t('reread');
+      }
+    } catch (error) {
+      console.warn('Manico: the notes could not be read again', error);
     }
   }
 
@@ -1465,13 +1502,16 @@
         const base = isolate ? 0.84 : 0.05;
         events = await Transcriber.transcribe(source, {
           isolated,
+          // an isolated bass is held against the recording it came from, and read for the instrument
+          mix: isolated ? mix : null,
+          lowest: (Core.TUNINGS[existing?.settings?.tuning] || Core.TUNINGS['4']).open[0],
           sensitivity: Number($('sensitivity').value) / 100,
           onProgress(value, stage) {
             progress(base + value * (0.97 - base), stage === 'prepare' ? t('preparing') : t('analysing'));
           }
         });
         if (state.cancelled) return;
-        if (!events.length) throw new Error('NO_NOTES');
+        if (!events.length) throw new Error(isolated ? 'NO_BASS' : 'NO_NOTES');
       }
       progress(0.98, t('findingBeat'));
       await new Promise(resolve => setTimeout(resolve, 0));
@@ -1486,7 +1526,7 @@
         if (events) {
           const open = (Core.TUNINGS[existing.settings.tuning] || Core.TUNINGS['4']).open;
           existing.events = Core.optimiseFingering(events, open, existing.settings.frets);
-          existing.analysisVersion = 3;
+          existing.analysisVersion = READER;
           existing.source = isolated ? 'bass' : 'mix';
         }
         if (rhythm && !existing.rhythm) existing.rhythm = rhythm;
@@ -1505,7 +1545,7 @@
           duration: mix.duration,
           createdAt: now,
           updatedAt: now,
-          analysisVersion: 3,
+          analysisVersion: READER,
           source: isolated ? 'bass' : 'mix',
           settings,
           events: Core.optimiseFingering(events, Core.TUNINGS['4'].open, settings.frets)
@@ -1525,7 +1565,7 @@
     } catch (error) {
       $('startAnalysis').disabled = false;
       $('analysisProgress').style.width = '0%';
-      $('analysisStatus').textContent = t({ NO_NOTES: 'noNotes', SEPARATION_FAILED: 'separationFailed' }[error?.message] || 'failed');
+      $('analysisStatus').textContent = t({ NO_NOTES: 'noNotes', NO_BASS: 'noBass', SEPARATION_FAILED: 'separationFailed' }[error?.message] || 'failed');
     } finally {
       try { await wakeLock?.release(); } catch (error) { /* already released */ }
     }

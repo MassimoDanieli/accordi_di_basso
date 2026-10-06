@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 await import('../src/core.js');
 await import('../src/storage.js');
+await import('../src/reader.js');
 await import('../src/transcriber.js');
 await import('../src/separator.js');
 await import('../src/rhythm.js');
@@ -8,7 +9,7 @@ const C = globalThis.ManicoCore;
 const S = globalThis.ManicoStorage;
 const T = globalThis.ManicoTranscriber;
 
-assert.equal(C.VERSION, '7.2.0');
+assert.equal(C.VERSION, '7.3.0');
 assert.equal(C.DEFAULT_FRETS, 12);
 new Function(T.workerSource());
 const adaptiveOffsets = T.analysisOffsets(1, 1.11);
@@ -226,5 +227,38 @@ for (const data of [{ stage: 'model', loaded: 1, total: 4 }, { stage: 'model', l
   assert.ok(value >= last && value <= 1, 'progress never goes backwards');
   last = value;
 }
+
+// The reader of an isolated bass, shared with C_bass. A line played on a plucked string: a note
+// held, the same note struck again, its octave, a step down; each is one note, at its pitch.
+const R = globalThis.ManicoReader;
+{
+  const rate = 5512;
+  const line = [[0.20, 0.70, 33], [0.95, 0.40, 33], [1.40, 0.40, 45], [1.85, 0.60, 31], [2.60, 1.20, 28]];
+  const signal = new Float32Array(Math.round(4.2 * rate));
+  for (const [start, length, midi] of line) {
+    const hz = 440 * 2 ** ((midi - 69) / 12);
+    for (let i = 0; i < length * rate; i += 1) {
+      const time = i / rate;
+      const body = Math.min(1, time / .004) * Math.exp(-time * 1.6) * Math.min(1, (length - time) / .03);
+      signal[Math.round(start * rate) + i] += .4 * body * (Math.sin(2 * Math.PI * hz * time) + .5 * Math.sin(4 * Math.PI * hz * time) + .25 * Math.sin(6 * Math.PI * hz * time));
+    }
+  }
+  const read = C.stabilizeOctaves(C.normalizeEvents(T.dedupeEvents(R.isolatedNotes(signal, rate, .72, 0, 26, null)), 4.2));
+  assert.deepEqual(read.map(note => note.midi), line.map(note => note[2]), 'each note of the line is read once, at its pitch and in its octave');
+  read.forEach((note, index) => assert.ok(Math.abs(note.start - line[index][0]) < .06, `note ${index} starts where it was played`));
+  assert.ok(read[4].end - read[4].start > 1, 'a held note is one long note');
+  // held against a recording far louder than it, the same sound is what a separation leaves behind: not notes
+  const loud = R.loudLevel(signal, rate);
+  assert.equal(R.isolatedNotes(signal, rate, .72, loud * 2, 26, null).length, 0, 'under the floor nothing is a note');
+  // and nothing is read below the instrument: the low B of a five-string is not looked for on a four-string
+  assert.ok(R.isolatedNotes(signal, rate, .72, 0, 26, null).every(note => note.midi >= 26));
+}
+// An octave read clearly from the whole note is kept: octaves played in turn are a bass line.
+const turns = [33, 45, 33, 45, 33, 45].map((midi, index) => ({ start: index * .3, end: index * .3 + .28, midi, confidence: .7, sure: true }));
+assert.deepEqual(C.stabilizeOctaves(C.normalizeEvents(turns, 2)).map(note => note.midi), [33, 45, 33, 45, 33, 45]);
+assert.notDeepEqual(C.stabilizeOctaves(C.normalizeEvents(turns.map(({ sure, ...note }) => note), 2)).map(note => note.midi), [33, 45, 33, 45, 33, 45],
+  'without that, quick octave turns at middling confidence are smoothed away');
+// The worker carries the same reader.
+assert.ok(T.workerSource().includes('isolatedNotes') && T.workerSource().includes('Reader.loudLevel'));
 
 console.log(`All Manico ${C.VERSION} smoke tests passed.`);

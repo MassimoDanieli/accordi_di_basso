@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it" data-versione="7.2.0">
+<html lang="it" data-versione="7.3.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -91,7 +91,7 @@
     <header class="section-head"><div><h2 data-i18n="examples">Esercizi inclusi</h2><p data-i18n="examplesHint">Linee essenziali pronte per provare il flusso.</p></div></header>
     <div id="demoList" class="track-grid"></div>
   </section>
-  <footer class="home-footer"><span id="versionLabel">Versione 7.2.0</span><span class="footer-links"><a class="sister-link" href="https://chords.massimodanieli.com/">chords.massimodanieli.com</a><a class="sister-link" href="https://github.com/MassimoDanieli/accordi_di_basso" data-i18n="source">Codice su GitHub</a></span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
+  <footer class="home-footer"><span id="versionLabel">Versione 7.3.0</span><span class="footer-links"><a class="sister-link" href="https://chords.massimodanieli.com/">chords.massimodanieli.com</a><a class="sister-link" href="https://github.com/MassimoDanieli/accordi_di_basso" data-i18n="source">Codice su GitHub</a></span><span>Manico © 2026 Massimo Danieli · GPL-3.0</span></footer>
 </main>
 
 <main id="studioView" class="view studio-view" hidden>
@@ -185,7 +185,7 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '7.2.0';
+  const VERSION = '7.3.0';
   // New imports and included exercises start in the accompaniment-friendly 0-12 range;
   // existing projects keep the range their owner chose.
   const DEFAULT_FRETS = 12;
@@ -420,8 +420,11 @@
 
       candidates.forEach((candidate, candidateIndex) => {
         const octaveDistance = Math.abs(candidate - raw) / 12;
-        const observation = octaveDistance * (1.1 + confidence * 3.2)
+        let observation = octaveDistance * (1.1 + confidence * 3.2)
           + Math.abs(candidate - 36) * 0.006;
+        // Its octave was read from the whole note, and is not up for discussion: octaves
+        // played in turn are a bass line, not a misreading to smooth away.
+        if (events[index].sure && octaveDistance > 0) observation += 100;
 
         if (index === 0) {
           costs[index][candidateIndex] = observation;
@@ -564,7 +567,9 @@
         string: Number.isInteger(event.string) ? event.string : null,
         fret: Number.isInteger(event.fret) ? event.fret : null,
         lockedPosition: Boolean(event.lockedPosition),
-        edited: Boolean(event.edited)
+        edited: Boolean(event.edited),
+        // set by the reader on a note whose octave it read from the whole note, clearly
+        ...(event.sure ? { sure: true } : {})
       }))
       .sort((left, right) => left.start - right.start);
 
@@ -744,6 +749,394 @@
 })(globalThis);
 
 
+(function initManicoReader(root) {
+  'use strict';
+
+  // The reader of an isolated bass. It is the one C_bass uses (internal/transcribe in
+  // https://github.com/MassimoDanieli/C_bass), kept line for line the same so that the two
+  // programs write the same notes for the same recording, and what is measured on one holds
+  // for the other.
+  //
+  // Everything is inside one function that leans on nothing outside it: its text is handed
+  // to the worker that does the reading, and the page and the tests call it as it is.
+  function reader() {
+    const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+
+    function percentile(values, ratio) {
+      if (!values.length) return 0;
+      const sorted = Float64Array.from(values).sort();
+      return sorted[Math.max(0, Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * ratio)))];
+    }
+
+    // How loud the signal is from moment to moment: rectified and low-passed at 22 Hz in both
+    // directions, so that it neither ripples with the note nor lags behind it.
+    function smoothLevel(signal, rate) {
+      const k = 1 - Math.exp(-2 * Math.PI * 22 / rate);
+      const out = new Float64Array(signal.length);
+      let a = 0;
+      let b = 0;
+      for (let i = 0; i < signal.length; i += 1) {
+        a += k * (Math.abs(signal[i]) - a);
+        b += k * (a - b);
+        out[i] = b;
+      }
+      a = 0;
+      b = 0;
+      for (let i = signal.length - 1; i >= 0; i -= 1) {
+        a += k * (out[i] - a);
+        b += k * (a - b);
+        out[i] = b;
+      }
+      return out;
+    }
+
+    // The level reached by the loudest twentieth of a recording, a hundred times a second:
+    // what the level of its separated bass can be held against.
+    function loudLevel(signal, rate) {
+      const level = smoothLevel(signal, rate);
+      const hop = Math.round(rate * 0.01);
+      const env = [];
+      for (let i = 0; i < level.length; i += hop) env.push(level[i]);
+      return percentile(env, 0.95);
+    }
+
+    // How much worse a shorter period may fit and still be taken for the fundamental. Twice
+    // the true period always fits as well as the period itself, so the shortest good one is
+    // the note. But half the period fits nearly as well when the second harmonic is strong,
+    // as on the lowest strings, and then the note is read an octave up: the margin cannot be
+    // made safe against both, so a single frame is not trusted with the octave. The pitch of
+    // a note is read from all its frames together, where the margin is safe.
+    const octaveMargin = 0.08;
+
+    // The period in a curve of how well each lag fits: the shortest lag that peaks within
+    // the margin of the best, refined between samples. Null when nothing fits well enough.
+    function fundamental(scores, minimumLag, maximumLag, margin) {
+      let bestLag = -1;
+      let bestScore = -1;
+      for (let lag = minimumLag; lag <= maximumLag; lag += 1) {
+        if (scores[lag] > bestScore) { bestScore = scores[lag]; bestLag = lag; }
+      }
+      if (bestScore < 0.5) return null;
+      let chosen = bestLag;
+      const strong = Math.max(0.6, bestScore - margin);
+      for (let lag = minimumLag + 1; lag < bestLag; lag += 1) {
+        if (scores[lag] >= strong && scores[lag] >= scores[lag - 1] && scores[lag] >= scores[lag + 1]) {
+          chosen = lag;
+          break;
+        }
+      }
+      // The top of the peak lies between samples: at the high notes a whole sample is most of a semitone.
+      let exact = chosen;
+      if (chosen > minimumLag && chosen < maximumLag) {
+        const before = scores[chosen - 1];
+        const at = scores[chosen];
+        const after = scores[chosen + 1];
+        const curve = before - 2 * at + after;
+        if (curve < 0) exact += clamp(0.5 * (before - after) / curve, -0.5, 0.5);
+      }
+      return { lag: exact, score: scores[chosen] };
+    }
+
+    const pitchOfLag = (lag, rate) => 69 + 12 * Math.log2(rate / lag / 440);
+
+    // The pitch of a short window by normalised autocorrelation. The curve of how well every
+    // lag fits is left in scores.
+    function framePitch(signal, rate, start, size, minimumLag, maximumLag, scores) {
+      if (start < 0 || start + size + maximumLag > signal.length) return null;
+      let base = 0;
+      for (let i = start; i < start + size; i += 1) base += signal[i] * signal[i];
+      if (base <= 0) return null;
+      let energy = base;
+      for (let lag = 1; lag <= maximumLag; lag += 1) {
+        const arriving = signal[start + size + lag - 1];
+        const gone = signal[start + lag - 1];
+        energy += arriving * arriving - gone * gone;
+        if (lag < minimumLag) continue;
+        let xy = 0;
+        for (let i = start; i < start + size; i += 1) xy += signal[i] * signal[i + lag];
+        scores[lag] = xy / Math.sqrt(base * energy + 1e-20);
+      }
+      const found = fundamental(scores, minimumLag, maximumLag, octaveMargin);
+      if (!found) return null;
+      const exact = pitchOfLag(found.lag, rate);
+      const midi = Math.round(exact);
+      if (midi < 23 || midi > 76) return null;
+      return { midi, confidence: found.score, exact };
+    }
+
+    // How far the recording sits from concert pitch, in semitones between -0.5 and 0.5: where
+    // its notes fall between the semitones, if they agree on it. A recording a quarter tone
+    // flat would otherwise have every note named by the toss of a coin.
+    function tuningOf(pitch, sure) {
+      let x = 0;
+      let y = 0;
+      let weight = 0;
+      for (let i = 0; i < pitch.length; i += 1) {
+        const p = pitch[i];
+        if (p === 0 || sure[i] < 0.9) continue;
+        const angle = 2 * Math.PI * (p - Math.round(p));
+        x += Math.cos(angle);
+        y += Math.sin(angle);
+        weight += 1;
+      }
+      // too little to go on, or no agreement: a fretless played freely
+      if (weight < 50 || Math.hypot(x, y) / weight < 0.5) return 0;
+      return Math.atan2(y, x) / (2 * Math.PI);
+    }
+
+    const pitchClass = midi => ((midi % 12) + 12) % 12;
+
+    // The notes of a bass on its own, found by following the note itself instead of looking
+    // for bursts of energy. A held note keeps its level; a plucked one dips and comes back
+    // within a few hundredths of a second; a slurred one changes pitch without either. Those
+    // three are told apart here.
+    //
+    // floor is a level, as loudLevel measures it, below which nothing is taken for a note: a
+    // bass separated from a recording that has none is not silence but a faint noise. lowest
+    // is the lowest note looked for, as a MIDI number: a tone under the lowest open string.
+    function isolatedNotes(signal, rate, sensitivity, floor, lowest, report) {
+      const hop = Math.round(rate * 0.01);
+      const fps = rate / hop;
+      const count = Math.floor(signal.length / hop);
+      const level = smoothLevel(signal, rate);
+      const env = new Float64Array(count);
+      for (let i = 0; i < count; i += 1) env[i] = level[i * hop];
+      const reference = percentile(env, 0.95) || 1e-9;
+      const gate = Math.max(reference * 0.07, floor || 0);
+      const active = i => env[i] > gate;
+
+      // How much the level must come back up, within five hundredths of a second, to count as a new attack.
+      const threshold = clamp(1.15 + (0.72 - sensitivity) * 0.5, 1.04, 1.5);
+      const reach = 5;
+      const rise = new Float64Array(count).fill(1);
+      for (let i = 0; i + reach < count; i += 1) rise[i] = env[i + reach] / (env[i] + reference * 0.02);
+      const attacks = [];
+      for (let i = 3; i < count - reach - 3; i += 1) {
+        if (rise[i] < threshold || env[i + reach] <= gate) continue;
+        let top = true;
+        for (let j = i - 3; j <= i + 3; j += 1) if (rise[j] > rise[i]) top = false;
+        if (!top) continue;
+        const last = attacks.length - 1;
+        if (last >= 0 && i - attacks[last] < 5) {
+          if (rise[i] > rise[attacks[last]]) attacks[last] = i;
+        } else {
+          attacks.push(i);
+        }
+      }
+      const bounds = new Uint8Array(count + 8);
+      const struck = new Uint8Array(count + 8);
+      for (const i of attacks) { bounds[i + 2] = 1; struck[i + 2] = 1; }
+
+      const size = Math.round(rate * 0.085);
+      const minimumLag = Math.max(2, Math.floor(rate / 330));
+      // the longest period looked for: half a semitone below the lowest note, and never under 31 Hz
+      const maximumLag = Math.min(Math.floor(rate / 31), Math.floor(rate / (440 * Math.pow(2, (lowest - 0.5 - 69) / 12))));
+      const scores = new Float64Array(maximumLag + 2);
+      const raw = new Float64Array(count); // the pitch of each frame, between semitones; 0 where there is none
+      const sure = new Float64Array(count);
+      const curves = new Array(count).fill(null); // how well every lag fits, for the frames with a pitch
+      for (let i = 0; i < count; i += 1) {
+        if (active(i)) {
+          const found = framePitch(signal, rate, i * hop - Math.trunc(size / 2), size, minimumLag, maximumLag, scores);
+          if (found) {
+            raw[i] = found.exact;
+            sure[i] = found.confidence;
+            const curve = new Float32Array(maximumLag + 1);
+            for (let lag = minimumLag; lag <= maximumLag; lag += 1) curve[lag] = scores[lag];
+            curves[i] = curve;
+          }
+        }
+        if (i % 400 === 0 && report) report(i / count);
+      }
+      const tuning = tuningOf(raw, sure);
+      // The median of five frames steadies the pitch.
+      const pitch = new Float64Array(count);
+      const near = [];
+      for (let i = 0; i < count; i += 1) {
+        near.length = 0;
+        for (let j = Math.max(0, i - 2); j <= Math.min(count - 1, i + 2); j += 1) if (raw[j] !== 0) near.push(raw[j]);
+        if (near.length >= 3) {
+          near.sort((a, b) => a - b);
+          pitch[i] = near.length % 2 === 1 ? near[(near.length - 1) / 2] : (near[near.length / 2 - 1] + near[near.length / 2]) / 2;
+        }
+      }
+      // A new note starts where the pitch moves away from where the note has been sitting and
+      // settles somewhere else for four hundredths (twice that for an octave, the usual
+      // misreading). The pitch is followed between semitones: a note played a little flat, as
+      // on a fretless or on a recording not tuned to 440, would otherwise flicker between two
+      // names; and a slide passes through without leaving a note at every fret.
+      const away = 0.7;
+      const settled = 0.4;
+      let current = 0;
+      let held = 0;
+      let run = 0;
+      let candidate = 0;
+      let bottom = 0;
+      let top = 0;
+      for (let i = 0; i < count; i += 1) {
+        const p = pitch[i];
+        if (!active(i)) { current = 0; held = 0; run = 0; continue; }
+        if (p === 0) continue;
+        if (bounds[i] || current === 0) { current = p; held = 1; run = 0; continue; }
+        if (Math.abs(p - current) <= away) {
+          run = 0;
+          held = Math.min(held + 1, 30);
+          current += (p - current) / held;
+          continue;
+        }
+        // settled: the frames of the run all within a narrow band, which a pitch on its way
+        // somewhere else never is
+        if (run > 0 && Math.max(top, p) - Math.min(bottom, p) <= settled) {
+          run += 1;
+          candidate += (p - candidate) / run;
+          bottom = Math.min(bottom, p);
+          top = Math.max(top, p);
+        } else {
+          run = 1; candidate = p; bottom = p; top = p;
+        }
+        let need = 4;
+        const octaves = Math.abs(candidate - current) / 12;
+        if (Math.abs(octaves - Math.round(octaves)) < 0.05) need = 8;
+        if (run >= need) {
+          bounds[i - run + 1] = 1;
+          current = candidate; held = run; run = 0;
+        }
+      }
+
+      // The stretches between one boundary and the next.
+      let notes = [];
+      for (let i = 0; i < count;) {
+        if (!active(i)) { i += 1; continue; }
+        let j = i;
+        while (j < count && active(j)) j += 1;
+        let from = i;
+        for (let k = i + 1; k <= j; k += 1) {
+          if (k === j || bounds[k]) {
+            notes.push({ from, to: k, midi: 0, confidence: 0, struck: from === i || Boolean(struck[from]) });
+            from = k;
+          }
+        }
+        i = j;
+      }
+      // The pitch of a stretch is read from the whole of it at once: the fit of every lag is
+      // averaged over its frames before the period is chosen. A frame on its own can be
+      // fooled, above all between an octave and the next; the average of a note cannot so easily.
+      const mean = new Float64Array(maximumLag + 2);
+      const pitchOf = (from, to) => {
+        // A frame looks 40 ms each way: near the ends of the stretch it sees the neighbours
+        // too. The ends are left out, as far as the stretch is long enough to spare them.
+        const edge = Math.min(4, Math.trunc((to - from) / 3));
+        const first = from + edge;
+        const last = to - edge;
+        // Nor do the frames on their way to another pitch count, in a slide or a bend: only
+        // those that sit where most of the stretch sits, in whatever octave they were read.
+        const within = [];
+        for (let i = first; i < last; i += 1) if (raw[i] !== 0) within.push(raw[i]);
+        if (!within.length) return [0, 0];
+        within.sort((a, b) => a - b);
+        const middle = within[Math.trunc(within.length / 2)];
+        mean.fill(0);
+        let frames = 0;
+        for (let i = first; i < last; i += 1) {
+          if (!curves[i]) continue;
+          const off = Math.abs(raw[i] - middle);
+          if (Math.abs(off - 12 * Math.round(off / 12)) > away) continue;
+          const curve = curves[i];
+          for (let lag = minimumLag; lag <= maximumLag; lag += 1) mean[lag] += curve[lag];
+          frames += 1;
+        }
+        for (let lag = minimumLag; lag <= maximumLag; lag += 1) mean[lag] /= frames;
+        const found = fundamental(mean, minimumLag, maximumLag, octaveMargin);
+        if (!found) return [0, 0];
+        const midi = Math.round(pitchOfLag(found.lag, rate) - tuning);
+        if (midi < 23 || midi > 76) return [0, 0];
+        return [midi, found.score];
+      };
+      for (const note of notes) [note.midi, note.confidence] = pitchOf(note.from, note.to);
+
+      // Boundaries that are not the start of a note are taken out, until none is left.
+      const fragment = 5; // hundredths: too short to be anything
+      const short = 8; // too short to be a note unless it is clearly one
+      const blur = 10; // how long the start of a note can take to settle on its pitch
+      const release = 12; // how long its end can take to die away
+      const steady = 30; // long enough for what was read to be what was played
+      const length = p => p.to - p.from;
+      const join = (k, midi, confidence) => { // k and k+1 become one
+        notes[k] = {
+          from: notes[k].from, to: notes[k + 1].to, midi, confidence,
+          struck: notes[k].struck || (length(notes[k]) < blur && notes[k + 1].struck)
+        };
+        notes.splice(k + 1, 1);
+      };
+      for (let changed = true; changed;) {
+        changed = false;
+        for (let k = 0; k + 1 < notes.length; k += 1) {
+          const a = notes[k];
+          const b = notes[k + 1];
+          if (a.to !== b.from) continue;
+          const lastOfRun = k + 2 >= notes.length || notes[k + 2].from !== b.to;
+          if (b.midi === 0) {
+            // no pitch: the note before rings on
+            join(k, a.midi, a.confidence);
+          } else if (a.midi === 0) {
+            join(k, b.midi, b.confidence);
+          } else if (a.midi === b.midi && (!b.struck || length(a) < short)) {
+            // the same note, and nothing struck in between: the two halves of one attack
+            let [midi, confidence] = pitchOf(a.from, b.to);
+            if (midi !== a.midi) { midi = a.midi; confidence = Math.max(a.confidence, b.confidence); }
+            join(k, midi, confidence);
+          } else if (pitchClass(a.midi) === pitchClass(b.midi) && !b.struck) {
+            // The same note an octave away, and nothing struck in between: one note. No hand
+            // jumps an octave without plucking; it is the sound that changes. A string just
+            // struck can rattle so that every other wave differs, and looks an octave lower;
+            // left ringing it loses its fundamental, and looks an octave higher. Sound at the
+            // lower octave is evidence, its absence is not: where the lower one held for a
+            // good while it is the note. Otherwise the note is what fits the whole.
+            let [midi, confidence] = pitchOf(a.from, b.to);
+            const low = b.midi < a.midi ? b : a;
+            if (length(low) >= steady) {
+              // long enough to be no accident: the lower octave was really there
+              midi = low.midi; confidence = low.confidence;
+            } else if (pitchClass(midi) !== pitchClass(a.midi)) {
+              midi = a.midi; confidence = a.confidence;
+              if (length(b) > length(a)) { midi = b.midi; confidence = b.confidence; }
+            }
+            join(k, midi, confidence);
+          } else if (length(a) < fragment || (length(a) < blur && !b.struck && a.confidence < 0.85 && length(b) >= 2 * length(a))) {
+            // the blur at the start of the next note: its pitch settles without anything
+            // being struck again. A short note before a struck one is a note.
+            join(k, b.midi, b.confidence);
+          } else if ((length(b) < fragment && (!b.struck || lastOfRun)) || (!b.struck && lastOfRun && (length(b) < short || (length(b) < release && b.confidence < 0.9)))) {
+            // the pitch drifting as the note dies away
+            join(k, a.midi, a.confidence);
+          } else {
+            continue;
+          }
+          changed = true;
+          k -= 1;
+        }
+      }
+      const events = [];
+      notes.forEach((note, k) => {
+        const alone = !(k > 0 && notes[k - 1].to === note.from) && !(k + 1 < notes.length && notes[k + 1].from === note.to);
+        if (note.midi === 0 || length(note) < fragment || (alone && length(note) < short)) return; // a blip on its own in silence
+        events.push({
+          start: note.from / fps, end: note.to / fps, midi: note.midi, rawMidi: note.midi,
+          confidence: clamp(note.confidence, 0, 1),
+          // its octave was read from the whole note, clearly: not to be second-guessed from the notes around it
+          sure: note.confidence >= 0.75 && length(note) >= short
+        });
+      });
+      return events;
+    }
+
+    return { isolatedNotes, loudLevel, smoothLevel, percentile };
+  }
+
+  root.ManicoReader = Object.assign(reader(), { source: reader.toString() });
+})(globalThis);
+
+
 (function initManicoTranscriber(root) {
   'use strict';
 
@@ -782,45 +1175,9 @@ function estimateWindow(signal,sampleRate,start,size){const minimumLag=Math.max(
 function offsets(start,end){const span=Math.max(.055,end-start);return[.14,.34,.58,.8].map(ratio=>Math.min(span-.018,Math.max(.012,span*ratio))).filter((value,index,values)=>value>0&&(index===0||value-values[index-1]>=.012));}
 function selectVotes(votes){const groups=new Map();for(const vote of votes){const item=groups.get(vote.midi)||{midi:vote.midi,score:0,count:0};item.score+=vote.confidence;item.count++;groups.set(vote.midi,item);}let selected=null;for(const item of groups.values()){item.confidence=item.score/item.count;item.rank=item.count*.32+item.confidence;if(!selected||item.rank>selected.rank||item.rank===selected.rank&&item.confidence>selected.confidence)selected=item;}return selected;}
 function pitch(signal,sampleRate,time,endTime){const votes=[];for(const offset of offsets(time,endTime)){const start=Math.max(0,Math.floor((time+offset)*sampleRate)),remaining=Math.max(0,endTime-time-offset-.006),size=Math.min(Math.round(sampleRate*.16),Math.round(remaining*sampleRate),signal.length-start);if(size<Math.round(sampleRate*.052))continue;const estimate=estimateWindow(signal,sampleRate,start,size);if(estimate)votes.push(estimate);}return votes.length?selectVotes(votes):null;}
-// --- An isolated bass: follow the note itself instead of looking for bursts of energy. ---
-// A held note keeps its level; a plucked one dips and comes back within a few hundredths of a
-// second; a slurred one changes pitch without either. Those three are told apart here.
-function smoothLevel(signal,sampleRate){const k=1-Math.exp(-2*Math.PI*22/sampleRate),out=new Float32Array(signal.length);let a=0,b=0;for(let i=0;i<signal.length;i++){a+=k*(Math.abs(signal[i])-a);b+=k*(a-b);out[i]=b;}a=0;b=0;for(let i=signal.length-1;i>=0;i--){a+=k*(out[i]-a);b+=k*(a-b);out[i]=b;}return out;}
-function framePitch(signal,sampleRate,start,size,minimumLag,maximumLag,scores){if(start<0||start+size+maximumLag>signal.length)return null;let base=0;for(let i=start;i<start+size;i++)base+=signal[i]*signal[i];if(base<=0)return null;let energy=base,bestLag=-1,bestScore=-1;for(let lag=1;lag<=maximumLag;lag++){energy+=signal[start+size+lag-1]*signal[start+size+lag-1]-signal[start+lag-1]*signal[start+lag-1];if(lag<minimumLag)continue;let xy=0;for(let i=start;i<start+size;i++)xy+=signal[i]*signal[i+lag];const score=xy/Math.sqrt(base*energy+1e-20);scores[lag]=score;if(score>bestScore){bestScore=score;bestLag=lag;}}if(bestScore<.5)return null;let chosen=bestLag;const strong=Math.max(.6,bestScore*.92);for(let lag=minimumLag+1;lag<bestLag;lag++){if(scores[lag]>=strong&&scores[lag]>=scores[lag-1]&&scores[lag]>=scores[lag+1]){chosen=lag;break;}}const midi=Math.round(69+12*Math.log2(sampleRate/chosen/440));return midi>=23&&midi<=76?{midi,confidence:scores[chosen]}:null;}
-function isolatedNotes(signal,sampleRate,sensitivity,report){
-  const hop=Math.round(sampleRate*.01),fps=sampleRate/hop,count=Math.floor(signal.length/hop),level=smoothLevel(signal,sampleRate),env=new Float32Array(count);
-  for(let i=0;i<count;i++)env[i]=level[i*hop];
-  const reference=percentile(Array.from(env),.95)||1e-9,gate=reference*.07,active=i=>env[i]>gate;
-  // How much the level must come back up, within five hundredths of a second, to count as a new attack.
-  const threshold=clamp(1.15+(.72-sensitivity)*.5,1.04,1.5),reach=5,rise=new Float32Array(count).fill(1);
-  for(let i=0;i+reach<count;i++)rise[i]=env[i+reach]/(env[i]+reference*.02);
-  const attacks=[];
-  for(let i=3;i<count-reach-3;i++){if(rise[i]<threshold||env[i+reach]<=gate)continue;let top=true;for(let j=i-3;j<=i+3;j++)if(rise[j]>rise[i])top=false;if(!top)continue;const last=attacks.length-1;if(last>=0&&i-attacks[last]<5){if(rise[i]>rise[attacks[last]])attacks[last]=i;}else attacks.push(i);}
-  const bounds=new Set(attacks.map(i=>i+2));
-  const size=Math.round(sampleRate*.085),minimumLag=Math.max(2,Math.floor(sampleRate/330)),maximumLag=Math.floor(sampleRate/31),scores=new Float32Array(maximumLag+1),raw=new Int16Array(count),sure=new Float32Array(count);
-  for(let i=0;i<count;i++){if(active(i)){const found=framePitch(signal,sampleRate,i*hop-(size>>1),size,minimumLag,maximumLag,scores);if(found){raw[i]=found.midi;sure[i]=found.confidence;}}if(i%400===0)report(i/count);}
-  const pitch=new Int16Array(count),near=[];
-  for(let i=0;i<count;i++){near.length=0;for(let j=Math.max(0,i-2);j<=Math.min(count-1,i+2);j++)if(raw[j])near.push(raw[j]);if(near.length>=3){near.sort((x,y)=>x-y);pitch[i]=near.length%2?near[near.length>>1]:Math.round((near[near.length/2-1]+near[near.length/2])/2);}}
-  // A new pitch that holds for four hundredths (twice that for an octave, the usual misreading) starts a note.
-  let current=0,run=0,candidate=0;
-  for(let i=0;i<count;i++){const p=pitch[i];if(!active(i)){current=0;run=0;candidate=0;continue;}if(!p)continue;if(bounds.has(i)){current=p;run=0;candidate=0;continue;}if(!current){current=p;continue;}if(p!==current){run=p===candidate?run+1:1;candidate=p;if(run>=((p-current)%12===0?8:4)){bounds.add(i-run+1);current=p;run=0;candidate=0;}}else{run=0;candidate=0;}}
-  const pieces=[];
-  for(let i=0;i<count;){if(!active(i)){i++;continue;}let j=i;while(j<count&&active(j))j++;let from=i;for(let k=i+1;k<=j;k++){if(k===j||bounds.has(k)){pieces.push([from,k]);from=k;}}i=j;}
-  const pitchOf=(from,to)=>{const votes=new Map();let best=0,bestCount=0,total=0,n=0;for(let i=Math.min(from+2,to-1);i<to;i++){if(!pitch[i])continue;const c=(votes.get(pitch[i])||0)+1;votes.set(pitch[i],c);if(c>bestCount||c===bestCount&&pitch[i]<best){best=pitch[i];bestCount=c;}}for(let i=from;i<to;i++)if(sure[i]){total+=sure[i];n++;}return{midi:best,confidence:n?total/n:0};};
-  const notes=[],minimum=5;
-  for(const[from,to]of pieces){const found=pitchOf(from,to),last=notes[notes.length-1];
-    // A fragment too short to be a note belongs to its neighbour, which keeps the pitch of the longer part.
-    if(last&&last.to===from&&(to-from<minimum||last.to-last.from<minimum)){const keep=last.to-last.from>=to-from&&last.midi;notes[notes.length-1]={from:last.from,to,midi:keep?last.midi:found.midi,confidence:keep?last.confidence:found.confidence};continue;}
-    if(!found.midi||to-from<minimum)continue;notes.push({from,to,midi:found.midi,confidence:found.confidence});}
-  // Two leftovers that are not notes: the blur of a slide into the next note, and a blip on its own in silence.
-  const kept=[];
-  for(let k=0;k<notes.length;k++){const note=notes[k],next=notes[k+1],before=kept[kept.length-1],short=note.to-note.from<8;
-    if(short&&next&&next.from===note.to&&next.midi!==note.midi&&Math.abs(next.midi-note.midi)<=2){next.from=note.from;continue;}
-    if(short&&!(next&&next.from===note.to)&&!(before&&before.to===note.from))continue;
-    kept.push(note);}
-  return kept.filter(note=>note.midi).map(note=>({start:note.from/fps,end:note.to/fps,midi:note.midi,rawMidi:note.midi,confidence:clamp(note.confidence,0,1)}));
-}
-self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=message.data;if(isolated){self.postMessage({type:'result',events:isolatedNotes(signal,sampleRate,sensitivity,value=>self.postMessage({type:'progress',value}))});return;}const points=onsets(signal,sampleRate,sensitivity),events=[];for(let index=0;index<points.length;index++){const start=points[index],next=index+1<points.length?points[index+1]:Math.min(duration,start+.72),found=pitch(signal,sampleRate,start,next);if(found&&found.confidence>=.47)events.push({start,end:Math.max(start+.045,next),midi:found.midi,rawMidi:found.midi,confidence:clamp(found.confidence,0,1)});if(index%6===0)self.postMessage({type:'progress',value:(index+1)/points.length});}self.postMessage({type:'result',events});};`;
+// An isolated bass is read by the reader shared with the page and the tests (src/reader.js).
+const Reader=(${root.ManicoReader.source})();
+self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated,mixSignal,lowest}=message.data;if(isolated){const floor=mixSignal?Reader.loudLevel(mixSignal,sampleRate)*.02:0;self.postMessage({type:'result',events:Reader.isolatedNotes(signal,sampleRate,sensitivity,floor,(lowest||28)-2,value=>self.postMessage({type:'progress',value}))});return;}const points=onsets(signal,sampleRate,sensitivity),events=[];for(let index=0;index<points.length;index++){const start=points[index],next=index+1<points.length?points[index+1]:Math.min(duration,start+.72),found=pitch(signal,sampleRate,start,next);if(found&&found.confidence>=.47)events.push({start,end:Math.max(start+.045,next),midi:found.midi,rawMidi:found.midi,confidence:clamp(found.confidence,0,1)});if(index%6===0)self.postMessage({type:'progress',value:(index+1)/points.length});}self.postMessage({type:'result',events});};`;
   }
 
   function createWorker() {
@@ -889,9 +1246,16 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=
     return result;
   }
 
+  /**
+   * Reads the notes of a recording. With `isolated` the recording is a bass on its own, and two
+   * more things help: `mix`, the recording it was separated from, against which its level is
+   * held (34 dB under it there is no bass, only what the separation left behind); and `lowest`,
+   * the lowest open string of the instrument as a MIDI note, a tone under which nothing is read.
+   */
   async function transcribe(buffer, options = {}) {
     const progress = options.onProgress || (() => {});
     const prepared = await prepare(buffer, value => progress(value * 0.22, 'prepare'));
+    const against = options.isolated && options.mix ? (await prepare(options.mix)).signal : null;
     const instance = createWorker();
 
     return new Promise((resolve, reject) => {
@@ -904,7 +1268,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=
           instance.terminate();
           URL.revokeObjectURL(instance.__url);
           const normalized = Core.normalizeEvents(dedupeEvents(message.data.events), buffer.duration);
-          resolve(Core.stabilizeOctaves(normalized));
+          resolve(Core.stabilizeOctaves(normalized).map(({ sure, ...event }) => event));
         }
       };
       instance.onerror = error => {
@@ -917,12 +1281,14 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=
         sampleRate: prepared.sampleRate,
         sensitivity: Number.isFinite(options.sensitivity) ? options.sensitivity : 0.72,
         duration: buffer.duration,
-        isolated: Boolean(options.isolated)
-      }, [prepared.signal.buffer]);
+        isolated: Boolean(options.isolated),
+        mixSignal: against,
+        lowest: Number.isFinite(options.lowest) ? options.lowest : 28
+      }, against ? [prepared.signal.buffer, against.buffer] : [prepared.signal.buffer]);
     });
   }
 
-  root.ManicoTranscriber = { decode, transcribe, dedupeEvents, analysisOffsets, selectPitchVotes, workerSource };
+  root.ManicoTranscriber = { decode, transcribe, prepare, dedupeEvents, analysisOffsets, selectPitchVotes, workerSource };
 })(globalThis);
 
 
@@ -1373,6 +1739,8 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=
   'use strict';
 
   const Core = root.ManicoCore;
+  // The version of the reader of notes: tracks read by an earlier one are read again when opened.
+  const READER = 4;
   const Store = root.ManicoStorage;
   const Transcriber = root.ManicoTranscriber;
   const Separator = root.ManicoSeparator;
@@ -1415,6 +1783,8 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=
       decoding: 'Decodifica dell’audio…', saving: 'Salvataggio locale…',
       failed: 'Non sono riuscito a trascrivere questo file.',
       noNotes: 'Non ho trovato note affidabili. Prova con una sensibilità più alta o con un mix dove il basso è più presente.',
+      noBass: 'In questo brano non ho trovato un basso: forse è una base per suonarci sopra.',
+      reread: 'Note rilette con il lettore nuovo',
       persistentYes: 'archiviazione persistente', persistentNo: 'il browser può liberare spazio automaticamente',
       importedLine: 'Linea di basso trascritta', isolatedLine: 'Trascritta dal basso isolato',
       isolate: 'Isola il basso con l’AI (consigliato)',
@@ -1470,6 +1840,8 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=
       preparing: 'Preparing the signal…', analysing: 'Recognising notes…', decoding: 'Decoding audio…',
       saving: 'Saving locally…', failed: 'This file could not be transcribed.',
       noNotes: 'No reliable notes were found. Try a higher sensitivity or a mix with a more prominent bass.',
+      noBass: 'No bass was found in this recording: it may be a backing track to play over.',
+      reread: 'Notes read again with the new reader',
       persistentYes: 'persistent storage', persistentNo: 'the browser may reclaim storage automatically',
       importedLine: 'Transcribed bass line', isolatedLine: 'Transcribed from the isolated bass',
       isolate: 'Isolate the bass with AI (recommended)',
@@ -1735,9 +2107,40 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=
     renderStudio(true);
     startAnimation();
     ensureRhythm(track);
+    ensureReader(track);
     if (migrated) {
       $('savedLabel').textContent = t('migrated');
       scheduleSave();
+    }
+  }
+
+  /**
+   * A track whose bass was isolated and read by an earlier reader is read again, from that bass,
+   * the first time it is opened. One with notes corrected by hand is left as it is: what a
+   * person wrote is not read over.
+   */
+  async function ensureReader(track) {
+    if (track.demo || !track.stems?.bass || !track.audioBlob || Number(track.analysisVersion || 0) >= READER) return;
+    if ((track.events || []).some(event => event.edited)) return;
+    try {
+      const open = (Core.TUNINGS[track.settings.tuning] || Core.TUNINGS['4']).open;
+      const events = await Transcriber.transcribe(await Transcriber.decode(track.stems.bass), {
+        isolated: true,
+        mix: await Transcriber.decode(track.audioBlob),
+        lowest: open[0]
+      });
+      if (!events.length || (track.events || []).some(event => event.edited)) return;
+      track.events = Core.optimiseFingering(events, open, track.settings.frets);
+      track.analysisVersion = READER;
+      track.source = 'bass';
+      await Store.save(track);
+      if (state.track === track) {
+        state.currentIndex = 0;
+        renderStudio(true);
+        $('savedLabel').textContent = t('reread');
+      }
+    } catch (error) {
+      console.warn('Manico: the notes could not be read again', error);
     }
   }
 
@@ -2836,13 +3239,16 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=
         const base = isolate ? 0.84 : 0.05;
         events = await Transcriber.transcribe(source, {
           isolated,
+          // an isolated bass is held against the recording it came from, and read for the instrument
+          mix: isolated ? mix : null,
+          lowest: (Core.TUNINGS[existing?.settings?.tuning] || Core.TUNINGS['4']).open[0],
           sensitivity: Number($('sensitivity').value) / 100,
           onProgress(value, stage) {
             progress(base + value * (0.97 - base), stage === 'prepare' ? t('preparing') : t('analysing'));
           }
         });
         if (state.cancelled) return;
-        if (!events.length) throw new Error('NO_NOTES');
+        if (!events.length) throw new Error(isolated ? 'NO_BASS' : 'NO_NOTES');
       }
       progress(0.98, t('findingBeat'));
       await new Promise(resolve => setTimeout(resolve, 0));
@@ -2857,7 +3263,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=
         if (events) {
           const open = (Core.TUNINGS[existing.settings.tuning] || Core.TUNINGS['4']).open;
           existing.events = Core.optimiseFingering(events, open, existing.settings.frets);
-          existing.analysisVersion = 3;
+          existing.analysisVersion = READER;
           existing.source = isolated ? 'bass' : 'mix';
         }
         if (rhythm && !existing.rhythm) existing.rhythm = rhythm;
@@ -2876,7 +3282,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=
           duration: mix.duration,
           createdAt: now,
           updatedAt: now,
-          analysisVersion: 3,
+          analysisVersion: READER,
           source: isolated ? 'bass' : 'mix',
           settings,
           events: Core.optimiseFingering(events, Core.TUNINGS['4'].open, settings.frets)
@@ -2896,7 +3302,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=
     } catch (error) {
       $('startAnalysis').disabled = false;
       $('analysisProgress').style.width = '0%';
-      $('analysisStatus').textContent = t({ NO_NOTES: 'noNotes', SEPARATION_FAILED: 'separationFailed' }[error?.message] || 'failed');
+      $('analysisStatus').textContent = t({ NO_NOTES: 'noNotes', NO_BASS: 'noBass', SEPARATION_FAILED: 'separationFailed' }[error?.message] || 'failed');
     } finally {
       try { await wakeLock?.release(); } catch (error) { /* already released */ }
     }
