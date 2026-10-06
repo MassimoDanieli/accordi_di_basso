@@ -41,7 +41,7 @@ jobs:
       - name: Assemble the site
         run: |
           mkdir _site
-          cp index.html index.en.html app.html help-it.html help-en.html CNAME LICENSE _site/
+          cp index.html index.en.html app.html help-it.html help-en.html about.html CNAME LICENSE _site/
           cp -r assets dist _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
