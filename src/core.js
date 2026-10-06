@@ -1,7 +1,7 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '7.2.0';
+  const VERSION = '7.3.0';
   // New imports and included exercises start in the accompaniment-friendly 0-12 range;
   // existing projects keep the range their owner chose.
   const DEFAULT_FRETS = 12;
@@ -236,8 +236,11 @@
 
       candidates.forEach((candidate, candidateIndex) => {
         const octaveDistance = Math.abs(candidate - raw) / 12;
-        const observation = octaveDistance * (1.1 + confidence * 3.2)
+        let observation = octaveDistance * (1.1 + confidence * 3.2)
           + Math.abs(candidate - 36) * 0.006;
+        // Its octave was read from the whole note, and is not up for discussion: octaves
+        // played in turn are a bass line, not a misreading to smooth away.
+        if (events[index].sure && octaveDistance > 0) observation += 100;
 
         if (index === 0) {
           costs[index][candidateIndex] = observation;
@@ -380,7 +383,9 @@
         string: Number.isInteger(event.string) ? event.string : null,
         fret: Number.isInteger(event.fret) ? event.fret : null,
         lockedPosition: Boolean(event.lockedPosition),
-        edited: Boolean(event.edited)
+        edited: Boolean(event.edited),
+        // set by the reader on a note whose octave it read from the whole note, clearly
+        ...(event.sure ? { sure: true } : {})
       }))
       .sort((left, right) => left.start - right.start);
 

@@ -36,45 +36,9 @@ function estimateWindow(signal,sampleRate,start,size){const minimumLag=Math.max(
 function offsets(start,end){const span=Math.max(.055,end-start);return[.14,.34,.58,.8].map(ratio=>Math.min(span-.018,Math.max(.012,span*ratio))).filter((value,index,values)=>value>0&&(index===0||value-values[index-1]>=.012));}
 function selectVotes(votes){const groups=new Map();for(const vote of votes){const item=groups.get(vote.midi)||{midi:vote.midi,score:0,count:0};item.score+=vote.confidence;item.count++;groups.set(vote.midi,item);}let selected=null;for(const item of groups.values()){item.confidence=item.score/item.count;item.rank=item.count*.32+item.confidence;if(!selected||item.rank>selected.rank||item.rank===selected.rank&&item.confidence>selected.confidence)selected=item;}return selected;}
 function pitch(signal,sampleRate,time,endTime){const votes=[];for(const offset of offsets(time,endTime)){const start=Math.max(0,Math.floor((time+offset)*sampleRate)),remaining=Math.max(0,endTime-time-offset-.006),size=Math.min(Math.round(sampleRate*.16),Math.round(remaining*sampleRate),signal.length-start);if(size<Math.round(sampleRate*.052))continue;const estimate=estimateWindow(signal,sampleRate,start,size);if(estimate)votes.push(estimate);}return votes.length?selectVotes(votes):null;}
-// --- An isolated bass: follow the note itself instead of looking for bursts of energy. ---
-// A held note keeps its level; a plucked one dips and comes back within a few hundredths of a
-// second; a slurred one changes pitch without either. Those three are told apart here.
-function smoothLevel(signal,sampleRate){const k=1-Math.exp(-2*Math.PI*22/sampleRate),out=new Float32Array(signal.length);let a=0,b=0;for(let i=0;i<signal.length;i++){a+=k*(Math.abs(signal[i])-a);b+=k*(a-b);out[i]=b;}a=0;b=0;for(let i=signal.length-1;i>=0;i--){a+=k*(out[i]-a);b+=k*(a-b);out[i]=b;}return out;}
-function framePitch(signal,sampleRate,start,size,minimumLag,maximumLag,scores){if(start<0||start+size+maximumLag>signal.length)return null;let base=0;for(let i=start;i<start+size;i++)base+=signal[i]*signal[i];if(base<=0)return null;let energy=base,bestLag=-1,bestScore=-1;for(let lag=1;lag<=maximumLag;lag++){energy+=signal[start+size+lag-1]*signal[start+size+lag-1]-signal[start+lag-1]*signal[start+lag-1];if(lag<minimumLag)continue;let xy=0;for(let i=start;i<start+size;i++)xy+=signal[i]*signal[i+lag];const score=xy/Math.sqrt(base*energy+1e-20);scores[lag]=score;if(score>bestScore){bestScore=score;bestLag=lag;}}if(bestScore<.5)return null;let chosen=bestLag;const strong=Math.max(.6,bestScore*.92);for(let lag=minimumLag+1;lag<bestLag;lag++){if(scores[lag]>=strong&&scores[lag]>=scores[lag-1]&&scores[lag]>=scores[lag+1]){chosen=lag;break;}}const midi=Math.round(69+12*Math.log2(sampleRate/chosen/440));return midi>=23&&midi<=76?{midi,confidence:scores[chosen]}:null;}
-function isolatedNotes(signal,sampleRate,sensitivity,report){
-  const hop=Math.round(sampleRate*.01),fps=sampleRate/hop,count=Math.floor(signal.length/hop),level=smoothLevel(signal,sampleRate),env=new Float32Array(count);
-  for(let i=0;i<count;i++)env[i]=level[i*hop];
-  const reference=percentile(Array.from(env),.95)||1e-9,gate=reference*.07,active=i=>env[i]>gate;
-  // How much the level must come back up, within five hundredths of a second, to count as a new attack.
-  const threshold=clamp(1.15+(.72-sensitivity)*.5,1.04,1.5),reach=5,rise=new Float32Array(count).fill(1);
-  for(let i=0;i+reach<count;i++)rise[i]=env[i+reach]/(env[i]+reference*.02);
-  const attacks=[];
-  for(let i=3;i<count-reach-3;i++){if(rise[i]<threshold||env[i+reach]<=gate)continue;let top=true;for(let j=i-3;j<=i+3;j++)if(rise[j]>rise[i])top=false;if(!top)continue;const last=attacks.length-1;if(last>=0&&i-attacks[last]<5){if(rise[i]>rise[attacks[last]])attacks[last]=i;}else attacks.push(i);}
-  const bounds=new Set(attacks.map(i=>i+2));
-  const size=Math.round(sampleRate*.085),minimumLag=Math.max(2,Math.floor(sampleRate/330)),maximumLag=Math.floor(sampleRate/31),scores=new Float32Array(maximumLag+1),raw=new Int16Array(count),sure=new Float32Array(count);
-  for(let i=0;i<count;i++){if(active(i)){const found=framePitch(signal,sampleRate,i*hop-(size>>1),size,minimumLag,maximumLag,scores);if(found){raw[i]=found.midi;sure[i]=found.confidence;}}if(i%400===0)report(i/count);}
-  const pitch=new Int16Array(count),near=[];
-  for(let i=0;i<count;i++){near.length=0;for(let j=Math.max(0,i-2);j<=Math.min(count-1,i+2);j++)if(raw[j])near.push(raw[j]);if(near.length>=3){near.sort((x,y)=>x-y);pitch[i]=near.length%2?near[near.length>>1]:Math.round((near[near.length/2-1]+near[near.length/2])/2);}}
-  // A new pitch that holds for four hundredths (twice that for an octave, the usual misreading) starts a note.
-  let current=0,run=0,candidate=0;
-  for(let i=0;i<count;i++){const p=pitch[i];if(!active(i)){current=0;run=0;candidate=0;continue;}if(!p)continue;if(bounds.has(i)){current=p;run=0;candidate=0;continue;}if(!current){current=p;continue;}if(p!==current){run=p===candidate?run+1:1;candidate=p;if(run>=((p-current)%12===0?8:4)){bounds.add(i-run+1);current=p;run=0;candidate=0;}}else{run=0;candidate=0;}}
-  const pieces=[];
-  for(let i=0;i<count;){if(!active(i)){i++;continue;}let j=i;while(j<count&&active(j))j++;let from=i;for(let k=i+1;k<=j;k++){if(k===j||bounds.has(k)){pieces.push([from,k]);from=k;}}i=j;}
-  const pitchOf=(from,to)=>{const votes=new Map();let best=0,bestCount=0,total=0,n=0;for(let i=Math.min(from+2,to-1);i<to;i++){if(!pitch[i])continue;const c=(votes.get(pitch[i])||0)+1;votes.set(pitch[i],c);if(c>bestCount||c===bestCount&&pitch[i]<best){best=pitch[i];bestCount=c;}}for(let i=from;i<to;i++)if(sure[i]){total+=sure[i];n++;}return{midi:best,confidence:n?total/n:0};};
-  const notes=[],minimum=5;
-  for(const[from,to]of pieces){const found=pitchOf(from,to),last=notes[notes.length-1];
-    // A fragment too short to be a note belongs to its neighbour, which keeps the pitch of the longer part.
-    if(last&&last.to===from&&(to-from<minimum||last.to-last.from<minimum)){const keep=last.to-last.from>=to-from&&last.midi;notes[notes.length-1]={from:last.from,to,midi:keep?last.midi:found.midi,confidence:keep?last.confidence:found.confidence};continue;}
-    if(!found.midi||to-from<minimum)continue;notes.push({from,to,midi:found.midi,confidence:found.confidence});}
-  // Two leftovers that are not notes: the blur of a slide into the next note, and a blip on its own in silence.
-  const kept=[];
-  for(let k=0;k<notes.length;k++){const note=notes[k],next=notes[k+1],before=kept[kept.length-1],short=note.to-note.from<8;
-    if(short&&next&&next.from===note.to&&next.midi!==note.midi&&Math.abs(next.midi-note.midi)<=2){next.from=note.from;continue;}
-    if(short&&!(next&&next.from===note.to)&&!(before&&before.to===note.from))continue;
-    kept.push(note);}
-  return kept.filter(note=>note.midi).map(note=>({start:note.from/fps,end:note.to/fps,midi:note.midi,rawMidi:note.midi,confidence:clamp(note.confidence,0,1)}));
-}
-self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=message.data;if(isolated){self.postMessage({type:'result',events:isolatedNotes(signal,sampleRate,sensitivity,value=>self.postMessage({type:'progress',value}))});return;}const points=onsets(signal,sampleRate,sensitivity),events=[];for(let index=0;index<points.length;index++){const start=points[index],next=index+1<points.length?points[index+1]:Math.min(duration,start+.72),found=pitch(signal,sampleRate,start,next);if(found&&found.confidence>=.47)events.push({start,end:Math.max(start+.045,next),midi:found.midi,rawMidi:found.midi,confidence:clamp(found.confidence,0,1)});if(index%6===0)self.postMessage({type:'progress',value:(index+1)/points.length});}self.postMessage({type:'result',events});};`;
+// An isolated bass is read by the reader shared with the page and the tests (src/reader.js).
+const Reader=(${root.ManicoReader.source})();
+self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated,mixSignal,lowest}=message.data;if(isolated){const floor=mixSignal?Reader.loudLevel(mixSignal,sampleRate)*.02:0;self.postMessage({type:'result',events:Reader.isolatedNotes(signal,sampleRate,sensitivity,floor,(lowest||28)-2,value=>self.postMessage({type:'progress',value}))});return;}const points=onsets(signal,sampleRate,sensitivity),events=[];for(let index=0;index<points.length;index++){const start=points[index],next=index+1<points.length?points[index+1]:Math.min(duration,start+.72),found=pitch(signal,sampleRate,start,next);if(found&&found.confidence>=.47)events.push({start,end:Math.max(start+.045,next),midi:found.midi,rawMidi:found.midi,confidence:clamp(found.confidence,0,1)});if(index%6===0)self.postMessage({type:'progress',value:(index+1)/points.length});}self.postMessage({type:'result',events});};`;
   }
 
   function createWorker() {
@@ -143,9 +107,16 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=
     return result;
   }
 
+  /**
+   * Reads the notes of a recording. With `isolated` the recording is a bass on its own, and two
+   * more things help: `mix`, the recording it was separated from, against which its level is
+   * held (34 dB under it there is no bass, only what the separation left behind); and `lowest`,
+   * the lowest open string of the instrument as a MIDI note, a tone under which nothing is read.
+   */
   async function transcribe(buffer, options = {}) {
     const progress = options.onProgress || (() => {});
     const prepared = await prepare(buffer, value => progress(value * 0.22, 'prepare'));
+    const against = options.isolated && options.mix ? (await prepare(options.mix)).signal : null;
     const instance = createWorker();
 
     return new Promise((resolve, reject) => {
@@ -158,7 +129,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=
           instance.terminate();
           URL.revokeObjectURL(instance.__url);
           const normalized = Core.normalizeEvents(dedupeEvents(message.data.events), buffer.duration);
-          resolve(Core.stabilizeOctaves(normalized));
+          resolve(Core.stabilizeOctaves(normalized).map(({ sure, ...event }) => event));
         }
       };
       instance.onerror = error => {
@@ -171,10 +142,12 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated}=
         sampleRate: prepared.sampleRate,
         sensitivity: Number.isFinite(options.sensitivity) ? options.sensitivity : 0.72,
         duration: buffer.duration,
-        isolated: Boolean(options.isolated)
-      }, [prepared.signal.buffer]);
+        isolated: Boolean(options.isolated),
+        mixSignal: against,
+        lowest: Number.isFinite(options.lowest) ? options.lowest : 28
+      }, against ? [prepared.signal.buffer, against.buffer] : [prepared.signal.buffer]);
     });
   }
 
-  root.ManicoTranscriber = { decode, transcribe, dedupeEvents, analysisOffsets, selectPitchVotes, workerSource };
+  root.ManicoTranscriber = { decode, transcribe, prepare, dedupeEvents, analysisOffsets, selectPitchVotes, workerSource };
 })(globalThis);

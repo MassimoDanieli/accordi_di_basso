@@ -1,6 +1,17 @@
-# Manico 7.2.0 · Bass Transcriber
+# Manico 7.3.0 · Bass Transcriber
 
 Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico rettangolare con anticipo visivo coerente delle note successive.
+
+La release 7.3.0 porta in Manico il lettore delle note di [C_bass](https://github.com/MassimoDanieli/C_bass), il programma nato da Manico, dove nel frattempo è stato rifatto e misurato:
+
+- **l'altezza di una nota si legge dall'intera nota**, non da ogni centesimo di secondo: un momento solo confonde facilmente un'ottava con l'altra;
+- **una nota non si spezza dove cambia solo il suo suono**: una corda bassa che risuona perde la fondamentale e sembrava un'altra nota;
+- **l'altezza si segue tra un semitono e l'altro**: un basso un po' calante o un fretless non sfarfalla tra due nomi, e un glissato non lascia una nota a ogni tasto;
+- **il basso isolato si misura contro il brano**: quello che la separazione lascia dove il basso non c'è non diventa note, e un brano senza basso viene detto tale;
+- **niente sotto lo strumento**: non si leggono note più di un tono sotto la corda più grave dell'accordatura scelta;
+- un brano già separato e letto dal lettore di prima viene **riletto da solo** la prima volta che lo si apre, se non ha note corrette a mano.
+
+Su una registrazione di 3:21 il cui basso è scritto in uno spartito (155 note), separata e letta: prima 148 giuste, 5 con l'ottava sbagliata, 2 sbagliate e 39 in più; adesso 155 giuste e nessuna in più. Il lettore è lo stesso codice nei due programmi, riga per riga (`src/reader.js`): sulle diciotto registrazioni di prova scrive le stesse note di C_bass, una per una.
 
 La release 7.2.0 riscrive la tablatura e il modo in cui si leggono le note dal basso isolato:
 
