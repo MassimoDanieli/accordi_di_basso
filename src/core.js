@@ -1,7 +1,7 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '7.3.0';
+  const VERSION = '7.4.0';
   // New imports and included exercises start in the accompaniment-friendly 0-12 range;
   // existing projects keep the range their owner chose.
   const DEFAULT_FRETS = 12;
@@ -13,13 +13,8 @@
     '5c': { label: 'E A D G C', open: [28, 33, 38, 43, 48] },
     '6':  { label: 'B E A D G C', open: [23, 28, 33, 38, 43, 48] }
   };
-  const DEMOS = [
-    { id: 'demo-blues', title: 'Slow Blues in F', style: 'Blues', bpm: 82, notes: ['F1','A1','C2','Eb2','F2','C2','A1','F1','Bb1','D2','F2','Ab2','A1','C2','Eb2','E2','F2'] },
-    { id: 'demo-funk', title: 'Funk Pocket', style: 'Funk', bpm: 104, notes: ['E1','E1','G1','A1','B1','D2','E2','D2','B1','A1','G1','E1','E2','D2','B1','A1'] },
-    { id: 'demo-reggae', title: 'Reggae One Drop', style: 'Reggae', bpm: 74, notes: ['A1','E2','G2','A2','A1','E2','D2','C2','A1','E2','G2','A2'] },
-    { id: 'demo-bossa', title: 'Bossa in D minor', style: 'Bossa', bpm: 112, notes: ['D2','A1','C2','D2','F2','A2','G2','E2','D2','A1','C2','Db2'] },
-    { id: 'demo-eighths', title: 'Rock Eighths', style: 'Rock', bpm: 126, notes: ['A1','A1','A1','A1','C2','C2','D2','D2','A1','A1','G1','G1','E1','E1','A1','A1'] }
-  ];
+  // The pieces that come with the app; each has a recording in assets/pieces.
+  const DEMOS = (root.ManicoPieces || []).map(piece => ({ ...piece, style: piece.title }));
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -422,27 +417,24 @@
     };
   }
 
+  /** One of the pieces that come with the app, as a track: its notes and chords as written, no recording yet. */
   function createDemoTrack(definition, tuning = '4', frets = DEFAULT_FRETS) {
-    const beat = 60 / definition.bpm;
-    let time = 0;
-    const events = definition.notes.map((name, index) => {
-      const length = beat * (definition.style === 'Rock' ? 0.5 : index % 4 === 3 ? 1.08 : 0.82);
-      const midi = parseNote(name);
-      const event = { id: `${definition.id}-${index}`, start: time, end: time + length, midi, rawMidi: midi, confidence: 1 };
-      time += length;
-      return event;
-    });
+    const events = definition.notes.map(([start, end, midi], index) => (
+      { id: `${definition.id}-${index}`, start, end, midi, rawMidi: midi, confidence: 1 }
+    ));
     return {
       id: definition.id,
       demo: true,
       title: definition.title,
       style: definition.style,
       bpm: definition.bpm,
-      duration: time,
+      beats: definition.beats,
+      duration: definition.duration,
       createdAt: 0,
       updatedAt: 0,
       analysisVersion: 2,
       settings: { tuning, frets, lookahead: 3, speed: 1, loopA: null, loopB: null },
+      chords: definition.chords.map(([start, end, root, quality]) => ({ start, end, root, quality })),
       events: optimiseFingering(events, TUNINGS[tuning].open, frets)
     };
   }
