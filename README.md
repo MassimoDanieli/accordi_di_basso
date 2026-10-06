@@ -1,6 +1,8 @@
-# Manico 7.2.0 · Bass Transcriber
+# Manico 7.2.1 · Bass Transcriber
 
 Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico rettangolare con anticipo visivo coerente delle note successive.
+
+La release 7.2.1 corregge il brano «senza basso»: ogni 5,85 secondi il canale destro aveva un vuoto di circa 56 millisecondi, per un difetto della libreria di separazione alla fine di ogni finestra. I brani già separati vanno separati di nuovo per avere la correzione.
 
 La release 7.2.0 riscrive la tablatura e il modo in cui si leggono le note dal basso isolato:
 
