@@ -29,7 +29,7 @@
 (function initManicoCore(root) {
   'use strict';
 
-  const VERSION = '7.4.0';
+  const VERSION = '7.5.0';
   // New imports and included exercises start in the accompaniment-friendly 0-12 range;
   // existing projects keep the range their owner chose.
   const DEFAULT_FRETS = 12;
@@ -2347,8 +2347,14 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated,m
       positionLabel: 'Posizione nel brano', help: 'Aiuto', source: 'Codice su GitHub',
       heroTitle: 'Ascolta. Trascrivi. Suona.',
       heroText: 'Importa una registrazione, ricava la linea di basso e studiala sul manico. Audio, trascrizione e correzioni restano sul tuo dispositivo.',
-      privacy: 'Nessun upload. Tutto avviene nel browser.', dropTitle: 'Porta qui il tuo brano',
-      dropText: 'MP3, WAV, M4A, AAC, OGG o FLAC', choose: 'Scegli un file',
+      privacy: 'Nessun upload. Tutto avviene nel browser.', dropTitle: 'Porta qui i tuoi brani',
+      dropText: 'Uno, tanti o una cartella: MP3, WAV, M4A, AAC, OGG o FLAC', choose: 'Scegli i file', chooseFolder: 'Scegli una cartella',
+      analyseManyTitle: 'Trascrivi {n} brani', startMany: 'Trascrivi {n} brani', andOthers: 'e altri {n}',
+      analyseManyHint: 'Vengono trascritti uno dopo l’altro con queste scelte, e salvati sul dispositivo. Puoi lasciare la pagina aperta e fare altro.',
+      manyKnown: 'Già salvati, da saltare: {n}.',
+      outcomeReady: 'brani pronti', outcomeReadyOne: 'brano pronto', outcomeKnown: 'già salvati', outcomeFailed: 'non riusciti',
+      outcomeStopped: 'interrotto prima della fine', noAudioFiles: 'Lì non ho trovato file audio.',
+      reasonNoNotes: 'nessuna nota trovata', reasonNoBass: 'nessun basso trovato', reasonFailed: 'non leggibile',
       yourTracks: 'I tuoi brani', yourTracksHint: 'Riapri una trascrizione e continua da dove eri rimasto.',
       examples: 'Brani inclusi', examplesHint: 'Cinque brani suonati dal programma, con basso, batteria e accordi: per provare tutto senza importare nulla.',
       loadingPiece: 'Carico la registrazione…',
@@ -2419,8 +2425,14 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated,m
       positionLabel: 'Position in the track', help: 'Help', source: 'Source on GitHub',
       heroTitle: 'Listen. Transcribe. Play.',
       heroText: 'Import a recording, extract the bass line and practise it on the fretboard. Audio, transcription and corrections stay on your device.',
-      privacy: 'No upload. Everything happens in your browser.', dropTitle: 'Drop your track here',
-      dropText: 'MP3, WAV, M4A, AAC, OGG or FLAC', choose: 'Choose a file',
+      privacy: 'No upload. Everything happens in your browser.', dropTitle: 'Drop your tracks here',
+      dropText: 'One, many or a folder: MP3, WAV, M4A, AAC, OGG or FLAC', choose: 'Choose files', chooseFolder: 'Choose a folder',
+      analyseManyTitle: 'Transcribe {n} tracks', startMany: 'Transcribe {n} tracks', andOthers: 'and {n} more',
+      analyseManyHint: 'They are transcribed one after the other with these choices, and saved on the device. You can leave the page open and do something else.',
+      manyKnown: 'Already saved, to be skipped: {n}.',
+      outcomeReady: 'tracks ready', outcomeReadyOne: 'track ready', outcomeKnown: 'already saved', outcomeFailed: 'did not work',
+      outcomeStopped: 'stopped before the end', noAudioFiles: 'No audio files were found there.',
+      reasonNoNotes: 'no notes found', reasonNoBass: 'no bass found', reasonFailed: 'cannot be read',
       yourTracks: 'Your tracks', yourTracksHint: 'Reopen a transcription and continue where you left off.',
       examples: 'Included pieces', examplesHint: 'Five pieces played by the program, with bass, drums and chords: to try everything without importing anything.',
       loadingPiece: 'Loading the recording…',
@@ -2490,7 +2502,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated,m
     lang: 'it', tracks: [], track: null, currentIndex: 0, pendingFile: null,
     cancelled: false, audioUrl: null, playing: false, animation: 0,
     demoTimer: 0, demoClock: 0, saveTimer: 0, persistent: false, synth: null, mic: null,
-    separable: false, job: null, pendingTrack: null, pendingMode: 'import', listen: 'mix', switching: false,
+    separable: false, job: null, pendingTrack: null, pendingFiles: null, pendingMode: 'import', listen: 'mix', switching: false,
     // how many times shorter than the track the audio being played is: not 1 when the key was changed
     stretch: 1, loading: 0, keyCache: null, counting: false, countTimer: 0, priming: false,
     nextClick: null, clickedAt: 0, origin: 0, where: '', countIn: false, metronome: false
@@ -4244,6 +4256,7 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated,m
   function openImport(file, track = null, mode = 'import') {
     if (!file) return;
     state.pendingFile = file;
+    state.pendingFiles = null;
     state.pendingTrack = track;
     state.pendingMode = track ? mode : 'import';
     state.cancelled = false;
@@ -4269,136 +4282,211 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated,m
     return t('encoding');
   }
 
+  /**
+   * Works one recording out and saves it: a new file, or a track already saved whose bass is
+   * to be isolated or whose notes are to be read again. Returns the id of the track and
+   * whether the bass could not be isolated; nothing if the work was given up; fails with a
+   * reason (NO_NOTES, NO_BASS, SEPARATION_FAILED) when it cannot be done.
+   */
+  async function importOne(file, existing, mode, options, progress) {
+    const { isolate, readNotes } = options;
+    progress(0.03, t('decoding'));
+    let mix;
+    let source;
+    let stems = null;
+    let isolated = false;
+    if (isolate) {
+      mix = await Separator.decode(file);
+      if (state.cancelled) return null;
+      try {
+        state.job = Separator.separate(mix, data => progress(0.05 + data.value * 0.77, separationStatus(data)));
+        const result = await state.job.promise;
+        stems = { backing: result.backing, bass: result.bassAudio };
+        source = result.bass;
+        isolated = true;
+      } catch (error) {
+        if (state.cancelled || error?.message === 'CANCELLED') return null;
+        // A new import still gets its transcription, from the full mix as before.
+        if (existing) throw new Error('SEPARATION_FAILED');
+        console.warn('Manico: bass separation failed', error);
+        source = mix;
+      } finally {
+        state.job = null;
+      }
+    } else {
+      mix = await Transcriber.decode(file);
+      source = mix;
+      // A track separated earlier is read again from its bass alone.
+      if (existing?.stems?.bass) {
+        source = await Transcriber.decode(existing.stems.bass);
+        isolated = true;
+      }
+    }
+    if (state.cancelled) return null;
+    let events = null;
+    if (readNotes) {
+      const base = isolate ? 0.84 : 0.05;
+      events = await Transcriber.transcribe(source, {
+        isolated,
+        // an isolated bass is held against the recording it came from, and read for the instrument
+        mix: isolated ? mix : null,
+        lowest: (Core.TUNINGS[existing?.settings?.tuning] || Core.TUNINGS['4']).open[0],
+        sensitivity: options.sensitivity,
+        onProgress(value, stage) {
+          progress(base + value * (0.97 - base), stage === 'prepare' ? t('preparing') : t('analysing'));
+        }
+      });
+      if (state.cancelled) return null;
+      if (!events.length) throw new Error(isolated ? 'NO_BASS' : 'NO_NOTES');
+    }
+    progress(0.98, t('findingBeat'));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const rhythm = Rhythm.analyse(mix);
+    if (state.cancelled) return null;
+    const harmonise = async (target, firstBeat) => {
+      if (!target.stems?.backing || !target.rhythm) return;
+      progress(0.99, t('readingChords'));
+      await new Promise(resolve => setTimeout(resolve, 0));
+      try { await readChords(target, firstBeat); } catch (error) { console.warn('Manico: the chords could not be read', error); }
+    };
+    const now = Date.now();
+    let id;
+    if (existing) {
+      id = existing.id;
+      if (stems) existing.stems = stems;
+      if (events) {
+        const open = (Core.TUNINGS[existing.settings.tuning] || Core.TUNINGS['4']).open;
+        const moved = existing.transpose ? Pitch.shiftEvents(events, existing.transpose, open, existing.settings.frets) : events;
+        existing.events = Core.optimiseFingering(moved, open, existing.settings.frets);
+        existing.analysisVersion = READER;
+        existing.source = isolated ? 'bass' : 'mix';
+      }
+      if (rhythm && !existing.rhythm) existing.rhythm = rhythm;
+      // a bass isolated just now brings the chords with it; ones already there are kept
+      if (stems && !existing.chords) await harmonise(existing, false);
+      existing.updatedAt = now;
+      progress(1, t('saving'));
+      clearTimeout(state.saveTimer);
+      await Store.save(existing);
+    } else {
+      id = `track-${now}-${Math.random().toString(36).slice(2, 8)}`;
+      const settings = { tuning: '4', frets: Core.DEFAULT_FRETS, lookahead: 3, speed: 1, loopA: null, loopB: null };
+      const track = {
+        id,
+        title: file.name.replace(/\.[^.]+$/, ''),
+        filename: file.name,
+        size: file.size,
+        mime: file.type,
+        audioBlob: file,
+        duration: mix.duration,
+        createdAt: now,
+        updatedAt: now,
+        analysisVersion: READER,
+        source: isolated ? 'bass' : 'mix',
+        settings,
+        events: Core.optimiseFingering(events, Core.TUNINGS['4'].open, settings.frets)
+      };
+      if (stems) track.stems = stems;
+      if (rhythm) track.rhythm = rhythm;
+      await harmonise(track, true);
+      progress(1, t('saving'));
+      await Store.save(track);
+    }
+    return { id, skipped: isolate && !stems };
+  }
+
+  const REASONS = { NO_NOTES: 'noNotes', NO_BASS: 'noBass', SEPARATION_FAILED: 'separationFailed' };
+
+  /** Whether a recording is already among the saved tracks: the same file name and the same size. */
+  const alreadySaved = file => state.tracks.some(track => track.filename === file.name
+    && (track.size ?? track.audioBlob?.size) === file.size);
+
+  /**
+   * Several recordings, one after the other with the same choices. One already saved is
+   * passed over, one that fails does not stop the rest, and at the end the list of tracks
+   * says what became of each.
+   */
+  async function importMany(files, options, progress) {
+    const outcome = { ready: 0, known: 0, failed: [], stopped: false };
+    for (let index = 0; index < files.length; index += 1) {
+      if (state.cancelled) { outcome.stopped = true; break; }
+      const file = files[index];
+      $('importFileName').textContent = `${index + 1} / ${files.length} · ${file.name}`;
+      if (alreadySaved(file)) { outcome.known += 1; continue; }
+      try {
+        const done = await importOne(file, null, 'import', options, (value, text) => progress((index + Core.clamp(value, 0, 1)) / files.length, text));
+        if (!done) { outcome.stopped = true; break; }
+        outcome.ready += 1;
+        state.tracks = await Store.list();
+      } catch (error) {
+        if (state.cancelled) { outcome.stopped = true; break; }
+        console.warn(`Manico: ${file.name} could not be transcribed`, error);
+        outcome.failed.push(`${file.name} (${t({ NO_NOTES: 'reasonNoNotes', NO_BASS: 'reasonNoBass' }[error?.message] || 'reasonFailed')})`);
+      }
+    }
+    return outcome;
+  }
+
+  /** What became of several recordings, said above the list of tracks until it is clicked away. */
+  function showOutcome(outcome) {
+    const parts = [];
+    if (outcome.ready) parts.push(`${outcome.ready} ${t(outcome.ready === 1 ? 'outcomeReadyOne' : 'outcomeReady')}`);
+    if (outcome.known) parts.push(`${outcome.known} ${t('outcomeKnown')}`);
+    if (outcome.failed.length) parts.push(`${t('outcomeFailed')}: ${outcome.failed.join(', ')}`);
+    if (outcome.stopped) parts.push(t('outcomeStopped'));
+    const note = $('batchSummary');
+    note.textContent = parts.join(' · ');
+    note.classList.toggle('bad', outcome.failed.length > 0);
+    note.hidden = !parts.length;
+  }
+
   async function startImport() {
     const file = state.pendingFile;
+    const many = state.pendingFiles?.length > 1 ? state.pendingFiles : null;
     const existing = state.pendingTrack;
     const mode = state.pendingMode;
     if (!file) return;
     state.cancelled = false;
     $('startAnalysis').disabled = true;
-    const isolate = mode === 'isolate' || (mode === 'import' && state.separable && $('isolateBass').checked);
-    const readNotes = mode !== 'isolate' || $('retranscribe').checked;
+    const options = {
+      isolate: mode === 'isolate' || (mode === 'import' && state.separable && $('isolateBass').checked),
+      readNotes: mode !== 'isolate' || $('retranscribe').checked,
+      sensitivity: Number($('sensitivity').value) / 100
+    };
     const progress = (value, text) => {
       $('analysisProgress').style.width = `${Math.round(Core.clamp(value, 0, 1) * 100)}%`;
       if (text) $('analysisStatus').textContent = text;
     };
     let wakeLock = null;
+    // Minutes of work, or hours for many recordings: keep the screen from sleeping where the browser allows it.
+    if (options.isolate || many) { try { wakeLock = await navigator.wakeLock?.request('screen'); } catch (error) { wakeLock = null; } }
     try {
-      progress(0.03, t('decoding'));
-      let mix;
-      let source;
-      let stems = null;
-      let isolated = false;
-      if (isolate) {
-        // Minutes of work: keep the screen from sleeping where the browser allows it.
-        try { wakeLock = await navigator.wakeLock?.request('screen'); } catch (error) { wakeLock = null; }
-        mix = await Separator.decode(file);
-        if (state.cancelled) return;
-        try {
-          state.job = Separator.separate(mix, data => progress(0.05 + data.value * 0.77, separationStatus(data)));
-          const result = await state.job.promise;
-          stems = { backing: result.backing, bass: result.bassAudio };
-          source = result.bass;
-          isolated = true;
-        } catch (error) {
-          if (state.cancelled || error?.message === 'CANCELLED') return;
-          // A new import still gets its transcription, from the full mix as before.
-          if (existing) throw new Error('SEPARATION_FAILED');
-          console.warn('Manico: bass separation failed', error);
-          source = mix;
-        } finally {
-          state.job = null;
-        }
-      } else {
-        mix = await Transcriber.decode(file);
-        source = mix;
-        // A track separated earlier is read again from its bass alone.
-        if (existing?.stems?.bass) {
-          source = await Transcriber.decode(existing.stems.bass);
-          isolated = true;
-        }
+      if (many) {
+        const outcome = await importMany(many, options, progress);
+        state.pendingFile = null;
+        state.pendingFiles = null;
+        $('analysisModal').hidden = true;
+        stopAudio();
+        state.track = null;
+        await loadLibrary();
+        await refreshStorage();
+        show('home');
+        showOutcome(outcome);
+        return;
       }
-      if (state.cancelled) return;
-      let events = null;
-      if (readNotes) {
-        const base = isolate ? 0.84 : 0.05;
-        events = await Transcriber.transcribe(source, {
-          isolated,
-          // an isolated bass is held against the recording it came from, and read for the instrument
-          mix: isolated ? mix : null,
-          lowest: (Core.TUNINGS[existing?.settings?.tuning] || Core.TUNINGS['4']).open[0],
-          sensitivity: Number($('sensitivity').value) / 100,
-          onProgress(value, stage) {
-            progress(base + value * (0.97 - base), stage === 'prepare' ? t('preparing') : t('analysing'));
-          }
-        });
-        if (state.cancelled) return;
-        if (!events.length) throw new Error(isolated ? 'NO_BASS' : 'NO_NOTES');
-      }
-      progress(0.98, t('findingBeat'));
-      await new Promise(resolve => setTimeout(resolve, 0));
-      const rhythm = Rhythm.analyse(mix);
-      if (state.cancelled) return;
-      const harmonise = async (target, firstBeat) => {
-        if (!target.stems?.backing || !target.rhythm) return;
-        progress(0.99, t('readingChords'));
-        await new Promise(resolve => setTimeout(resolve, 0));
-        try { await readChords(target, firstBeat); } catch (error) { console.warn('Manico: the chords could not be read', error); }
-      };
-      const now = Date.now();
-      let id;
-      if (existing) {
-        id = existing.id;
-        if (stems) existing.stems = stems;
-        if (events) {
-          const open = (Core.TUNINGS[existing.settings.tuning] || Core.TUNINGS['4']).open;
-          const moved = existing.transpose ? Pitch.shiftEvents(events, existing.transpose, open, existing.settings.frets) : events;
-          existing.events = Core.optimiseFingering(moved, open, existing.settings.frets);
-          existing.analysisVersion = READER;
-          existing.source = isolated ? 'bass' : 'mix';
-        }
-        if (rhythm && !existing.rhythm) existing.rhythm = rhythm;
-        // a bass isolated just now brings the chords with it; ones already there are kept
-        if (stems && !existing.chords) await harmonise(existing, false);
-        existing.updatedAt = now;
-        progress(1, t('saving'));
-        clearTimeout(state.saveTimer);
-        await Store.save(existing);
-      } else {
-        id = `track-${now}-${Math.random().toString(36).slice(2, 8)}`;
-        const settings = { tuning: '4', frets: Core.DEFAULT_FRETS, lookahead: 3, speed: 1, loopA: null, loopB: null };
-        const track = {
-          id,
-          title: file.name.replace(/\.[^.]+$/, ''),
-          filename: file.name,
-          mime: file.type,
-          audioBlob: file,
-          duration: mix.duration,
-          createdAt: now,
-          updatedAt: now,
-          analysisVersion: READER,
-          source: isolated ? 'bass' : 'mix',
-          settings,
-          events: Core.optimiseFingering(events, Core.TUNINGS['4'].open, settings.frets)
-        };
-        if (stems) track.stems = stems;
-        if (rhythm) track.rhythm = rhythm;
-        await harmonise(track, true);
-        progress(1, t('saving'));
-        await Store.save(track);
-      }
-      const skipped = isolate && !stems;
+      const done = await importOne(file, existing, mode, options, progress);
+      if (!done) return;
       state.pendingFile = null;
       state.pendingTrack = null;
       $('analysisModal').hidden = true;
       await loadLibrary();
       await refreshStorage();
-      await openTrack(id, false);
-      if (skipped) $('savedLabel').textContent = t('separationSkipped');
+      await openTrack(done.id, false);
+      if (done.skipped) $('savedLabel').textContent = t('separationSkipped');
     } catch (error) {
       $('startAnalysis').disabled = false;
       $('analysisProgress').style.width = '0%';
-      $('analysisStatus').textContent = t({ NO_NOTES: 'noNotes', NO_BASS: 'noBass', SEPARATION_FAILED: 'separationFailed' }[error?.message] || 'failed');
+      $('analysisStatus').textContent = t(REASONS[error?.message] || 'failed');
     } finally {
       try { await wakeLock?.release(); } catch (error) { /* already released */ }
     }
@@ -4409,8 +4497,60 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated,m
     state.job?.cancel();
     state.job = null;
     state.pendingFile = null;
+    state.pendingFiles = null;
     state.pendingTrack = null;
     $('analysisModal').hidden = true;
+  }
+
+  const AUDIO_NAME = /\.(mp3|wav|m4a|aac|ogg|oga|opus|flac|aif|aiff|mp4|weba)$/i;
+  const isAudio = file => Boolean(file) && !String(file.name || '').startsWith('.')
+    && (String(file.type || '').startsWith('audio/') || AUDIO_NAME.test(file.name || ''));
+
+  /** Everything dropped on the page: the files, and what is in the folders, folders within folders included. */
+  async function droppedFiles(transfer) {
+    // the entries must be asked for at once: after the first pause the browser forgets the drop
+    const entries = [...(transfer.items || [])].map(item => item.webkitGetAsEntry?.()).filter(Boolean);
+    if (!entries.length) return [...(transfer.files || [])];
+    const files = [];
+    const walk = async (entry, folder) => {
+      if (entry.isFile) {
+        const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
+        files.push({ file, order: `${folder}/${entry.name}` });
+        return;
+      }
+      const reader = entry.createReader();
+      for (;;) { // a folder is read a hundred entries at a time
+        const some = await new Promise((resolve, reject) => reader.readEntries(resolve, reject));
+        if (!some.length) break;
+        for (const child of some) if (!child.name.startsWith('.')) await walk(child, `${folder}/${entry.name}`);
+      }
+    };
+    for (const entry of entries) { try { await walk(entry, ''); } catch (error) { console.warn('Manico: a dropped folder could not be read', error); } }
+    return inOrder(files);
+  }
+
+  /** Files in the order of their names, 2 before 10. */
+  const inOrder = list => list
+    .sort((left, right) => left.order.localeCompare(right.order, undefined, { numeric: true, sensitivity: 'base' }))
+    .map(item => item.file);
+
+  /** Takes what was chosen or dropped: one recording opens the dialog as before, several open it for all of them. */
+  function takeFiles(list) {
+    const files = [...list].filter(isAudio);
+    if (!files.length) {
+      if ([...list].length) { $('batchSummary').textContent = t('noAudioFiles'); $('batchSummary').classList.add('bad'); $('batchSummary').hidden = false; }
+      return;
+    }
+    $('batchSummary').hidden = true;
+    if (files.length === 1) { openImport(files[0]); return; }
+    openImport(files[0]);
+    state.pendingFiles = files;
+    const known = files.filter(alreadySaved).length;
+    $('analysisTitle').textContent = t('analyseManyTitle').replace('{n}', files.length);
+    $('startAnalysis').textContent = t('startMany').replace('{n}', files.length);
+    const names = files.slice(0, 3).map(file => file.name).join(', ');
+    $('importFileName').textContent = files.length > 3 ? `${names} ${t('andOthers').replace('{n}', files.length - 3)}` : names;
+    $('analysisStatus').textContent = t('analyseManyHint') + (known ? ` ${t('manyKnown').replace('{n}', known)}` : '');
   }
 
   function populate() {
@@ -4436,14 +4576,20 @@ self.onmessage=message=>{const{signal,sampleRate,sensitivity,duration,isolated,m
     $('homeButton').onclick = () => { stopAudio(); state.track = null; show('home'); };
     $('importTop').onclick = () => $('fileInput').click();
     $('chooseFile').onclick = () => $('fileInput').click();
-    $('fileInput').onchange = () => { openImport($('fileInput').files[0]); $('fileInput').value = ''; };
+    $('fileInput').onchange = () => { takeFiles($('fileInput').files); $('fileInput').value = ''; };
+    $('chooseFolder').onclick = () => $('folderInput').click();
+    $('folderInput').onchange = () => {
+      takeFiles(inOrder([...$('folderInput').files].map(file => ({ file, order: file.webkitRelativePath || file.name }))));
+      $('folderInput').value = '';
+    };
+    $('batchSummary').onclick = () => { $('batchSummary').hidden = true; };
     $('startAnalysis').onclick = startImport;
     $('cancelAnalysis').onclick = cancelImport;
     $('sensitivity').oninput = event => { $('sensitivityValue').textContent = `${event.target.value}%`; };
     const drop = $('dropzone');
     drop.ondragover = event => { event.preventDefault(); drop.classList.add('over'); };
     drop.ondragleave = () => drop.classList.remove('over');
-    drop.ondrop = event => { event.preventDefault(); drop.classList.remove('over'); openImport(event.dataTransfer.files[0]); };
+    drop.ondrop = event => { event.preventDefault(); drop.classList.remove('over'); droppedFiles(event.dataTransfer).then(takeFiles); };
     $('backHome').onclick = () => { stopAudio(); state.track = null; show('home'); };
     $('playButton').onclick = togglePlay;
     $('tabStrip').onclick = clickTab;

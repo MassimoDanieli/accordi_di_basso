@@ -1,8 +1,10 @@
-# Manico 7.4.0 · Bass Transcriber
+# Manico 7.5.0 · Bass Transcriber
 
 **[Manico e C_bass, presentati insieme](https://basso.massimodanieli.com/about.html)** · [in English](https://basso.massimodanieli.com/about.html#en)
 
 Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico rettangolare con anticipo visivo coerente delle note successive.
+
+La release 7.5.0 importa **tanti brani insieme**: più file scelti o trascinati, oppure una cartella intera (anche con sottocartelle). Vengono trascritti uno dopo l'altro con le stesse scelte; quelli già salvati (stesso nome e stessa dimensione) si saltano, uno che non riesce non ferma gli altri, e alla fine sopra la lista c'è scritto cosa ne è stato di ciascuno. C_bass fa lo stesso dalla 0.10.0.
 
 La release 7.4.0 porta in Manico il resto di quello che nel frattempo è nato in [C_bass](https://github.com/MassimoDanieli/C_bass):
 
