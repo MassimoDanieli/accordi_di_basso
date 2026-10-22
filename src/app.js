@@ -2186,9 +2186,11 @@
       await loadLibrary();
       await refreshStorage();
       await openTrack(done.id, false);
+      $('playButton').focus();
       if (done.skipped) $('savedLabel').textContent = t('separationSkipped');
     } catch (error) {
       $('startAnalysis').disabled = false;
+      $('startAnalysis').focus();
       $('analysisProgress').style.width = '0%';
       $('analysisStatus').textContent = t(REASONS[error?.message] || 'failed');
     } finally {
@@ -2384,8 +2386,10 @@
         if (event.key === 'Escape' && !$('cancelAnalysis').disabled) { event.preventDefault(); cancelImport(); }
         return;
       }
-      if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'A'].includes(event.target.tagName) || event.target.isContentEditable
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName) || event.target.isContentEditable
         || event.ctrlKey || event.metaKey || event.altKey || $('studioView').hidden) return;
+      // A focused button or link keeps Space and Enter for itself; arrows and loop keys still work.
+      if (['BUTTON', 'A'].includes(event.target.tagName) && (event.code === 'Space' || event.key === 'Enter')) return;
       if (event.code === 'Space') { event.preventDefault(); togglePlay(); }
       else if (event.key === 'ArrowRight') selectEvent(state.currentIndex + 1);
       else if (event.key === 'ArrowLeft') selectEvent(state.currentIndex - 1);
