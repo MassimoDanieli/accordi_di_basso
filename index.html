@@ -79,7 +79,7 @@
   <div class="studio-grid">
     <section class="main-stage">
       <div class="transport">
-        <button id="playButton" class="play-button" type="button" title="Play">▶</button>
+        <button id="playButton" class="play-button" type="button" title="Riproduci" aria-label="Riproduci">▶</button>
         <div class="seek-track"><div id="loopRange" class="loop-range" hidden></div><i id="loopMarkerA" class="loop-marker marker-a" aria-hidden="true" hidden>A</i><i id="loopMarkerB" class="loop-marker marker-b" aria-hidden="true" hidden>B</i><input id="seek" class="seek" type="range" min="0" max="1000" value="0" aria-label="Posizione nel brano" data-i18n-aria="positionLabel" aria-describedby="loopLabel"></div>
         <span id="clock" class="clock">0:00 / 0:00</span>
         <label class="inline-control"><span data-i18n="speed">Velocità</span><select id="speedSelect"></select></label>
@@ -145,7 +145,7 @@
   </div>
 </main>
 
-<div id="analysisModal" class="modal" hidden>
+<div id="analysisModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="analysisTitle" aria-describedby="analysisStatus" hidden>
   <div class="modal-card">
     <div class="modal-icon">♩</div>
     <h2 id="analysisTitle" data-i18n="analyseTitle">Trascrivi la linea di basso</h2>
