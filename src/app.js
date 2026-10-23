@@ -19,7 +19,7 @@
     it: {
       product: 'Bass Transcriber', sister: 'Bass Chord Lab: accordi sulla tastiera', import: 'Importa audio', eyebrow: 'Dal brano alle dita',
       library: 'Torna ai brani', trackTitle: 'Titolo del brano', transcribedNotes: 'Tablatura con battute e valori ritmici: scorre a tempo con il brano', fretboard: 'Manico del basso',
-      positionLabel: 'Posizione nel brano', help: 'Aiuto', source: 'Codice su GitHub',
+      positionLabel: 'Posizione nel brano', help: 'Aiuto', play: 'Riproduci', pause: 'Pausa', source: 'Codice su GitHub',
       heroTitle: 'Ascolta. Trascrivi. Suona.',
       heroText: 'Importa una registrazione, ricava la linea di basso e studiala sul manico. Audio, trascrizione e correzioni restano sul tuo dispositivo.',
       privacy: 'Nessun upload. Tutto avviene nel browser.', dropTitle: 'Porta qui i tuoi brani',
@@ -97,7 +97,7 @@
     en: {
       product: 'Bass Transcriber', sister: 'Bass Chord Lab: chords on the fretboard', import: 'Import audio', eyebrow: 'From the track to your fingers',
       library: 'Back to your tracks', trackTitle: 'Track title', transcribedNotes: 'Tablature with bars and note values: scrolls in time with the track', fretboard: 'Bass fretboard',
-      positionLabel: 'Position in the track', help: 'Help', source: 'Source on GitHub',
+      positionLabel: 'Position in the track', help: 'Help', play: 'Play', pause: 'Pause', source: 'Source on GitHub',
       heroTitle: 'Listen. Transcribe. Play.',
       heroText: 'Import a recording, extract the bass line and practise it on the fretboard. Audio, transcription and corrections stay on your device.',
       privacy: 'No upload. Everything happens in your browser.', dropTitle: 'Drop your tracks here',
@@ -180,7 +180,7 @@
     separable: false, job: null, pendingTrack: null, pendingFiles: null, pendingMode: 'import', listen: 'mix', switching: false,
     // how many times shorter than the track the audio being played is: not 1 when the key was changed
     stretch: 1, loading: 0, keyCache: null, counting: false, countTimer: 0, priming: false,
-    nextClick: null, clickedAt: 0, origin: 0, where: '', countIn: false, metronome: false
+    nextClick: null, clickedAt: 0, origin: 0, where: '', countIn: false, metronome: false, modalReturn: null
   };
 
   const SECTION_KINDS = ['intro', 'verse', 'prechorus', 'chorus', 'bridge', 'solo', 'outro'];
@@ -213,8 +213,35 @@
     $('helpLink').title = t('help');
     $('helpLink').setAttribute('aria-label', $('helpLink').title);
     $('versionLabel').textContent = t('version');
+    renderPlayButton();
     renderHome();
     if (state.track) renderStudio(true);
+  }
+
+  /** The play button shows a glyph: its name, read aloud and on hover, follows the state and the language. */
+  function renderPlayButton() {
+    const label = t(state.playing ? 'pause' : 'play');
+    $('playButton').textContent = state.playing ? '❚❚' : '▶';
+    $('playButton').title = label;
+    $('playButton').setAttribute('aria-label', label);
+  }
+
+  /** The dialog: the page behind it is inert, focus goes in and comes back to where it was. */
+  function openModal() {
+    const modal = $('analysisModal');
+    if (modal.hidden) state.modalReturn = document.activeElement;
+    for (const sibling of modal.parentElement.children) if (sibling !== modal) sibling.inert = true;
+    modal.hidden = false;
+    $('startAnalysis').focus();
+  }
+
+  function closeModal() {
+    const modal = $('analysisModal');
+    for (const sibling of modal.parentElement.children) sibling.inert = false;
+    modal.hidden = true;
+    const back = state.modalReturn;
+    state.modalReturn = null;
+    if (back && document.contains(back)) back.focus();
   }
 
   function setLanguage(language) {
@@ -289,14 +316,16 @@
     const open = document.createElement('button');
     open.className = 'icon-button';
     open.textContent = '▶';
-    open.title = t('open');
+    open.title = `${t('open')}: ${track.title}`;
+    open.setAttribute('aria-label', open.title);
     open.onclick = () => openTrack(track.id, Boolean(track.demo));
     actions.append(open);
     if (!track.demo) {
       const remove = document.createElement('button');
       remove.className = 'icon-button danger';
       remove.textContent = '×';
-      remove.title = t('remove');
+      remove.title = `${t('remove')}: ${track.title}`;
+      remove.setAttribute('aria-label', remove.title);
       remove.onclick = async event => {
         event.stopPropagation();
         if (!confirm(t('confirmDelete'))) return;
@@ -1478,7 +1507,7 @@
     $('fretsSelect').value = String(state.track.settings.frets);
     $('lookaheadSelect').value = String(state.track.settings.lookahead);
     $('speedSelect').value = String(state.track.settings.speed);
-    $('playButton').textContent = state.playing ? '❚❚' : '▶';
+    renderPlayButton();
     renderTimeline();
     renderFretboard();
     renderSide();
@@ -1946,7 +1975,7 @@
     $('analysisStatus').textContent = t(hints[state.pendingMode]);
     $('analysisProgress').style.width = '0%';
     $('startAnalysis').disabled = false;
-    $('analysisModal').hidden = false;
+    openModal();
   }
 
   function separationStatus(data) {
@@ -2140,7 +2169,7 @@
         const outcome = await importMany(many, options, progress);
         state.pendingFile = null;
         state.pendingFiles = null;
-        $('analysisModal').hidden = true;
+        closeModal();
         stopAudio();
         state.track = null;
         await loadLibrary();
@@ -2153,13 +2182,15 @@
       if (!done) return;
       state.pendingFile = null;
       state.pendingTrack = null;
-      $('analysisModal').hidden = true;
+      closeModal();
       await loadLibrary();
       await refreshStorage();
       await openTrack(done.id, false);
+      $('playButton').focus();
       if (done.skipped) $('savedLabel').textContent = t('separationSkipped');
     } catch (error) {
       $('startAnalysis').disabled = false;
+      $('startAnalysis').focus();
       $('analysisProgress').style.width = '0%';
       $('analysisStatus').textContent = t(REASONS[error?.message] || 'failed');
     } finally {
@@ -2174,7 +2205,7 @@
     state.pendingFile = null;
     state.pendingFiles = null;
     state.pendingTrack = null;
-    $('analysisModal').hidden = true;
+    closeModal();
   }
 
   const AUDIO_NAME = /\.(mp3|wav|m4a|aac|ogg|oga|opus|flac|aif|aiff|mp4|weba)$/i;
@@ -2351,7 +2382,14 @@
     audio.onended = () => { state.playing = false; setTime(0); renderStudio(false); };
     audio.onloadedmetadata = () => { if (state.track && !state.track.duration) state.track.duration = audio.duration * state.stretch; updatePlayback(true); };
     document.addEventListener('keydown', event => {
-      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName) || $('studioView').hidden) return;
+      if (!$('analysisModal').hidden) {
+        if (event.key === 'Escape' && !$('cancelAnalysis').disabled) { event.preventDefault(); cancelImport(); }
+        return;
+      }
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName) || event.target.isContentEditable
+        || event.ctrlKey || event.metaKey || event.altKey || $('studioView').hidden) return;
+      // A focused button or link keeps Space and Enter for itself; arrows and loop keys still work.
+      if (['BUTTON', 'A'].includes(event.target.tagName) && (event.code === 'Space' || event.key === 'Enter')) return;
       if (event.code === 'Space') { event.preventDefault(); togglePlay(); }
       else if (event.key === 'ArrowRight') selectEvent(state.currentIndex + 1);
       else if (event.key === 'ArrowLeft') selectEvent(state.currentIndex - 1);
