@@ -1,4 +1,4 @@
-FROM nginx:1.27-alpine
+FROM nginx:1.30-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY index.html index.en.html app.html help-it.html help-en.html /usr/share/nginx/html/
 COPY assets/ /usr/share/nginx/html/assets/
