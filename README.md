@@ -1,8 +1,36 @@
-# Manico 7.2.1 · Bass Transcriber
+# Manico 7.5.1 · Bass Transcriber
+
+**[Manico e C_bass, presentati insieme](https://basso.massimodanieli.com/about.html)** · [in English](https://basso.massimodanieli.com/about.html#en)
 
 Manico importa una registrazione, stima la linea di basso nota per nota e la mostra su un manico rettangolare con anticipo visivo coerente delle note successive.
 
-La release 7.2.1 corregge il brano «senza basso»: ogni 5,85 secondi il canale destro aveva un vuoto di circa 56 millisecondi, per un difetto della libreria di separazione alla fine di ogni finestra. I brani già separati vanno separati di nuovo per avere la correzione.
+La release 7.5.1 corregge il brano «senza basso»: ogni 5,85 secondi il canale destro aveva un vuoto di circa 56 millisecondi, per un difetto della libreria di separazione alla fine di ogni finestra (valori non numerici). I brani già separati vanno separati di nuovo per avere la correzione. Il server Docker passa a nginx 1.30.
+
+La release 7.5.0 importa **tanti brani insieme**: più file scelti o trascinati, oppure una cartella intera (anche con sottocartelle). Vengono trascritti uno dopo l'altro con le stesse scelte; quelli già salvati (stesso nome e stessa dimensione) si saltano, uno che non riesce non ferma gli altri, e alla fine sopra la lista c'è scritto cosa ne è stato di ciascuno. C_bass fa lo stesso dalla 0.10.0.
+
+La release 7.4.0 porta in Manico il resto di quello che nel frattempo è nato in [C_bass](https://github.com/MassimoDanieli/C_bass):
+
+- **accordi**: nei brani con il basso isolato vengono letti dal brano senza basso (cromagramma, un accordo per beat, con la linea di basso come indizio per la fondamentale) e scritti sopra la tablatura; si correggono a mano. Il codice è quello di C_bass riga per riga (`src/chords.js`): su sei brani di prova scrive gli stessi accordi;
+- **prima battuta dall'armonia**: all'importazione, tra il beat scelto dalla batteria e quello a mezza battuta di distanza vince quello dove cambiano più accordi;
+- **battute di lunghezza propria**: una battuta può avere un beat in più o in meno, e tutte le stanghette dopo si spostano; **+½ beat** per quando il tempo è stato seguito sui levare;
+- **sezioni** (intro, strofa, ritornello…) dalla battuta corrente, con il loop sulla sezione intera;
+- **tonalità**: fino a sei semitoni su o giù per audio, note e accordi. La registrazione viene ricampionata una volta (`src/pitch.js`) e poi suonata più lenta o più veloce di altrettanto dal lettore del browser, che mantiene l'intonazione;
+- **conta una battuta** prima di partire e **metronomo** sui beat trovati nel brano;
+- **PDF e MusicXML** della parte, con tablatura, valori ritmici, accordi e sezioni (`src/sheet.js`);
+- **cinque brani inclusi**, gli stessi di C_bass (blues, funk, bossa nova, walking, rock), suonati dal suo sintetizzatore: basso, batteria e accordi, con l'ascolto senza basso e a solo basso. Le registrazioni sono in `assets/pieces/` (3,7 MB), le note e gli accordi in `src/pieces.js`; li scrive `go run ./tools/pieces` nel repository di C_bass. Dove le registrazioni non si possono scaricare (la versione in un solo file, `dist/manico.html`) le note vengono suonate una per una come prima.
+
+Limiti noti: gli accordi sono verificati per uguaglianza con C_bass e sui brani inclusi, non su un insieme di brani veri con accordi scritti; senza basso isolato non vengono letti. Il metronomo segue l'orologio del lettore audio del browser: l'allineamento all'ascolto va giudicato a orecchio, come la qualità dell'audio trasposto.
+
+La release 7.3.0 porta in Manico il lettore delle note di [C_bass](https://github.com/MassimoDanieli/C_bass), il programma nato da Manico, dove nel frattempo è stato rifatto e misurato:
+
+- **l'altezza di una nota si legge dall'intera nota**, non da ogni centesimo di secondo: un momento solo confonde facilmente un'ottava con l'altra;
+- **una nota non si spezza dove cambia solo il suo suono**: una corda bassa che risuona perde la fondamentale e sembrava un'altra nota;
+- **l'altezza si segue tra un semitono e l'altro**: un basso un po' calante o un fretless non sfarfalla tra due nomi, e un glissato non lascia una nota a ogni tasto;
+- **il basso isolato si misura contro il brano**: quello che la separazione lascia dove il basso non c'è non diventa note, e un brano senza basso viene detto tale;
+- **niente sotto lo strumento**: non si leggono note più di un tono sotto la corda più grave dell'accordatura scelta;
+- un brano già separato e letto dal lettore di prima viene **riletto da solo** la prima volta che lo si apre, se non ha note corrette a mano.
+
+Su una registrazione di 3:21 il cui basso è scritto in uno spartito (155 note), separata e letta: prima 148 giuste, 5 con l'ottava sbagliata, 2 sbagliate e 39 in più; adesso 155 giuste e nessuna in più. Il lettore è lo stesso codice nei due programmi, riga per riga (`src/reader.js`): sulle diciotto registrazioni di prova scrive le stesse note di C_bass, una per una.
 
 La release 7.2.0 riscrive la tablatura e il modo in cui si leggono le note dal basso isolato:
 

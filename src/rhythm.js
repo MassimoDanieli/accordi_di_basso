@@ -200,11 +200,62 @@
         beats.push(time);
         if (index + 1 < rhythm.beats.length) beats.push(Math.round((time + rhythm.beats[index + 1]) * 500) / 1000);
       });
-      return { ...rhythm, beats, downbeat: rhythm.downbeat * 2 };
+      return { ...rhythm, beats, downbeat: rhythm.downbeat * 2, odd: [] };
     }
     const start = rhythm.downbeat % 2;
     for (let index = start; index < rhythm.beats.length; index += 2) beats.push(rhythm.beats[index]);
-    return { ...rhythm, beats, downbeat: Math.floor(rhythm.downbeat / 2) % rhythm.perBar };
+    return { ...rhythm, beats, downbeat: Math.floor(rhythm.downbeat / 2) % rhythm.perBar, odd: [] };
+  }
+
+  /**
+   * The pulse moved half a beat later: every beat where the "and" after it was. For when the
+   * pulse was followed on the off-beats, which a shaker, a hi-hat or an off-beat guitar louder
+   * than the beats will bring about.
+   */
+  function halfway(rhythm) {
+    const beats = [];
+    for (let index = 0; index + 1 < rhythm.beats.length; index += 1) {
+      beats.push(Math.round((rhythm.beats[index] + rhythm.beats[index + 1]) * 500) / 1000);
+    }
+    const last = rhythm.beats.length - 1;
+    if (last >= 1) beats.push(Math.round((rhythm.beats[last] + (rhythm.beats[last] - rhythm.beats[last - 1]) / 2) * 1000) / 1000);
+    return { ...rhythm, beats };
+  }
+
+  // A bar can have a length of its own: a bar of two in a piece in four, after which every bar
+  // line falls somewhere else. `odd` lists those bars, in order, as {bar, beats}; bars are
+  // counted from 0.
+
+  /** The number of beats in a bar. */
+  function beatsIn(rhythm, bar) {
+    for (const odd of rhythm.odd || []) if (odd.bar === bar) return odd.beats;
+    return rhythm.perBar;
+  }
+
+  /** Where a bar starts, in beats from the first bar line. Bars before it, where a pickup falls, have the usual length. */
+  function barStart(rhythm, bar) {
+    let start = bar * rhythm.perBar;
+    for (const odd of rhythm.odd || []) if (odd.bar < bar) start += odd.beats - rhythm.perBar;
+    return start;
+  }
+
+  /** The bar a place falls in, the place being in beats from the first bar line. */
+  function barAt(rhythm, beats) {
+    if (beats < 0) return Math.floor(beats / rhythm.perBar);
+    // from the bar it would be with no odd bars, a step or two either way finds the real one
+    let bar = Math.floor(Math.floor(beats) / rhythm.perBar);
+    while (barStart(rhythm, bar) > Math.floor(beats)) bar -= 1;
+    while (barStart(rhythm, bar + 1) <= Math.floor(beats)) bar += 1;
+    return bar;
+  }
+
+  /** The pulse with a bar given its own number of beats, or the usual number back. */
+  function setBeatsIn(rhythm, bar, beats) {
+    if (bar < 0 || beats < 1) return rhythm;
+    const odd = (rhythm.odd || []).filter(item => item.bar !== bar);
+    if (beats !== rhythm.perBar) odd.push({ bar, beats });
+    odd.sort((left, right) => left.bar - right.bar);
+    return { ...rhythm, odd };
   }
 
   const tempoOf = rhythm => {
@@ -315,33 +366,40 @@
     const barSlots = rhythm.perBar * DIVISION;
     const placed = quantize(rhythm, events);
     const bars = new Map();
+    // the bar holding a sixteenth, where that bar starts and how long it is, in sixteenths
+    const barOf = at => {
+      const bar = barAt(rhythm, at / DIVISION);
+      return { bar, start: barStart(rhythm, bar) * DIVISION, length: beatsIn(rhythm, bar) * DIVISION };
+    };
     const push = (slot, length, extra) => {
       let at = slot;
       let first = true;
       while (at < slot + length) {
-        const bar = Math.floor(at / barSlots);
-        const inBar = at - bar * barSlots;
-        const span = Math.min(slot + length - at, barSlots - inBar);
-        for (const piece of splitValues(inBar, span, barSlots, Boolean(extra.rest))) {
+        const { bar, start, length: slots } = barOf(at);
+        const inBar = at - start;
+        const span = Math.min(slot + length - at, slots - inBar);
+        for (const piece of splitValues(inBar, span, slots, Boolean(extra.rest))) {
           if (!bars.has(bar)) bars.set(bar, []);
-          bars.get(bar).push({ ...extra, slot: piece.slot, value: piece.value, tied: !first && !extra.rest, barStart: piece.slot === 0 });
+          // `at` is its place in sixteenths from the first bar line, whatever the bars before it hold
+          bars.get(bar).push({ ...extra, slot: piece.slot, value: piece.value, tied: !first && !extra.rest, barStart: piece.slot === 0, at: start + piece.slot });
           first = false;
         }
         at += span;
       }
     };
-    let cursor = placed.length ? Math.floor(placed[0].slot / barSlots) * barSlots : 0;
+    let cursor = placed.length ? barOf(placed[0].slot).start : 0;
     for (const note of placed) {
       if (note.slot > cursor) push(cursor, note.slot - cursor, { rest: true });
       push(note.slot, note.slots, { index: note.index });
       cursor = note.slot + note.slots;
     }
-    if (cursor % barSlots) push(cursor, barSlots - cursor % barSlots, { rest: true });
+    const end = barOf(cursor);
+    if (cursor > end.start) push(cursor, end.start + end.length - cursor, { rest: true });
     return { bars, barSlots, placed };
   }
 
   root.ManicoRhythm = {
     FPS, DIVISION, fft, monoSignal, onsetEnvelope, estimateTempo, trackBeats, estimateDownbeat,
-    analyse, steady, rescale, tempoOf, positionOf, timeOf, calibrate, quantize, splitValues, notate
+    analyse, steady, rescale, halfway, beatsIn, barStart, barAt, setBeatsIn, tempoOf, positionOf, timeOf, calibrate, quantize, splitValues, notate
   };
 })(globalThis);
