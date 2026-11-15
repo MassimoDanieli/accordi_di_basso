@@ -48,6 +48,15 @@ self.onmessage = async message => {
       (step, total) => report({stage: 'separate', step, total}));
     report({stage: 'encode'});
     const {bass, drums, other, vocals} = tracks;
+    // The library leaves the last 56 ms of every 7.8-second window of the last channel (the
+    // right channel of the vocals) without a value. Left as they are, those gaps would silence
+    // the whole right channel of the mix there; as zeros, only the vocals miss them, under the
+    // fade between windows.
+    for (const stem of [bass, drums, other, vocals]) {
+      for (const data of stem.channelData) {
+        for (let index = 0; index < data.length; index += 1) if (!Number.isFinite(data[index])) data[index] = 0;
+      }
+    }
     const length = bass.channelData[0].length;
     // Everything but the bass, mixed back together; and the bass on its own, in mono for the transcriber.
     const backing = [0, 1].map(channel => {
